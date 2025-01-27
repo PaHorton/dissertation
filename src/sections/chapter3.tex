@@ -7,31 +7,31 @@ Each module is designed to be self-contained, focusing on a single device in the
 
 
 \section{PMCC}
-For ASTHROS, we utiltize an array of 4GHz spectrometers called the PMCC ASIC P19800B ASIC RF Spectrometer, henceforth refered to as the PMCC.
+For ASTHROS, we utilize an array of 4GHz spectrometers called the PMCC ASIC P19800B ASIC RF Spectrometer, henceforth referred to as the PMCC.
 These PMCCs are interfaced with via SPI for control, diagnostics, and readout \cite{PMCCP19800B}.
-To cmmunicate with the PMCCs, we utilize Raspberry Pi Compute Module 4s (CM4s) with custom harnesses.
-The CM4 was chosen as it can be configured to operate at the necessary 1.8V logic level required by the PMCCs by moving a diode on the CM4 IO board \cite{cm4io}.
-Additionally, the CM4 has 4 SPI buses, which allows us to control up to 4 PMCCs per device \cite{cm4}.
+To communicate with the PMCCs, we utilize Raspberry Pi Compute Module 4s (CM4s) with custom harnesses.
+The CM4 was chosen because it can be configured to operate at the 1.8V logic level necessary for PMCC by moving a diode on the CM4 IO board \cite{cm4io}.
+Additionally, the CM4 has 4 SPI buses, allowing us to control up to 4 PMCCs per device \cite{cm4}.
 The PMCCs are also connected to a GPIO pin on the CM4 to allow us to send a reset signal to the PMCCs.
 The custom harness used to connect the PMCCs to the CM4 mounts onto the CM4 IO board's GPIO pins and converts the 40 ribbon cable to four sets of connections for the PMCC's SPI and reset pins.
 Additionally, the CM4 has an SSD mounted to the side of it's IO board enclosure for raw spectra storage and easier local debugging when the device is not connected to the rest of the readout network.
 Finally, two CM4s and eight PMCCs are mounted in a custom enclosure that is designed to be mounted on the back of the ASTHROS primary mirror.
 
 PyMCC is the Python module developed to interface with the PMCCs and communicate with the rest of the readout system.
-Originally, the PMCCs were controlled by a C program that was designed to provide a simple CLI for manually controllilng the PMCCs.
+Originally, the PMCCs were controlled by a C program that was designed to provide a simple CLI for manually controlling the PMCCs.
 As we needed to control multiple PMCCs and have them communicate with the rest of the readout system, we decided to rewrite the control software and drivers in Python.
-The core of PyMCC is a Python driver for the PMCCs that provide an interface for controlling the PMCCs, and reading out the data.
+The core of PyMCC is a Python driver for the PMCCs that provides an interface for controlling the PMCCs and reading out the data.
 Built on top of the driver are Python programs that allow for manual control of the PMCCs, as well as a server that allows for control of the PMCCs over the RabbitMQ network.
 
 \subsection{SPI Utilities}
 At the lowest level of the PyMCC driver is the \verb|spi_utils| module.
 This module provides an interface for communicating with the PMCCs over SPI using the \verb|spidev| Python library.
 The \verb|spidev| library provides an interface to the Linux kernel's SPI device driver \cite{spidev}.
-Additionally, the PMCC has 16-bit registers which require us to send and receive 16-bit words instead of the typical 8-bit bytes that \verb|spidev| expects. 
-This was the primary reason for the development of the \verb|spi_utils| module as it handles the conversion between 16-bit words and 8-bit bytes and provides an easier interface for confguring the PMCCs registers without having to worry about the low-level details of the SPI communication.
+Additionally, the PMCC has 16-bit registers that require us to send and receive 16-bit words instead of the typical 8-bit bytes that \verb|spidev| expect. 
+This was the primary reason for the development of the \verb|spi_utils| module as it handles the conversion between 16-bit words and 8-bit bytes and provides an easier interface for configuring the PMCCs registers without having to worry about the low-level details of the SPI communication.
 
 The \verb|spi_utils| module provides a \verb|PMCC_SPI| class that is used to communicate with the PMCCs.
-The \verb|PMCC_SPI| class is initialized with the bus, device, SPI mode, bits per word, and clock speed for the PMCC we are communicating with.
+The \verb|PMCC_SPI| class is initialized with the bus, device, SPI mode, bits per word, and clock speed for the PMCC with which we are communicating.
 The bus and device are specific to the PMCC we are communicating with and are based on the wiring harness used to connect the PMCC to the CM4.
 The SPI mode, bits per word, and clock speed are all set to the values specified in the PMCC manual.
 
