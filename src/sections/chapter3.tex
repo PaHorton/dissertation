@@ -1,4 +1,4 @@
-\chapter[ASATHROS Payload Readout System Design]{ASATHROS Payload Readout System Design}
+\chapter[ASATHROS Payload Readout System Design]{ASTHROS Payload Readout System Design}
 ASTHROS, the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths, is a balloon-borne observatory designed to study the universe in the submillimeter wavelength range.
 The readout system is responsible for controlling the detectors, reading out the data, and storing the data on a solid state drive.
 The readout system is designed to be modular and scalable, allowing for easy integration of new detectors and readout systems.
@@ -24,66 +24,66 @@ The core of PyMCC is a Python driver for the PMCCs that provides an interface fo
 Built on top of the driver are Python programs that allow for manual control of the PMCCs, as well as a server that allows for control of the PMCCs over the RabbitMQ network.
 
 \subsection{SPI Utilities}
-At the lowest level of the PyMCC driver is the \verb|spi_utils| module.
-This module provides an interface for communicating with the PMCCs over SPI using the \verb|spidev| Python library.
-The \verb|spidev| library provides an interface to the Linux kernel's SPI device driver \cite{spidev}.
-Additionally, the PMCC has 16-bit registers that require us to send and receive 16-bit words instead of the typical 8-bit bytes that \verb|spidev| expect. 
-This was the primary reason for the development of the \verb|spi_utils| module as it handles the conversion between 16-bit words and 8-bit bytes and provides an easier interface for configuring the PMCCs registers without having to worry about the low-level details of the SPI communication.
+At the lowest level of the PyMCC driver is the \texttt{spi\_utils} module.
+This module provides an interface for communicating with the PMCCs over SPI using the \texttt{spidev} Python library.
+The \texttt{spidev} library provides an interface to the Linux kernel's SPI device driver \cite{spidev}.
+Additionally, the PMCC has 16-bit registers that require us to send and receive 16-bit words instead of the typical 8-bit bytes that \texttt{spidev} expect. 
+This was the primary reason for the development of the \texttt{spi\_utils} module as it handles the conversion between 16-bit words and 8-bit bytes and provides an easier interface for configuring the PMCCs registers without having to worry about the low-level details of the SPI communication.
 
-The \verb|spi_utils| module provides a \verb|PMCC_SPI| class that is used to communicate with the PMCCs.
-The \verb|PMCC_SPI| class is initialized with the bus, device, SPI mode, bits per word, and clock speed for the PMCC with which we are communicating.
+The \texttt{spi\_utils} module provides a \texttt{PMCC\_SPI} class that is used to communicate with the PMCCs.
+The \texttt{PMCC\_SPI} class is initialized with the bus, device, SPI mode, bits per word, and clock speed for the PMCC with which we are communicating.
 The bus and device are specific to the PMCC we are communicating with and are based on the wiring harness used to connect the PMCC to the CM4.
 The SPI mode, bits per word, and clock speed are all set to the values specified in the PMCC manual.
 
-To simplify addresses, the \verb|PMCC_SPI| object has a \verb|make_addr()| method that takes the address of the register we want to write to and the read/write bit.
+To simplify addresses, the \texttt{PMCC\_SPI} object has a \texttt{make\_addr()} method that takes the address of the register we want to write to and the read/write bit.
 Valid addresses for the PMCC are 0-511, and the read/write bit is 0 for a write and 1 for a read.
 When sending a command to the PMCC, the first word of the command is the address of the regster we want to write to shifted left by 1 bit to make room for the read/write bit.
 \begin{equation}
     \text{tx[16]} = \text{addr[9]} << 1 + \text{rw[1]}
 \end{equation}
-Because \verb|spidev| uses 8-bit communication, we need to split the 16-bit word into two 8-bit bytes.
+Because \texttt{spidev} uses 8-bit communication, we need to split the 16-bit word into two 8-bit bytes.
 \begin{equation}
     \label{eq:split_word}
     \text{byte[8][2]} = [\text{word[16]} >> 8,\ \text{word[16]}\ \text{\&}\ \text{0xFF}]
 \end{equation}
 The helper method returns these two bytes as an array that can be used in other methods to convert an address and command into a format that can be sent over SPI.
 
-For reading and writing to the PMCC, the \verb|PMCC_SPI| object has an \verb|xfer()| method that takes the address of the register, a read or write flag, and optional data to write and length of data to read.
+For reading and writing to the PMCC, the \texttt{PMCC\_SPI} object has an \texttt{xfer()} method that takes the address of the register, a read or write flag, and optional data to write and length of data to read.
 By default, the length of data to read is 1, and the data to write is None.
-The \verb|xfer()| method first obtains the tx bytes from the \verb|make_addr()| method.
-For both read and write commands, we utilize the \verb|spidev| library's \verb|xfer3()| function as it allows us to send and receive data of arbitrary length in a single SPI transaction \cite{spidev}.
-\verb|spidev|'s \verb|xfer2()| and \verb|xfer()| will fail at list values longer than the maximum SPI buffer size.
-On the other hand, \verb|xfer3()| will automatically split the data into multiple SPI transactions if the data is longer than the maximum SPI buffer size.
+The \texttt{xfer()} method first obtains the TX bytes from the \texttt{make\_addr()} method.
+For both read and write commands, we utilize the \texttt{spidev} library's \texttt{xfer3()} function as it allows us to send and receive data of arbitrary length in a single SPI transaction \cite{spidev}.
+\texttt{spidev}'s \texttt{xfer2()} and \texttt{xfer()} will fail at list values longer than the maximum SPI buffer size.
+On the other hand, \texttt{xfer3()} will automatically split the data into multiple SPI transactions if the data is longer than the maximum SPI buffer size.
 This is vital for burst reads on the PMCC as our data can be much longer than the maximum SPI buffer size.
-For writes, the \verb|xfer()| method sends the tx bytes and the data to write to the PMCC.
+For writes, the \texttt{xfer()} method sends the TX bytes and the data to write to the PMCC.
 The data is split into two 8-bit bytes using Equation \ref{eq:split_word}.
-During this transaction, the PMCC does not send any data back, so the \verb|xfer3()| function returns an array of zeros.
-If our transaction is unsuccessful, instead of returning zeroes, we will recieve an empty array that we can check for.
-For single register reads, the \verb|xfer()| method sends the tx bytes followed by a dummy word to the PMCC.
-While we are sending the dummy word over the MOSI line, the PMCC is sending the data we requested over the MISO line that is returned by the \verb|xfer3()| function along with the original tx bytes.
+During this transaction, the PMCC does not send any data back, so the \texttt{xfer3()} function returns an array of zeros.
+If our transaction is unsuccessful, instead of returning zeroes, we will receive an empty array that we can check for.
+For single register reads, the \texttt{xfer()} method sends the TX bytes followed by a dummy word to the PMCC.
+While we are sending the dummy word over the MOSI line, the PMCC is sending the data we requested over the MISO line that is returned by the \texttt{xfer3()} function along with the original TX bytes.
 After checking that we have received data from the PMCC, we return the data as an array of 16-bit words.
-This is done by utilizing numpy to cast the output as a \verb|np.uint8| array and then returning a view of that array with big-endian 16-bit unsigned integer data type.
-For reads that are longer than a single register, we send the tx bytes followed by a dummy word for each word we want to read and follow the same process as a single register read.
+This is done by utilizing NumPy to cast the output as a \texttt{np.uint8} array and then returning a view of that array with big-endian 16-bit unsigned integer data type.
+For reads that are longer than a single register, we send the TX bytes followed by a dummy word for each word we want to read and follow the same process as a single register read.
 
-For simple reads, \verb|PMCC_SPI| has a \verb|read()| method that takes the address of the register we want to read from and optionally the number of words we want to read.
+For simple reads, \texttt{PMCC\_SPI} has a \texttt{read()} method that takes the address of the register we want to read from and optionally the number of words we want to read.
 By default, this method reads a single word from the PMCC.
-The \verb|read()| method calls the \verb|xfer()| method with the read flag set to 1 and the number of words to read.
-If we are only reading a single word, we return the first word and only word in the array of words returned by the \verb|xfer()| method. 
+The \texttt{read()} method calls the \texttt{xfer()} method with the read flag set to 1 and the number of words to read.
+If we are only reading a single word, we return the first word and only word in the array of words returned by the \texttt{xfer()} method. 
 Otherwise, for burst reads, we return the entire array of words.
 
-For simple writes, \verb|PMCC_SPI| has a \verb|write()| method that takes the address of the register we want to write to and the data we want to write.
-The \verb|write()| method calls the \verb|xfer()| method with the read flag set to 0.
-From there, the \verb|xfer()| method sends the data to the PMCC and returns None as the PMCC does not send any data back.
-If there is an issue with the transaction, the \verb|xfer()| method will raise an exception indicating that it recieved null from the transfer to the specific address. 
+For simple writes, \texttt{PMCC\_SPI} has a \texttt{write()} method that takes the address of the register we want to write to and the data we want to write.
+The \texttt{write()} method calls the \texttt{xfer()} method with the read flag set to 0.
+From there, the \texttt{xfer()} method sends the data to the PMCC and returns None as the PMCC does not send any data back.
+If there is an issue with the transaction, the \texttt{xfer()} method will raise an exception indicating that it received null from the transfer to the specific address. 
 
-The doucmentation for the PMCC specifies specific bits and ranges of bits within a register address to set different configurations on the device.
+The documentation for the PMCC specifies specific bits and ranges of bits within a register address to set different configurations on the device.
 We often only want to change a specific value at an address and not the entire register.
-To accomplish this, the \verb|PMCC_SPI| object has a \verb|mask_data()| method that takes the most signifigant bit (MSB), least signifigant bit (LSB), the value we want to write, and the original buffer we are overwriting.
-This closely matches the way the PMCC documents the use of each register with a either a single bit or an inclusive range of bits. 
+To accomplish this, the \texttt{PMCC\_SPI} object has a \texttt{mask\_data()} method that takes the most significant bit (MSB), the least significant bit (LSB), the value we want to write, and the original buffer we are overwriting.
+This closely matches the way the PMCC documents the use of each register with either a single bit or an inclusive range of bits. 
 First we check if the MSB and LSB are valid values, and if they are not, we raise an exception.
 Valid values for addressing the 16-bit registers are 0 to 15 for the LSB and LSB to 15 for the MSB.
-Next, we check if the value provided will fit within the length specifiec by the MSB and LSB.
-The maximum value that can be stored between the two values is $2^{(MSB-LSB+1)}-1$.
+Next, we check if the value provided will fit within the length specific by the MSB and LSB.
+The maximum value that can be stored between the two values is $(1 << $ MSB $ - $ LSB $ + 1) - 1$.
 If the value is too large, we raise an exception.
 Finally, we create a mask using the maximum value and shifting it to the left by the LSB.
 We then take the original buffer and do a bitwise AND with the inverse of the mask to clear the bits between the LSB and the MSB. 
@@ -96,21 +96,30 @@ This process is shown in Equation \ref{eq:mask_data}.
     \text{buffer} &= (\text{buffer}\ \&\ \sim\text{mask})\ |\ (\text{data} << \text{LSB}) & 0 \leq \text{data} \leq \text{maxValue}
 \end{align}
 
-To further simplify the process of setting specific bits in a register, the \verb|PMCC_SPI| object has a \verb|read_write()| that first reads from the address we want to write to, modifies the data we want to change, and then writes the modified data back to the PMCC.
-The \verb|read_write()| method takes the address of the register we want to read from and one of the following formats for the data we want to write:
+To further simplify the process of setting specific bits in a register, the \texttt{PMCC\_SPI} object has a \texttt{read\_write()} that first reads from the address we want to write to, modifies the data we want to change, and then writes the modified data back to the PMCC.
+The \texttt{read\_write()} method takes the address of the register we want to read from and one of the following formats for the data we want to write:
 \begin{itemize}
-    \item A tuple of MSB, LSB, and value to write to the register (e.g. (15, 8, 0x1))
-    \item A tuple of a single bit and value to write to the register (e.g (0, 0x1))
-    \item An array contianing combinations of the above two formats (e.g. [(15, 8, 0x1), (0, 0x1)])
+    \item A tuple of MSB, LSB, and value to write to the register 
+    \begin{itemize}
+        \item e.g. \texttt{(15, 8, 0xAA)} would set the register to \texttt{0b1010 1010 XXXX XXXX}
+    \end{itemize}
+    \item A tuple of a single bit and value to write to the registers
+    \begin{itemize}
+        \item e.g. \texttt{(2, 0x1)} would set the register to \texttt{0bXXXX XXXX XXXX X1XX}
+    \end{itemize}
+    \item An array containing combinations of the above two formats
+    \begin{itemize}
+        \item e.g. \texttt{[(15, 8, 0xAA), (2, 0x1)]} would set the register to \texttt{0b1010 1010 XXXX X1XX}
+    \end{itemize}
 \end{itemize}
-The \verb|read_write()| method first reads the data from the PMCC using the \verb|read()| method and stores it in a buffer.
+The \texttt{read\_write()} method first reads the data from the PMCC using the \texttt{read()} method and stores it in a buffer.
 Then we check if the changes provided are a tuple or an array of tuples.
-If it's a tuple, we just wrap it in an array so we can iterate over it.
-For each change in the array, we unpack the tuple and call the \verb|mask_data()| method to modify the data we read from the PMCC, updating the buffer each time.
+If it's a tuple, we just wrap it in an array in order to iterate over it.
+For each change in the array, we unpack the tuple and call the \texttt{mask\_data()} method to modify the data we read from the PMCC, updating the buffer each time.
 If we are only changing a single bit, MSB and LSB are set to the same value.
-To complete the transaction, we write the modified buffer back to the PMCC using the \verb|write()| method.
+To complete the transaction, we write the modified buffer back to the PMCC using the \texttt{write()} method.
 
-Finally, we provide a \verb|close()| method that simply calls the \verb|close()| method on the \verb|spidev| object to close the SPI connection.
+Finally, we provide a \texttt{close()} method that simply calls the \texttt{close()} method on the \texttt{spidev} object to close the SPI connection.
 
 \subsection{Configuration}
 There are a number of device specific configurations that need to be set for each PMCC in order to operate correctly.
