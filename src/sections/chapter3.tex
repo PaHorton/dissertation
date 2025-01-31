@@ -23,7 +23,7 @@ As we needed to control multiple PMCCs and have them communicate with the rest o
 The core of PyMCC is a Python driver for the PMCCs that provides an interface for controlling the PMCCs and reading out the data.
 Built on top of the driver are Python programs that allow for manual control of the PMCCs, as well as a server that allows for control of the PMCCs over the RabbitMQ network.
 
-\subsection{SPI Utilities}
+\subsection{\texttt{spi\_utils}}
 At the lowest level of the PyMCC driver is the \texttt{spi\_utils} module.
 This module provides an interface for communicating with the PMCCs over SPI using the \texttt{spidev} Python library.
 The \texttt{spidev} library provides an interface to the Linux kernel's SPI device driver \cite{spidev}.
@@ -71,6 +71,15 @@ The \texttt{read()} method calls the \texttt{xfer()} method with the read flag s
 If we are only reading a single word, we return the first word and only word in the array of words returned by the \texttt{xfer()} method. 
 Otherwise, for burst reads, we return the entire array of words.
 
+Often times, we want to read a specific value over and over until that value is True.
+Many status bits on the PMCC operate in this way to indicate when a specific operation has completed. 
+To accomplish this, the \texttt{PMCC\_SPI} object has a \texttt{poll()} method that takes the address of the register we want to read from, the bit within the register we want to check, the amount of time to wait between reads, and the maximum number of reads.
+The \texttt{poll()} method then issues a \texttt{read()} of that register and checks if the bit is set by shifting the read value to the right by the bit number and checking if the least significant bit is set.
+If the value is not set, we wait for the specified amount of time and read the register again.
+This process is repeated until the value is set or the maximum number of reads is reached.
+We then return if the value was set or not instead of raising an exception if the value is not set.
+The implementation of raising exceptions is left to the user of the \texttt{poll()} method depending on the use case.
+
 For simple writes, \texttt{PMCC\_SPI} has a \texttt{write()} method that takes the address of the register we want to write to and the data we want to write.
 The \texttt{write()} method calls the \texttt{xfer()} method with the read flag set to 0.
 From there, the \texttt{xfer()} method sends the data to the PMCC and returns None as the PMCC does not send any data back.
@@ -83,8 +92,8 @@ This closely matches the way the PMCC documents the use of each register with ei
 First we check if the MSB and LSB are valid values, and if they are not, we raise an exception.
 Valid values for addressing the 16-bit registers are 0 to 15 for the LSB and LSB to 15 for the MSB.
 Next, we check if the value provided will fit within the length specific by the MSB and LSB.
-The maximum value that can be stored between the two values is $(1 << $ MSB $ - $ LSB $ + 1) - 1$.
-If the value is too large, we raise an exception.
+We then use the MSB and LSB to calculate the maximum value that will fit in the mask. 
+We use this maximum value to determine if the provided value is too large, in order to raise an exception if it is.
 Finally, we create a mask using the maximum value and shifting it to the left by the LSB.
 We then take the original buffer and do a bitwise AND with the inverse of the mask to clear the bits between the LSB and the MSB. 
 Finally, we shift our data to the left by the LSB and do a bitwise OR with the original buffer to set the bits between the LSB and MSB to the new value.
@@ -119,9 +128,480 @@ For each change in the array, we unpack the tuple and call the \texttt{mask\_dat
 If we are only changing a single bit, MSB and LSB are set to the same value.
 To complete the transaction, we write the modified buffer back to the PMCC using the \texttt{write()} method.
 
+
 Finally, we provide a \texttt{close()} method that simply calls the \texttt{close()} method on the \texttt{spidev} object to close the SPI connection.
 
-\subsection{Configuration}
+\subsection{\texttt{config}}
 There are a number of device specific configurations that need to be set for each PMCC in order to operate correctly.
 To simplify the process of writing code to configure the PMCCs, we utilize the YAML configuration file format to store the configuration for each PMCC \cite{yaml}.
-The format for the configuration file is shown in the following table:
+This YAML file has information about the RMQ configuration as well as spectrometer configuration. 
+For now, we will focus on the spectrometer configuration and discuss the RMQ configuration in Section \ref{section:rmqtools}.
+The spectrometer config section, \texttt{spec}, is split into two main sections for the PMCCs, global variables used for every spectrometer, and spectrometer specific variables.
+For each experiment, we would like to have a single configuration file that can be used on every CM4 to configure multiple PMCCs. 
+To accomplish this, each CM4 is given a unique name that we use to differentiate between each device. 
+Each PMCC connected to a CM4 is then indexed, so we can individually address each one by specifying the CM4 name and the PMCC index.
+
+The format for the global configurations is shown in Table \ref{table:pmcc_config}.
+These configurations are used to set values we don't expect to individually change for each PMCC.
+While we may create different configurations for different experiments, such as integration time and magnitude or power mode, we will likely make these changes to all PMCCs at once and not individually.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
+        \texttt{spec\_file} & string & Path to the spectrometer hardware file \\
+        \texttt{int\_time} & int & Integration time in milliseconds \\
+        \texttt{clock\_freq} & int & Reference clock frequency in MHz \\
+        \texttt{resolution} & int & 16 or 32 for 16-bit or 32-bit readout resolution \\
+        \texttt{shift} & int & 0 or 4 for 0 or 4 bit shift \\
+        \texttt{magnitude} & bool & True for magnitude mode, False for power mode \\
+        \texttt{window\_bypass} & bool & True to enable rectangular window bypass \\
+        \texttt{window\_bit\_growth} & bool & True to enable window div 2 bypass \\
+        \texttt{butterfly\_shift} & bool & True to enable butterfly shift for improved noise measurements \\
+        \texttt{wiring} & array & See Table \ref{table:wiring} for wiring configuration \\
+        \texttt{groups} & dict & Dictionary of CM4 names and an array of PMCC chip IDs  \\
+    \end{tabularx}
+    \label{table:pmcc_config}
+    \caption{Global Variables in the PMCC Configuration File}
+\end{table}
+
+After the global configurations, an array of four spectrometer wiring configurations is provided. 
+In full operation, we will have four PMCCs connected to each CM4, so we need a way of specifying the wiring for each PMCC's SPI bus and GPIO reset pin.
+Because the harness is identical for each CM4, we can specify the wiring for each PMCC along the harness, and it will be the same for every CM4. 
+The only exception to this is the lone 100GHz PMCC connected to its own CM4. 
+The wiring for this PMCC is simply the first index in the wiring array will still work with the rest of the system.
+Each item in the wiring configuration is as follows in Table \ref{table:wiring}.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
+        \texttt{dev} & string & Path to device address (e.g. \texttt{/dev/spidev0.0}) \\
+        \texttt{gpio} & int & GPIO pin number for the reset signal\\
+        \texttt{speed} & int & SPI device speed in Hz, typically 5000000 unless changes for stability reasons and debugging\\
+    \end{tabularx}
+    \label{table:wiring}
+    \caption{Wiring Configuration in the PMCC Configuration File}
+\end{table}
+
+Finally, we have the group configuration dictionary. 
+Each PMCC comes with a chip ID specified by the manufacturer used to set pre-calibrated values, such as the ADC time skew.
+The configuration dictionary consists of a CM4 name as the key and an array of PMCC chip IDs as the value.
+This allows us to specify which PMCCs are connected to each CM4 and configure them accordingly.
+For the 100GHz PMCC and CM4, the array will only contain a single chip ID.
+
+When loading in the configuration file, we create a \texttt{PMCC\_Config} object that all configuration information necessary for the CM4. 
+We initialize this object with the \texttt{spec} part of the YAML file, the group name of the CM4, and an array of PMCC indexes to configure (e.g. \texttt{[1, 2, 3, 4]} for all spectrometers).
+The \texttt{PMCC\_Config} object then creates properties for each of the global configurations that can be accessed by the \texttt{PMCC\_SPI} object.
+We set the resolution mode of the PMCCs using the \texttt{resolution} and \texttt{shift} properties and a lookup table for the proper register values as shown in Table \ref{table:resolution}.
+We could, theoretically, set higher values for LSB shift but for the purposes of ASTHROS, we only need 0 and 4 bit shifts.
+
+\begin{table}
+    \centering
+    \setlength{\extrarowheight}{2pt}
+    \begin{tabular}{cc|c|c|}
+      & \multicolumn{1}{c}{} & \multicolumn{2}{c}{Resolution}\\
+      & \multicolumn{1}{c}{} & \multicolumn{1}{c}{\texttt{16-Bit}}  & \multicolumn{1}{c}{\texttt{32-Bit}} \\\cline{3-4}
+      \multirow{2}*{LSB Shift}  & $0$ & \texttt{0x080} & \texttt{0x0C0} \\\cline{3-4}
+      & $4$ & \texttt{0x180} & \texttt{0x1C0} \\\cline{3-4}
+    \end{tabular}
+    \caption{Resolution Mode Configuration for PMCC}
+    \label{table:resolution}
+\end{table}
+
+After the global variables are loaded, we create a dictionary of device configurations for individual PMCCs. 
+This dictionary is indexed by the CM4 group name concatenated with the PMCC index.
+Each value in the dictionary is a \texttt{PMCC\_Device\_Config} object that is initialized with the chip ID, the wiring configuration at the PMCC index, and the \texttt{spec\_file} for configuration.
+The wiring information is paired with the chip ID to create a \texttt{PMCC\_Device\_Config} object that can later be used to configure the PMCC. 
+The provided \texttt{dev} path for the SPI configuration is split and stored into the bus and device number for the \texttt{PMCC\_SPI} object to use.
+Finally, the pre-calibrated values are loaded from the \texttt{spec\_file} by searching for the chip ID in the file and storing the associated values in the \texttt{PMCC\_Device\_Config} object.
+If the chip is not found in the file, we raise an exception that the configuration provided was not valid. 
+The final product is a \texttt{PMCC\_Config} object that contains all the necessary information to configure both the CM4 and any number of PMCCs connected to it. 
+
+\subsection{\texttt{consts}}
+The \texttt{consts} module is simply a collection of constants used throughout the PyMCC module.
+Many of these are register addresses so that we can easily reference them in the code without having to go back and forth between the PMCC manual and the code.
+Additionally, we have some large arrays that are used in configuration that we don't want to hard code into the code.
+For example, \texttt{WINDOW\_COEFFS} is a vector of 513 values used to configure the symmetrical 1024 point FFT on the DSP. 
+In addition to addresses and coefficients, we keep an array of default values for the PMCC registers so that we can easily identify issues with the device after reset. 
+
+\subsection{\texttt{driver}}
+The \texttt{driver} module is the highest level of the PyMCC module and is responsible for providing all functionality for the PMCCs. 
+Each PMCC is controlled by a \texttt{PMCC\_Driver} object that is initialized with a \texttt{PMCC\_Config} object and the index of the spectrometer in the config that we want to control.
+After initializing the object, the user must call the \texttt{initialize\_interface()} method to setup a \texttt{PMCC\_SPI} object to communicate with the PMCC.
+Following SPI setup, the user must call the \texttt{initalize\_gpio()} method to setup the GPIO pin for the reset signal.
+Both of these methods check the wiring configuration in the \texttt{PMCC\_Config} object to ensure that the correct wiring is provided.
+With both of these methods called, the \texttt{PMCC\_Driver} object is ready to start the PMCC configuration. 
+
+The first thing done before any configuration is toggling the reset signal on the PMCC.
+This is done by calling the \texttt{reset()} method with a boolean value to set the reset signal high followed by low.
+\texttt{reset()} is often called multiple times in the configuration process to ensure that the PMCC is in a known state before configuring it.
+
+\begin{quote}
+    \textbf{Note:} The PMCC documentation specifies individual bit fields for each register. 
+    When referring to a specific register in the documentation, we will use the format \texttt{reg\_name} with lowercase letters. 
+    These will be identical to the register names in the documentation. 
+    During the development of PyMCC, we often had to refer to SPI addresses that contain multiple PMCC registers. 
+    When referring to these addresses, we will use the format \texttt{REG\_NAME} with all uppercase letters.
+    These are not documented in the PMCC manual but are used to reference addresses defined in the \texttt{consts} module.
+\end{quote}
+
+After resetting the PMCC, we need to calibrate the Phase Lock Loop (PLL) on the PMCC using \texttt{initialize\_pll()}.
+The PLL is used to synthesize all required clocks for the PMCC with the use of an external reference clock. 
+Initializing the PLL is done in three steps, resetting the PLL with \texttt{reset\_pll()}, calibrating the PLL with \texttt{calibrate\_pll()}, and finally loading the ADC with the PLL values using \texttt{load\_adc()}.
+\texttt{reset\_pll()} resets the PLL and sets the ADC gain, offset, and time skew configurations. 
+This is done by the following sequence of commands:
+
+\begin{enumerate}
+    \item 
+        Write to the \texttt{CHIP\_CONF} to reset the DSP.
+    \item 
+        Read and write the \texttt{PLL\_LOCK\_CONF} to set the \texttt{lock\_desired\_count} to 3, \texttt{lock\_tune\_off} to 2, and \texttt{lock\_tune\_on} to 4. 
+        These set the lock detector control that will later be used to determine if we have locked the PLL.
+    \item 
+        Read and write the \texttt{PLL\_FVCO\_CAL\_CONF} to set the \texttt{fvco\_cal\_settletime} to 4. 
+        This is used by the PLL's Voltage Controlled Oscillator (VCO) to determine the settling time for the VCO.
+        By setting this to 4, we are setting our settle time to $2^{4} = 16$ times the reference frequency.
+    \item 
+        Read and write the \texttt{ADC\_GAIN\_ACCUM} and set the \texttt{adc\_gain\_cal\_accum} to 3 which sets the on-chip gain calibration accumulator length to 8192. 
+    \item 
+        Read and write the \texttt{ADC\_GAIN\_CONF} and set the \texttt{adc\_gain\_cal\_settle} to 3 which adjusts the delay during the gain calibration to 63 clock cycles. 
+    \item 
+        Read and write the \texttt{ADC\_OFFS\_CONF} and set the \texttt{adc\_offs\_cal\_accum} to 3 and the \texttt{adc\_offs\_plr} to 1. 
+        This sets the on-chip offset calibration accumulator length to 8192 and the polarity of the offset calibration to fine (comparator) adjustment mode. 
+    \item 
+        Read and write the \texttt{ADC\_TIME\_SKEW\_COEF} to set the \texttt{time\_skew\_select} to 0xF. 
+        This enables the use of manual time skew codes for the ADC.
+    \item 
+        Finally, write to the \texttt{DEMUX\_DEL\_ADJ\_A} to \texttt{DEMUX\_DEL\_ADJ\_D} to adjust the delay in the input interleaver clock for the four ADC groups. 
+        This value is set to 11 for all four registers, setting the delay to $18.8*11 = 206.8$ ps. 
+        Currently, this step is hard coded to 206.8 ps but, in the future, we may want to adjust this value based on the chip ID as these values are pre-calibrated for each chip.
+\end{enumerate}
+
+After resetting the PLL, we calibrate the PLL using \texttt{calibrate\_pll()}.
+This takes many of the values we set in \texttt{reset\_pll()} to execute the calibration process. 
+The calibration process is as follows:
+
+\begin{enumerate}
+    \item 
+        Check if the clock frequency set in the configuration is a multiple of 2000. 
+        Clocks must be a factor of 2GHz to ensure that the PLL can lock to the reference clock.
+    \item 
+        Read and write to the \texttt{PLL\_CONF} and set the \texttt{pll\_freq\_adjust} and the \texttt{pll\_ndiv}. 
+        The \texttt{pll\_freq\_adjust} is used to set the sampling rate of the ADC. 
+        We set this value to 2 which indicates a 4GHz clock for the ADC. 
+        The \texttt{pll\_ndiv} is used to set the divider ratio for the PLL feedback. 
+        This value is calculated using $N_{div} = 2000 \text{MHz} / F_{freq}$ and set in the \texttt{pll\_ndiv} register. 
+        For our 100 MHz reference clock, we set the \texttt{pll\_ndiv} to 20.
+    \item 
+        Now we begin the calibration process by reading and writing to the \texttt{PLL\_FVCO\_CAL\_CONF} to set the \texttt{fvc\_cal\_start} to 1 and resetting the \texttt{fvco\_cal\_settletime} to 4. 
+        This starts the calibration process and sets the settling time to 16 times the reference frequency.
+    \item 
+        Finally, we poll the \texttt{fvco\_cal\_cal\_done} bit until the band selection is completed. 
+        If the calibration is not completed after a default of 10 retries, we raise an exception indicating that the PLL calibration failed.
+\end{enumerate}
+
+After the PLL is calibrated, we load the ADC with the PLL values using \texttt{load\_adc()}.
+Many of the commands sent during this set are writes instead of reads and writes.
+This is because we actually want to override the registers are not setting to 0.
+The process for loading the ADC is as follows:
+\begin{enumerate}
+    \item 
+        Write to the \texttt{VGA\_CURRENT\_CONF} to set the \texttt{vga\_current\_out\_adjust} and \texttt{vga\_offset\_rng}.
+        The \texttt{vga\_current\_out\_adjust} is used to adjust the reference current at the VGA output buffer from 2.1 to 6.3 mA in steps of .6 mA.
+        We set this to $2.1 + 6 * .6 = 5.7$ mA by setting the value to 6.
+        The \texttt{vga\_offset\_rng} is used to adjust the offset compensation reference current from 250 to 600 uA in steps of 50 uA.
+        We set this value to $250 + 7 * 50 = 600$ uA by setting the value to 7.
+    \item 
+        Write to the \texttt{VGA\_GAIN\_CONF} to set the \texttt{vga\_peak\_cntrl} and \texttt{vga\_gain\_adjust}.
+        The \texttt{vga\_peak\_cntrl} is used to reduce the inductive AC peak of the VGA by increasing the capacitance.
+        We set this value to a code of 5.
+        The \texttt{vga\_gain\_adjust} is used to adjust the VGA gain from 0 to 10.4 dB in steps of approximately .53 dB.
+        We set this value to $8 * .53 = 4.24$ dB by setting the value to 8.
+    \item 
+        Write to the \texttt{VGA\_CONFIG} to enable the common-mode compensation (\texttt{vga\_cm\_comp}), the VGA offset compensation (\texttt{vga\_offset}), and the VGA enable (\texttt{vga\_en}).
+        These values are all defaulted to enabled, but it is good practice to set them to ensure that the VGA is properly configured.
+    \item 
+        Write the four \texttt{adc\_time\_skew\_adjust1} to \texttt{adc\_time\_skew\_adjust4} registers to set the time skew for the ADC.
+        These values are pre-calibrated for each chip and are set in the \texttt{PMCC\_Device\_Config} object.
+    \item 
+        Write to the \texttt{ADC\_TIME\_SKEW\_CONF} to set the \texttt{time\_skew\_mode}, \texttt{time\_skew\_select} and \texttt{time\_skew\_polarity}.
+        The \texttt{time\_skew\_mode} is set to 1 to enable calibration for a configured time instead of continuous calibration.
+        The \texttt{time\_skew\_select} is set to 0b1111 to enable each of the four time skew adjustments.
+        The \texttt{time\_skew\_polarity} is set to 1 to enable inverse polarity of the time skew code adjustment direction.
+    \item 
+        Write a 0 to \texttt{adc\_rst\_n} to register a reset to the ADC.
+    \item 
+        Write a 0 to \texttt{adc\_sub\_clk\_gen\_rst\_n} to reset the clock generators for all four ADC groups.
+    \item 
+        Sleep for 100 ms to allow the ADC to reset.
+    \item 
+        Write a 1 to \texttt{adc\_rst\_n} to enable the ADC.
+    \item 
+        Write a 1 to \texttt{adc\_sub\_clk\_gen\_rst\_n} to enable the clock generators for all four ADC groups.
+\end{enumerate}
+
+After those three steps, the PLL is calibrated and the ADC is ready for configuration.
+To verify this, the \texttt{PMCC\_Driver} object has a \texttt{check\_connection()} method that checks if we can read from the PMCC.
+We first read the \texttt{CHIP\_ID} register to ensure that we can communicate with the PMCC.
+Despite having the same name as the chip ID we use to differentiate between PMCCs, the \texttt{CHIP\_ID} register is a fixed value that is set by the manufacturer and will always be 0x6 for the second generation 4GHz PMCCs.
+Reading the \texttt{CHIP\_ID} register is a good way to verify that SPI connection is working.
+We then read the \texttt{PLL\_LOCK\_LOL} register to determine if we have a Loss of Lock (LOL) on the PLL.
+If the PLL is locked, the \texttt{PLL\_LOCK\_LOL} register will be 0.
+If we make it past both of these checks, we return True to indicate that the PMCC is connected and the PLL is locked.
+
+The usual next step in the configuration process is to calibrate the gain and offset of the ADC. 
+This is done by calling the \texttt{calibrate\_adc()} method.
+This method is a wrapper for the \texttt{calibrate\_adc\_offset()} and \texttt{calibrate\_adc\_gain()} methods and runs both of them twice.
+The calibrations run in interactive mode so running them twice allows the PMCC to iterate on the calibration values and get a more accurate result.
+To run the offset calibration, we set the following values within the \texttt{ADC\_OFFS\_CONF} register:
+
+\begin{itemize}
+    \item \texttt{adc\_offs\_cal\_en} to 1 to enable the offset calibration
+    \item \texttt{adc\_offs\_cal\_mode} to 1, setting the operation mode to a zero offset calibration.
+    \item \texttt{adc\_offs\_cal\_interactive} to 1 to start a new calibration using the previous adjustment codes. 
+\end{itemize}
+
+After setting these values, we poll the \texttt{adc\_offs\_cal\_ack} bit until the calibration is complete.
+For the gain calibration, we simply have to set the \texttt{adc\_gain\_cal\_en} to 1 to enable the gain calibration.
+We then poll the \texttt{adc\_gain\_cal\_ack} bit until the calibration is complete. 
+After both calibrations are run twice, we are done calibrating the ADC. 
+
+In the instance we already know the values we want to set for the gain and offset, we provide a \texttt{calibrate\_adc\_preset()} method that takes arrays of the 23 gain and 23 offset values to set the calibration values.
+These values are loaded into the 23 \texttt{ADC\_REF\_ADJUST\_XX} and 23 \texttt{ADC\_OFFS\_ADJUST\_COMP\_XX} registers respectively.
+The \texttt{adc\_gain\_cal\_mode} and \texttt{adc\_offs\_cal\_mode} registers also need to bet set to 0x1 and 0x2 to enable the use of the preset values.
+
+After calibrating the ADC, we are able to configure the DSP. 
+This is highly subjective to the experiment being run but, for ASTHROS, we have a specific configuration that we use that works for the integration time and resolution we are using. 
+In future version of the code, we will likely pull out some of the hard coded values and make them configurable in the YAML file.
+The configuration process is as follows:
+\begin{enumerate}
+    \item Reset the DSP by writing a 1 to the \texttt{CHIP\_CONF} register's \texttt{dsp\_reset}.
+    \item Load the window coefficients into the DSP by writing the 513 values in the \texttt{WINDOW\_COEFFS} array to the \texttt{WINDOW\_REGISTER} register one at a time followed by a pulse to the \texttt{dsp\_coeff\_dest\_wind} bit to shift store the value and shift the register.
+    \item 
+        Write to the \texttt{dsp\_skip\_fft\_stage} register to 0 to use all four stages of the FFT. 
+        This results in 512 frequency bins per sub-band. 
+    \item 
+        Write to the \texttt{DSP\_READOUT\_CONF} with the mode from the configuration file as shown in Table \ref{table:resolution}. 
+        This sets the resolution and shift for the readout.
+    \item 
+        Write to the \texttt{CHIP\_CONF} register to set the \texttt{dsp\_enable} bit to 1 to enable the DSP and \texttt{dsp\_acc\_mode} to 1 to enable continuous FFT operation. 
+    \item 
+        Read and write to the \texttt{FFT\_CONFIG} to set the \texttt{dsp\_magn\_bypass}, \texttt{dsp\_wind\_bypass}, \texttt{dsp\_div\_red\_wind}. 
+        These values are set in the configuration file and are used to enable the magnitude or power mode, the windowing function, and window bit growth. 
+    \item 
+        Calculate the number of integrations to run based on the integration time. 
+        We do this by diving our desired integration time by the length of time it takes to run a single accumulation on the DSP. 
+        For the ADC running at 8 GS/s (Gigasamples per second) reading 16384 time domain bins, this number is 2.048 us.
+        The number of accumulations we collect per integration is a 24-bit value split across two registers. 
+        The 16 most significant bits are stored in the \texttt{dsp\_acc\_num\_msb} register and the 8 least significant bits are stored in the \texttt{dsp\_acc\_num\_lsb} register.
+    \item 
+        If we are in power accumulation mode, we need to set the data shift for the DSP. 
+        The maximum output resolution is <40 bits so we need to shift the data to the right depending on the integration time.
+        We calculate this by taking the binary logarithm of the number of accumulations per integration and subtracting 8.
+        We get eight because there is a maximum output resolution of 40 bits and the most we can shift the value is 32.
+        By subtracting 8 from the binary logarithm, we get the number of bits we need to shift the data to the right that would maximize the output resolution without overflowing the readout.
+        This value is then stored in the \texttt{dsp\_data\_shift} register.
+    \item 
+        If we are using a butterfly shift, we set the data divide by 2 blocks to the following values:
+        \begin{itemize}
+            \item \texttt{dsp\_bfly\_shift\_pfb} to \texttt{0b10101} to alternate between enabled and disabled IFFT processor stages. 
+            \item \texttt{dsp\_bfly\_shift\_fft} to \texttt{0b1010101010} to alternate between enabled and disabled FFT processor stages.
+        \end{itemize}
+        The combination of these essentially skips every other stage of the IFFT and FFT processor, increasing performance for band-limited noise measurements.
+        It accomplishes this by skipping the stages that would divide the data by 2 to reduce the risk of overflow. 
+    \item 
+        Write to the \texttt{VGA\_CURRENT\_CONF} to set the \texttt{vga\_current\_out\_adjust} and \texttt{vga\_offset\_rng}.
+        We set these values to the same values as we did in the ADC calibration.
+    \item 
+        Finally, we perform a \texttt{check\_connection()} to ensure everything is in order and return the status.
+\end{enumerate}
+
+At this point, the PLL has been locked, the ADC has been calibrated and the DSP has been configured. 
+The most common next step is to start the DSP and begin acquiring data. 
+This is done in two parts, pulsing the accumulation bit and then reading the data. 
+Pulsing the accumulation bit is done in the \texttt{pulse\_acquisition()} method by writing a 1 to the \texttt{dsp\_start\_acc} register.
+This starts the DSP's operation and begins accumulating data.
+After starting accumulation, we immediately perform a single \texttt{retrieve\_data()} to clear any garbage data that may be present in the DSP's output buffer.
+
+The \texttt{retrieve\_data()} method follows the following process to read a spectra from the DSP:
+\begin{enumerate}
+    \item 
+        Read the \texttt{dsp\_data\_ready} register to determine if the DSP has finished accumulating data.
+        We poll this register at a rate of 500 Hz for a maximum of 2000 retries. 
+        Both of these values are adjustable agruments to this method but are set to 500 Hz and 2000 retries by default.
+        If we don't recieve data after the maximum number of retries, we raise an exception indicating that the DSP did not finish accumulating data.
+        Otherwise, we continue to the next step.
+    \item 
+        Write a pulse to the \texttt{dsp\_start\_readout} register to start the readout process. 
+    \item  
+        Take a timestamp to record the time the readout started.
+    \item 
+        Start the readout process by performing a burst read of the \texttt{DSP\_READOUT\_ADDRESS} at \texttt{0x4000}. 
+        If we are performing a 32-bit readout, we read the address 8193 times to get the first half of our data. 
+        Otherwise, for a 16-bit readout, we read the address 8192 times.
+    \item 
+        If we are performing a 32-bit readout, we read the second half of the data by reading the \texttt{DSP\_READOUT\_ADDRESS} at \texttt{0x8000} 8191 times.
+        This strange number of reads is due to a bug that causes issues if reading two 8192 blocks of data.
+        Without following this specific sequence, we will be missing one value in the second half of the data, shifting the entire readout. 
+    \item 
+        Regardless of the resolution, we write a pulse to the \texttt{dsp\_reset\_ready} register to begin the next accumulation.
+        This discards any data that may be present in the readout buffer so that new data can be stored. 
+    \item 
+        Finally, we return the data and the timestamp to the user. 
+        If the resolution is 32-bit, we concatenate the two arrays and use NumPy to return a view of the data as an array of 32-bit unsigned integers.
+        Otherwise, for 16-bit readouts, we use NumPy to return a view of the data as an array of 16-bit unsigned integers.
+\end{enumerate}
+
+Another common operation after setup is to read raw data from the ADC. 
+This can be useful to ensure that the ADC is working correctly by measuring the mean and swing of the digitized signal. 
+The \texttt{retrieve\_adc()} method does just this using the following procedure. 
+\begin{enumerate}
+    \item Write a 0 to the \texttt{dsp\_reset} register and a 1 to the \texttt{dsp\_enable} to enable the DSP.
+    \item Write a 0 to the \texttt{dsp\_proto\_en} to disable prototype mode on the ADC.
+    \item Write a 0 to the \texttt{DSP\_DEBUG\_MODES} to clear any other debug modes that may be enabled.
+    \item Write a 1 to the \texttt{debug\_wr\_from\_adc} register at the \texttt{DSP\_DEBUG\_MODES} address to begin writing ADC samples into the debug buffer. 
+    \item Begin polling the \texttt{debug\_wr\_from\_adc\_done} register to determine when the ADC samples have been written to the debug buffer. If we reach the maximum number of retries, we raise an exception that the ADC data was not ready after the maximum number of retries.
+    \item Write a 0 to the \texttt{DSP\_DEBUG\_MODES} to disable writing the ADC samples to the debug buffer.
+    \item Write a 1 to the \texttt{debug\_wr\_by\_spi} register at the \texttt{DSP\_DEBUG\_MODES} address to begin moving the debug buffer to the SPI readout buffer.
+    \item Finally, we perform single reads of the \texttt{ADC\_READOUT\_ADDR} at \texttt{0x2000} until we have read all 16384 samples in sets of 8 words across the 2048 lines in the ADC. 
+    To convert these values into the actual readout from the 20 ADC cores, we have to do quite a bit of bit manipulation. 
+    This is because each of the 20 core's readout is a 6-bit value split across the 8 words in the line. 
+    Accomplishing this is done by the following steps:
+    \begin{enumerate}
+        \item Start with an array of 8 16-bit words that contain the 20 6-bit for cores A to T. \\
+        {\raggedright 
+        \texttt{RRRRSSSSSSTTTTTT OOPPPPPPQQQQQQRR MMMMMMNNNNNNOOOO JJJJKKKKKKLLLLLL GGHHHHHHIIIIIIJJ EEEEEEFFFFFFGGGG BBBBCCCCCCDDDDDD XXXXXXXXAAAAAABB}
+        \par}
+        \item Take the array of 8 words and reverse the order. The first word from the readout contains the least significant bits of the line. \\ 
+        {\raggedright
+        \texttt{XXXXXXXXAAAAAABB BBBBCCCCCCDDDDDD EEEEEEFFFFFFGGGG GGHHHHHHIIIIIIJJ JJJJKKKKKKLLLLLL MMMMMMNNNNNNOOOO OOPPPPPPQQQQQQRR RRRRSSSSSSTTTTTT}
+        \par}
+        \item Convert the array of 8 16-bit words into an array of 16 8-bit bytes. \\
+        {\raggedright
+        \texttt{XXXXXXXX AAAAAABB BBBBCCCC CCDDDDDD EEEEEEFF FFFFGGGG GGHHHHHH IIIIIIJJ JJJJKKKK KKLLLLLL MMMMMMNN NNNNOOOO OOPPPPPP QQQQQQRR RRRRSSSS SSTTTTTT}  
+        \par}
+        \item Unpack the 8-bit bytes into their binary bits using NumPy's \texttt{unpackbits()} method. \\
+        {\raggedright
+        \texttt{
+            XXXXXXXXAAAAAABBBBBBCCCCCCDDDDDDEEEEEEFFFFFFGGGGGGHHHHHH-
+            IIIIIIJJJJJJKKKKKKLLLLLLMMMMMMNNNNNNOOOOOOPPPPPPQQQQQQRR-
+            RRRRSSSSSSTTTTTT
+            }
+        \par}
+        \item Throw away the first 8 bits of the output as these are used for padding the data.\\
+        {\raggedright
+        \texttt{
+            AAAAAABBBBBBCCCCCCDDDDDDEEEEEEFFFFFFGGGGGGHHHHHHIIIIIIJJJJJJ-
+            KKKKKKLLLLLLMMMMMMNNNNNNOOOOOOPPPPPPQQQQQQRRRRRRSSSSSSTTTTTT}
+        \par}
+        \item Reshape the array of bits into an array of 20, 6-bit values. \\
+        {\raggedright
+        \texttt{AAAAAA BBBBBB CCCCCC DDDDDD EEEEEE FFFFFF GGGGGG HHHHHH IIIIII JJJJJJ KKKKKK LLLLLL MMMMMM NNNNNN OOOOOO PPPPPP QQQQQQ RRRRRR SSSSSS TTTTTT}
+        \par}
+        \item Pack the 6-bit values back into 8-bit bytes using NumPy's \texttt{packbits()} method. This method adds zero padding to the end of the array if the length is not 8. \\
+        {\raggedright
+        \texttt{AAAAAAXX BBBBBBXX CCCCCCXX DDDDDDXX EEEEEEXX FFFFFFXX GGGGGGXX HHHHHHXX IIIIIIXX JJJJJJXX KKKKKKXX LLLLLLXX MMMMMMXX NNNNNNXX OOOOOOXX PPPPPPXX QQQQQQXX RRRRRRXX SSSSSSXX TTTTTTXX}        
+        \par}
+        \item Right shift the 8-bit bytes by 2 to remove the padding added by the previous step.\\
+        {\raggedright
+        \texttt{AAAAAA BBBBBB CCCCCC DDDDDD EEEEEE FFFFFF GGGGGG HHHHHH IIIIII JJJJJJ KKKKKK LLLLLL MMMMMM NNNNNN OOOOOO PPPPPP QQQQQQ RRRRRR SSSSSS TTTTTT}
+        \par}
+    \end{enumerate} 
+    \item Perform this process for all 2048 lines in the ADC readout.
+    \item Compute the mean and standard deviation of the ADC lines. 
+    \item Compute the swing of the ADC using the mean and standard deviation. 
+    \begin{equation}
+        \text{Swing} = \sigma * 2\sqrt{2}
+    \end{equation}
+    \item Return the buffer of ADC readouts, the mean, the standard deviation, and the swing.
+\end{enumerate}
+
+% The next method in the \texttt{PMCC\_Driver} object is the \texttt{prbs_test()} method.
+% The PRBS is the Pseudo-Random Binary Sequence that can be injected into readout data to test the system.
+% % We use this method to test the LVDS readout which we never use so I don't know why we have this method???
+
+
+Finally, we provide two methods to read and write to all of the PMCC registers. 
+These methods are \texttt{fetch\_registers()} and \texttt{write\_registers()}.
+There are 512 different SPI addresses that can be read and written to on the PMCC.
+This method allows us to dump the current state of the PMCC or set the PMCC to a known state.
+These are mostly used for debugging and are not used in the normal operation of the PMCC.
+
+\subsection{\texttt{data\_utils}}
+\texttt{data\_utils} provides a few handy classes to handle storing data from the PMCC. 
+The simplest of these is the \texttt{PMCC\_Register\_Writer} which, as the name suggests, is able to write the PMCC registers to a file. 
+This is useful for debugging and for storing the state of the PMCC for later use.
+This class is initialized as an object with a path to the directory where the data will be stored.
+Using this object, we can call the \texttt{write\_registers()} method with an array of register values to write the data to a CSV. 
+The data in the CSV will include the register address, the integer value, the hex value, and the default hex value for each register. 
+The file is saved with a timestamp in the filename, so we can identify when the file was written. 
+The \texttt{PMCC\_Register\_Writer} object also has a \texttt{read\_registers()} method that reads the data from the CSV and returns an array of register values that could be used to set the PMCC to the state it was at when the snapshot was taken. 
+Finally, there is a simple \texttt{get\_files()} method that returns all the files in the directory where the data is stored.
+
+We also provide a \texttt{PMCC\_ADC\_Writer} class that is used to write the raw data from an ADC test. 
+This class is initialized with a path to the directory where the data will be stored.
+The \texttt{write\_adc()} method is called with the data from the \texttt{retrieve\_adc()} method from \texttt{PMCC\_Driver} and writes the data to a CSV.
+This results in 2048 lines of data with the 20 values for each core in each line.
+The file is saved with a timestamp in the filename, so we can identify when the test was done. 
+
+Finally, we have our spectra writers. 
+We need to support writing in both HDF5 and CSV formats.
+HDF5 will be used during the flight to store the data in a more efficient format, whereas CSV is used for debugging and testing.
+For writing to HDF5, we provide the \texttt{PMCC\_H5\_Spectra\_Writer} class.
+This class takes in a path to the directory where the data will be stored, a reference to the spectrometer's driver, the maximum number of writes before the file is closed, and the data type of the spectra. 
+In initialization, we create the directory if it does not exist. 
+We also start a counter at 0 to keep track of the total number of spectra written by the writer. 
+
+Before writing the data, we need to create the HDF5 file using the \texttt{new\_file()} method.
+If a file is already linked to the writer, we closed that file and open a new one.
+Next, we create a new file with \texttt{spec\_<prefix>\_<timestamp>.h5} as the filename.
+\texttt{prefix} is an optional paramater that can be used to identify the file and \texttt{timestamp} is the current time.
+The file is created with two datasets. 
+The first dataset is called \texttt{stamps} and is used to store the timestamps of the spectra.
+The second dataset is called \texttt{data} and is used to store the spectra.
+Both datasets are created using the \texttt{gzip} compression filter with a compression level of 4.
+This is done to reduce the size of the file and speed up the writing process. 
+The shape of these datasets is determined by the \texttt{max\_writes} parameter and the length of the spectra.
+The \texttt{stamps} dataset is a 1D array of 64-bit doubles with a length of \texttt{max\_writes}.
+The \texttt{data} dataset is a 2D array with a shape of \texttt{max\_writes} by the length of the spectra and a data type matching the specified data type during initialization.
+A header is added to the \texttt{data} dataset and contains the attributes shown in Table \ref{table:h5_header}.
+After creating the file, we start a counter at 0 to keep track of the number of spectra in the file. 
+
+\begin{table}[h!]
+    \centering
+    \begin{tabularx}{\textwidth}{l|X}
+        \textbf{Attribute} & \textbf{Description} \\ \hline    
+        \texttt{id} & Name of the the spectrometer (\texttt{<CM4\_name><PMCC\_index>}) \\
+        \texttt{chip} & PMCC Chip ID from manufacturer \\
+        \texttt{int\_time} & Integration time (ms) \\
+        \texttt{resolution} & 32 or 16-bit data resolution \\
+        \texttt{shift} &  0 or 4 for 0 or 4 bit shift \\
+        \texttt{magnitude} & True if magnitude mode is enabled, False if power mode is enabled \\
+        \texttt{window\_bypass} & True if window bypass is enabled \\
+        \texttt{window\_bit\_growth} & True if window bit growth is enabled \\
+        \texttt{butterfly\_shift}  & True if butterfly shift is enabled\\
+    \end{tabularx}
+    \caption{Attributes of the \texttt{data} dataset in the HDF5 file}
+    \label{table:h5_header}
+\end{table}
+
+When writing data to the file, we use the \texttt{write\_spectra()} method.
+This method takes in a timestamp and the spectra to write to the file.
+If the file does not exist, or we have reached a maximum number of writes, we rerun the \texttt{new\_file()} method to create a new file.
+We then write the timestamp and spectra to the \texttt{stamps} and \texttt{data} datasets at the current index.
+After writing the data, we increment the count of spectra in the current file and the total count of spectra written by the writer.
+
+The \texttt{PMCC\_CSV\_Spectra\_Writer} class is used to write the data to a CSV file.
+It is almost identical to the \texttt{PMCC\_H5\_Spectra\_Writer} class but writes the data to a CSV file instead of an HDF5 file.
+The \texttt{PMCC\_CSV\_Spectra\_Writer} also implements \texttt{write\_spectra()} and \texttt{new\_file()} methods so that they it be used interchangeably with the \texttt{PMCC\_H5\_Writer} class.
+For \texttt{new\_file()}, the file is created with the name \texttt{spec\_<prefix>\_<timestamp>.csv} and no header is written to the file.
+Just like the \texttt{PMCC\_H5\_Spectra\_Writer}, the \texttt{PMCC\_CSV\_Spectra\_Writer} will close the previous file if one exists and start a new counter for the number of spectra in a file when a new file is created.
+The \texttt{write\_spectra()} method concatenates the timestamp and the spectra and writes them to the file as a single line.
+This method also increments the count of the number of spectra in the file, the total number of spectra written by the writer, and will create a new file if one doesn't exist or we reach the maximum number of spectra in a file.
+
+Finally, we provide a wrapper class called \texttt{PMCC\_Spectra\_Writers} that takes in an array of \texttt{PMCC\_H5\_Spectra\_Writer} and \texttt{PMCC\_CSV\_Spectra\_Writer} objects.
+This class is used to write data to multiple files at once. 
+This is useful for writing data to both HDF5 and CSV files at the same time as well as data to multiple locations, such as locally on the CM4 and remotely on the NAS. 
+\texttt{new\_file()} and \texttt{write\_spectra()} simply call the same methods on all of the writers in the array.
+This wrapper also keeps track of the total number of spectra written which is useful for housekeeping and telemetry. 

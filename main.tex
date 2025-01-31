@@ -40,6 +40,7 @@
                                         %   middle of the document
 \usepackage{calc}					              % Calculate text widths; used in page layout
                                         %   changes
+\usepackage{multirow,array}             % Adds multi row tables
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Title page, input
@@ -108,6 +109,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \usepackage[T1]{fontenc}                % Standard option to handle, e.g., accented
                                         %   characters like 'ö' better
+                                        
 \usepackage{amssymb,mathtools}          % For AMS-LaTeX, see here for more:
                                         %     http://www.ams.org/publications/authors/tex/amslatex
                                         % ('mathtools' loads and extends 'amsmath')
@@ -1166,7 +1168,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \mainmatter
 % \include{src/sample/chapter}                     %<Insert your chapters here; I recommend to use
-\include{src/sections/chapter2}                     %   \include rather than \input for chapters
+% \include{src/sections/chapter2}                     %   \include rather than \input for chapters
 \include{src/sections/chapter3}
 %\include{chapter3}% etc.
                                         % Heading commands (in descending order):

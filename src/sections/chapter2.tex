@@ -25,7 +25,7 @@ Identifying anomalous examples is useful in many application domains such as str
 \begin{figure*}
 \centering
 \includegraphics[width=\linewidth]{figs/2/DSN.png}
-\caption[Mastcam Image Processing Pipeline]{\bf{Illustration of the Mastcam image processing pipeline \protect\cite{kerner2020comparison}}}
+\caption[Mastcam Image Processing Pipeline]{\textbf{Illustration of the Mastcam image processing pipeline \protect\cite{kerner2020comparison}}}
 \label{timeline}
 \end{figure*}
 
@@ -87,13 +87,13 @@ Our goal is to create novelty detection products that could be integrated into a
 \begin{figure*}
 \centering
 \includegraphics[width=\linewidth]{figs/2/categories.png}
-\caption[Novel Geology Categories for Mastcam Multispectral Images]{\bf{Examples from the eight categories of novel geology in the Mastcam multispectral image data set \protect\cite{kerner_data}} }
+\caption[Novel Geology Categories for Mastcam Multispectral Images]{\textbf{Examples from the eight categories of novel geology in the Mastcam multispectral image data set \protect\cite{kerner_data}} }
 \label{NovelCategories}
 \end{figure*}
 
 In this work, we created a data set of all multispectral Mastcam sequences based on the pre-processing methods outlined in the labeled Mars multispectral novelty detection data set \cite{kerner_data}.
 This previous data set provided images with both \textit{typical} and \textit{novel} labels cropped from the M-100 right eye of Mastcam on MSL between sols 1 to 1666.
-Each example in the data set is a 64 by 64 tile with 6 bands corresponding to 6 different filters. 
+Each example in the data set is a 64 by 64 tile with 6 bands corresponding to 6 different filters.
 The tiles were sub-sampled from larger thumbnail images of around 140 by 100 pixels in size. 
 Thumbnails were used rather than full resolution sequences as they are among the first available products during tactical planning. 
 Additionally, uncalibrated images were used as these data are the most readily available in the tactical analysis timeline. 
@@ -198,7 +198,7 @@ By taking every filter into account, RX is able to identify the spectral anomaly
 \begin{figure*}
 \centering
 \includegraphics[width=\linewidth]{figs/2/mcam_novel.png}
-\caption{\bf{An example of difficult to notice novel features from mcam12276. In this example, there is a subtle ring of brighter dust on the edge of one of the rocks (shown by the red arrow). This is not noticeable in L0 (RGB) and faint in L5 (867 nm) and L6 (1012nm).}}
+\caption{\textbf{An example of difficult to notice novel features from mcam12276. In this example, there is a subtle ring of brighter dust on the edge of one of the rocks (shown by the red arrow). This is not noticeable in L0 (RGB) and faint in L5 (867 nm) and L6 (1012nm).}}
 \label{mcam12276}
 \end{figure*}
 
@@ -223,7 +223,7 @@ The scores are visualized without normalization when an analyst selects an indiv
 \centering
 \includegraphics[width=\linewidth]{figs/2/top10.jpg}
 \includegraphics[width=\linewidth]{figs/2/bottom10.jpg}
-\caption{\bf{The most and least novel sequences in the Mastcam left eye data set. Sequences are sorted by maximum novelty value obtained from a brightness corrected background distribution. The pixel novelty scores  are normalized across the entire data set.}}
+\caption{\textbf{The most and least novel sequences in the Mastcam left eye data set. Sequences are sorted by maximum novelty value obtained from a brightness corrected background distribution. The pixel novelty scores  are normalized across the entire data set.}}
 \label{sorted}
 \end{figure*}
 
