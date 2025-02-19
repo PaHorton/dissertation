@@ -1,10 +1,73 @@
-\chapter[ASATHROS Payload Readout System Design]{ASTHROS Payload Readout System Design}
+\chapter[ASTHROS Payload Readout System Design]{ASTHROS Payload Readout System Design}
 ASTHROS, the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths, is a balloon-borne observatory designed to study the universe in the submillimeter wavelength range.
 The readout system is responsible for controlling the detectors, reading out the data, and storing the data on a solid state drive.
 The readout system is designed to be modular and scalable, allowing for easy integration of new detectors and readout systems.
 Each module is designed to be self-contained, focusing on a single device in the readout system so that changes to the hardware can be made without affecting the rest of the system.
 
+\section{Raspberry Pi Compute Module 4}
+From a fresh install of Raspberry Pi OS, we need to install the necessary packages to run the readout system.
+The first step is to enable Secure Shell (SSH) so that we can remotely access the Raspberry Pi.
+This can be done in the Raspberry Pi Configuration tool by enabling SSH in the Interfaces tab.
+While we're in the interfaces tool, we can also enable SPI and Remote GPIO. 
+These are necessary to interface with the PMCC.
 
+Next, we need to configure the networking interfaces. 
+\texttt{eth0} is the wired interface to the rest of the readout network. 
+We need a static IP for the CM4 to ensure that other devices on the network can easily find it.
+In the network settings at the top right of the screen, we can select "Edit Connections" under Advanced Options. 
+From there, you will see "Wired connection 1" which is the default name for the wired interface.
+Select the interface and navigate to the IPv4 Settings tab.
+Chance the method from "Automatic (DHCP)" to "Manual" and add the IP address, Netmask, and Gateway.
+For ASTHROS, we have the IP addresses of all CM4s set to \texttt{192.168.1.13X} where \texttt{X} is uniquely assigned to each CM4.
+The Netmask is set to \texttt{23} so we can access all devices on the \texttt{192.168.1.X} readout network as well as the \texttt{192.168.0.X} gondola network.
+Finally, the Gateway is set to \texttt{192.168.1.1} when attached to the gondola and \texttt{192.168.1.101} when attached to the readout network.
+This is because, when connected to a test bench, we utilize the NAS as our router to access other devices on the network.
+When connected in flight configuration, we disable the NAS's router functionality and use the gondola's router instead.
+
+Next, we need to configure the SPI interface's buffer size and enable SPI on boot.
+This is done by appending the following to the end of the \texttt{/boot/firmware/cmdline.txt} file:
+\begin{verbatim}
+    spidev.bufsiz=65536
+\end{verbatim}
+This sets the SPI buffer size to 64KB which is the maximum size for the PMCC.
+For loading on boot, we need to add the SPI device to the \texttt{/etc/modules} file.
+This is done by adding the following line to the file:
+\begin{verbatim}
+    spi_bcm2835
+\end{verbatim}
+
+At this point, it is a good idea to reboot the CM4 to ensure that all changes have taken effect.
+After rebooting, we recommend connecting the CM4 to the internet through a wireless hotspot so we can install the necessary packages.
+The first package we need to install is the pigpio library.
+This is a library that allows us to control the GPIO pins on the CM4.
+To install the pigpio library, we need to run the following commands:
+\begin{verbatim}
+    sudo apt-get update
+    sudo apt-get install pigpio
+\end{verbatim}
+After installing the pigpio library, we need to enable the pigpio daemon to run on boot.
+This is done by running the following command:
+\begin{verbatim}
+    sudo systemctl enable pigpiod
+\end{verbatim}
+
+Finally, we need to install the actual Python packages that we will use to control the PMCC.
+First we need to clone the PyMCC repository from GitHub.
+This is done by running the following command:
+\begin{verbatim}
+    git clone https://github.com/asthros/pymcc.git
+\end{verbatim}
+Because this is a private repository, you will need to enter your GitHub username and personal access token.
+You will need to generate a personal access token on GitHub and use that as your password when prompted.
+After cloning the repository, we need to install the Python packages.
+This is done by running the following command:
+\begin{verbatim}
+    pip3 install -r pymcc/requirements.txt
+\end{verbatim}
+This will install all the necessary packages to run the PyMCC module.
+
+Finally, we need to edit the hosts file on the CM4 to ensure that we can access the other devices on the readout network by name.
+This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{appendix:hosts}.
 
 \section{PMCC}
 For ASTHROS, we utilize an array of 4GHz spectrometers called the PMCC ASIC P19800B ASIC RF Spectrometer, henceforth referred to as the PMCC.
