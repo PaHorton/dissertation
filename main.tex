@@ -780,7 +780,7 @@
 % Bibliography
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand{\bibfilename}{%             %<Enter the name of the *.bib file containing the
-  dis.bib%                   %   reference information for sources cited in
+  main.bib%                   %   reference information for sources cited in
 }%                                      %   the text. God help you if you're doing
                                         %   citations manually.
 
@@ -1084,7 +1084,7 @@
 \frontmatter
 
 \chapter*{Abstract}                     % Abstract is required
-\input{src/sample/abstract}             %<Enter the name of the .tex file containing your
+\input{src/sections/abstract}             %<Enter the name of the .tex file containing your
                                         %   your abstract or omit this line and type in
                                         %   your abstract here.
 
@@ -1092,12 +1092,12 @@
 %\clearpage                             %~If you don't wish to display the heading
                                         %   'Dedication', comment out the previous line
                                         %   and use this one instead.
-\input{src/sample/dedication}           %<Enter the name of the .tex file containing your
+\input{src/sections/dedication}           %<Enter the name of the .tex file containing your
                                         %   your dedication or omit this line and type in
                                         %   your dedication here.
 
 \chapter*{Acknowledgments}              %~Acknowledgments are optional
-\input{src/sample/acknowledgments}      %<Enter the name of the .tex file containing your
+\input{src/sections/acknowledgments}      %<Enter the name of the .tex file containing your
                                         %   acknowledgments or omit this line and type in
                                         %   your acknowledgments here.
 
@@ -1167,10 +1167,9 @@
 % Body
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \mainmatter
-% \include{src/sample/chapter}                     %<Insert your chapters here; I recommend to use
-% \include{src/sections/chapter2}                     %   \include rather than \input for chapters
-% \include{src/sections/chapter3}
-\include{src/sections/chapter5}
+\include{src/chapters/chapter2}                     %   \include rather than \input for chapters
+\include{src/chapters/chapter3}
+\include{src/chapters/chapter5}
 %\include{chapter3}% etc.
                                         % Heading commands (in descending order):
                                         % \chapter
@@ -1269,7 +1268,7 @@
                                         %   lines down and checking the output until
                                         %   the TOC headers appear correctly
 
-% \input{src/sample/appendix}                       %~Insert your appendices here; I recommend to use
+\input{src/sections/appendix}                       %~Insert your appendices here; I recommend to use
 %\input{appendix2}                       %   \input rather than \include for appendices.
 %\input{appendix3}% etc.                 %   All heading commands are the same as above,
                                          %   e.g., \chapter, \section, etc.

@@ -25,7 +25,7 @@ This is because, when connected to a test bench, we utilize the NAS as our route
 When connected in flight configuration, we disable the NAS's router functionality and use the gondola's router instead.
 
 Next, we need to configure the SPI interface's buffer size and enable SPI on boot.
-This is done by appending the following to the end of the \texttt{/boot/firmware/cmdline.txt} file:
+This is done by appending the following to the end of the \texttt{/boot/cmdline.txt} file:
 \begin{verbatim}
     spidev.bufsiz=65536
 \end{verbatim}
@@ -36,8 +36,20 @@ This is done by adding the following line to the file:
     spi_bcm2835
 \end{verbatim}
 
+Each of the CM4s will control up to four PMCCs, so we need to enable unique SPI busses for each PMCC.
+This is done on the \texttt{/boot/config.txt} file by adding the following lines:
+\begin{verbatim}
+    dtoverlay=spi0-1cs
+    dtoverlay=spi3-1cs
+    dtoverlay=spi4-1cs
+    dtoverlay=spi5-1cs
+\end{verbatim}
+This enables the SPI0, SPI3, SPI4, and SPI5 busses on the CM4.
+While we could, in theory, only use two SPI busses and use the chip select lines to control two PMCCs on each bus, we decided to use a single chip select line for each PMCC to simplify the wiring harness and ensure our bandwidth is not saturated.
+
 At this point, it is a good idea to reboot the CM4 to ensure that all changes have taken effect.
-After rebooting, we recommend connecting the CM4 to the internet through a wireless hotspot so we can install the necessary packages.
+To verify the SPI busses are enabled, we check the \texttt{/dev} directory for the SPI devices which should be \texttt{/dev/spidevX.0} where \texttt{X} is the SPI bus number.
+After rebooting and verifying the SPI has been setup, we recommend connecting the CM4 to the internet through a wireless hotspot so we can install the necessary packages.
 The first package we need to install is the pigpio library.
 This is a library that allows us to control the GPIO pins on the CM4.
 To install the pigpio library, we need to run the following commands:
@@ -67,7 +79,7 @@ This is done by running the following command:
 This will install all the necessary packages to run the PyMCC module.
 
 Finally, we need to edit the hosts file on the CM4 to ensure that we can access the other devices on the readout network by name.
-This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{appendix:hosts}.
+This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{chap2/appendix:hosts}.
 
 \section{PMCC}
 For ASTHROS, we utilize an array of 4GHz spectrometers called the PMCC ASIC P19800B ASIC RF Spectrometer, henceforth referred to as the PMCC.
@@ -106,7 +118,7 @@ When sending a command to the PMCC, the first word of the command is the address
 \end{equation}
 Because \texttt{spidev} uses 8-bit communication, we need to split the 16-bit word into two 8-bit bytes.
 \begin{equation}
-    \label{eq:split_word}
+    \label{chap2/eq:split_word}
     \text{byte[8][2]} = [\text{word[16]} >> 8,\ \text{word[16]}\ \text{\&}\ \text{0xFF}]
 \end{equation}
 The helper method returns these two bytes as an array that can be used in other methods to convert an address and command into a format that can be sent over SPI.
@@ -119,7 +131,7 @@ For both read and write commands, we utilize the \texttt{spidev} library's \text
 On the other hand, \texttt{xfer3()} will automatically split the data into multiple SPI transactions if the data is longer than the maximum SPI buffer size.
 This is vital for burst reads on the PMCC as our data can be much longer than the maximum SPI buffer size.
 For writes, the \texttt{xfer()} method sends the TX bytes and the data to write to the PMCC.
-The data is split into two 8-bit bytes using Equation \ref{eq:split_word}.
+The data is split into two 8-bit bytes using Equation \ref{chap2/eq:split_word}.
 During this transaction, the PMCC does not send any data back, so the \texttt{xfer3()} function returns an array of zeros.
 If our transaction is unsuccessful, instead of returning zeroes, we will receive an empty array that we can check for.
 For single register reads, the \texttt{xfer()} method sends the TX bytes followed by a dummy word to the PMCC.
@@ -160,9 +172,9 @@ We use this maximum value to determine if the provided value is too large, in or
 Finally, we create a mask using the maximum value and shifting it to the left by the LSB.
 We then take the original buffer and do a bitwise AND with the inverse of the mask to clear the bits between the LSB and the MSB. 
 Finally, we shift our data to the left by the LSB and do a bitwise OR with the original buffer to set the bits between the LSB and MSB to the new value.
-This process is shown in Equation \ref{eq:mask_data}.
+This process is shown in Equation \ref{chap2/eq:mask_data}.
 \begin{align}
-    \label{eq:mask_data}
+    \label{chap2/eq:mask_data}
     \text{maxValue} &= (1 << (\text{MSB} - \text{LSB} + 1)) - 1 & 0 \leq \text{LSB} \leq \text{MSB} \leq 15\\
     \text{mask} &= \text{maxValue} << \text{LSB} \\
     \text{buffer} &= (\text{buffer}\ \&\ \sim\text{mask})\ |\ (\text{data} << \text{LSB}) & 0 \leq \text{data} \leq \text{maxValue}
@@ -198,13 +210,13 @@ Finally, we provide a \texttt{close()} method that simply calls the \texttt{clos
 There are a number of device specific configurations that need to be set for each PMCC in order to operate correctly.
 To simplify the process of writing code to configure the PMCCs, we utilize the YAML configuration file format to store the configuration for each PMCC \cite{yaml}.
 This YAML file has information about the RMQ configuration as well as spectrometer configuration. 
-For now, we will focus on the spectrometer configuration and discuss the RMQ configuration in Section \ref{section:rmqtools}.
+For now, we will focus on the spectrometer configuration and discuss the RMQ configuration in Section \ref{chap2/section:rmqtools}.
 The spectrometer config section, \texttt{spec}, is split into two main sections for the PMCCs, global variables used for every spectrometer, and spectrometer specific variables.
 For each experiment, we would like to have a single configuration file that can be used on every CM4 to configure multiple PMCCs. 
 To accomplish this, each CM4 is given a unique name that we use to differentiate between each device. 
 Each PMCC connected to a CM4 is then indexed, so we can individually address each one by specifying the CM4 name and the PMCC index.
 
-The format for the global configurations is shown in Table \ref{table:pmcc_config}.
+The format for the global configurations is shown in Table \ref{chap2/table:pmcc_config}.
 These configurations are used to set values we don't expect to individually change for each PMCC.
 While we may create different configurations for different experiments, such as integration time and magnitude or power mode, we will likely make these changes to all PMCCs at once and not individually.
 
@@ -221,10 +233,10 @@ While we may create different configurations for different experiments, such as 
         \texttt{window\_bypass} & bool & True to enable rectangular window bypass \\
         \texttt{window\_bit\_growth} & bool & True to enable window div 2 bypass \\
         \texttt{butterfly\_shift} & bool & True to enable butterfly shift for improved noise measurements \\
-        \texttt{wiring} & array & See Table \ref{table:wiring} for wiring configuration \\
+        \texttt{wiring} & array & See Table \ref{chap2/table:wiring} for wiring configuration \\
         \texttt{groups} & dict & Dictionary of CM4 names and an array of PMCC chip IDs  \\
     \end{tabularx}
-    \label{table:pmcc_config}
+    \label{chap2/table:pmcc_config}
     \caption{Global Variables in the PMCC Configuration File}
 \end{table}
 
@@ -233,7 +245,7 @@ In full operation, we will have four PMCCs connected to each CM4, so we need a w
 Because the harness is identical for each CM4, we can specify the wiring for each PMCC along the harness, and it will be the same for every CM4. 
 The only exception to this is the lone 100GHz PMCC connected to its own CM4. 
 The wiring for this PMCC is simply the first index in the wiring array will still work with the rest of the system.
-Each item in the wiring configuration is as follows in Table \ref{table:wiring}.
+Each item in the wiring configuration is as follows in Table \ref{chap2/table:wiring}.
 
 \begin{table}[h!]
     \centering
@@ -243,7 +255,7 @@ Each item in the wiring configuration is as follows in Table \ref{table:wiring}.
         \texttt{gpio} & int & GPIO pin number for the reset signal\\
         \texttt{speed} & int & SPI device speed in Hz, typically 5000000 unless changes for stability reasons and debugging\\
     \end{tabularx}
-    \label{table:wiring}
+    \label{chap2/table:wiring}
     \caption{Wiring Configuration in the PMCC Configuration File}
 \end{table}
 
@@ -256,7 +268,7 @@ For the 100GHz PMCC and CM4, the array will only contain a single chip ID.
 When loading in the configuration file, we create a \texttt{PMCC\_Config} object that all configuration information necessary for the CM4. 
 We initialize this object with the \texttt{spec} part of the YAML file, the group name of the CM4, and an array of PMCC indexes to configure (e.g. \texttt{[1, 2, 3, 4]} for all spectrometers).
 The \texttt{PMCC\_Config} object then creates properties for each of the global configurations that can be accessed by the \texttt{PMCC\_SPI} object.
-We set the resolution mode of the PMCCs using the \texttt{resolution} and \texttt{shift} properties and a lookup table for the proper register values as shown in Table \ref{table:resolution}.
+We set the resolution mode of the PMCCs using the \texttt{resolution} and \texttt{shift} properties and a lookup table for the proper register values as shown in Table \ref{chap2/table:resolution}.
 We could, theoretically, set higher values for LSB shift but for the purposes of ASTHROS, we only need 0 and 4 bit shifts.
 
 \begin{table}
@@ -269,7 +281,7 @@ We could, theoretically, set higher values for LSB shift but for the purposes of
       & $4$ & \texttt{0x180} & \texttt{0x1C0} \\\cline{3-4}
     \end{tabular}
     \caption{Resolution Mode Configuration for PMCC}
-    \label{table:resolution}
+    \label{chap2/table:resolution}
 \end{table}
 
 After the global variables are loaded, we create a dictionary of device configurations for individual PMCCs. 
@@ -445,7 +457,7 @@ The configuration process is as follows:
         Write to the \texttt{dsp\_skip\_fft\_stage} register to 0 to use all four stages of the FFT. 
         This results in 512 frequency bins per sub-band. 
     \item 
-        Write to the \texttt{DSP\_READOUT\_CONF} with the mode from the configuration file as shown in Table \ref{table:resolution}. 
+        Write to the \texttt{DSP\_READOUT\_CONF} with the mode from the configuration file as shown in Table \ref{chap2/table:resolution}. 
         This sets the resolution and shift for the readout.
     \item 
         Write to the \texttt{CHIP\_CONF} register to set the \texttt{dsp\_enable} bit to 1 to enable the DSP and \texttt{dsp\_acc\_mode} to 1 to enable continuous FFT operation. 
@@ -628,7 +640,7 @@ This is done to reduce the size of the file and speed up the writing process.
 The shape of these datasets is determined by the \texttt{max\_writes} parameter and the length of the spectra.
 The \texttt{stamps} dataset is a 1D array of 64-bit doubles with a length of \texttt{max\_writes}.
 The \texttt{data} dataset is a 2D array with a shape of \texttt{max\_writes} by the length of the spectra and a data type matching the specified data type during initialization.
-A header is added to the \texttt{data} dataset and contains the attributes shown in Table \ref{table:h5_header}.
+A header is added to the \texttt{data} dataset and contains the attributes shown in Table \ref{chap2/table:h5_header}.
 After creating the file, we start a counter at 0 to keep track of the number of spectra in the file. 
 
 \begin{table}[h!]
@@ -646,7 +658,7 @@ After creating the file, we start a counter at 0 to keep track of the number of 
         \texttt{butterfly\_shift}  & True if butterfly shift is enabled\\
     \end{tabularx}
     \caption{Attributes of the \texttt{data} dataset in the HDF5 file}
-    \label{table:h5_header}
+    \label{chap2/table:h5_header}
 \end{table}
 
 When writing data to the file, we use the \texttt{write\_spectra()} method.
