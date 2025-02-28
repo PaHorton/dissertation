@@ -116,7 +116,7 @@ Examples of this are shown in Figure \ref{chap5/fig:PCA}.
     \label{chap5/fig:PCA}
 \end{figure}
 
-With the reconstructed values, we are able to calculate the residual ($Reconstructed_image - Original_image$) of the errors and identify where anomalies occur based on spikes in the ramp of the residual. 
+With the reconstructed values, we are able to calculate the residual ($Image_{Reconstructed} - Image_{Original}$) of the errors and identify where anomalies occur based on spikes in the ramp of the residual. 
 To identify these spikes, we can employ a similar method to the Statistical Threshold method to calculate the change in residuals between each frame and find out of distribution values. 
 This results in identifying the frames for each pixel that have large jumps in the residual. 
 By limiting the number of PCA components to two, our reconstructed ramps will be relatively smooth, causing original ramps that have large jumps in them to have a large change in residual at the frame of the event.
