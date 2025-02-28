@@ -1,7 +1,7 @@
 \chapter[Electron Density Mapping in Carina Nebula]{Electron Density Mapping in Carina Nebula}
 \label{ch:carina}
 
-To map electron density in Carina we begin with the following equation from \cite{Pineda 2018}.
+To map electron density in Carina we begin with the following equation from \cite{pineda2018}.
 \begin{equation}
     R^{[NII]}_{RRL} = 2.68 \times 10 ^ {-9} \nu_{RRL} T_e^{3/2} \frac{f(^3\text{P}_1)}{n_e} G^{-1}_{NLTE}(n_e,T_c)X_N
     \label{eq:ratio}
@@ -29,14 +29,14 @@ To solve for $n_e$ we can isolate the terms that rely on $n_e$ in Equation (5.1)
 \end{equation}
 
 The left side of Equation 5.3 has all the terms that depend on $n_e$ and the right side are calculated constants and the ratio of the intensities of the [NII] and RRL lines.
-In \cite{Pineda 2018}, the authors provide a relationship between $n_e$ and the terms on the left side of the equation for various continuum brightness temperatures ($T_c$ or $T_b$).
+In \cite{pineda2018}, the authors provide a relationship between $n_e$ and the terms on the left side of the equation for various continuum brightness temperatures ($T_c$ or $T_b$).
 In order to use this curve, I used the data provided in the paper to calculate the right side of the equation and fit the calculated values along with the reported $n_e$ values to a sigmoid.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.4\textwidth]{figs/5/curve.png}
-    \includegraphics[width=0.4\textwidth]{figs/5/calculated_curve.png}
-    \caption{The dependence of the [NII] 205 $\mu$m ratio on delectron density for a set of continuum brightness temperatures \cite{Pineda 2018}.}
+    \includegraphics[width=0.4\textwidth]{figs/4/curve.png}
+    \includegraphics[width=0.4\textwidth]{figs/4/calculated_curve.png}
+    \caption{The dependence of the [NII] 205 $\mu$m ratio on delectron density for a set of continuum brightness temperatures \cite{pineda2018}.}
     \label{fig:ne_vs_tc}
 \end{figure}
 
@@ -63,14 +63,14 @@ The resultant electron density map is shown in Figure \ref{fig:ne_map_keyhole} a
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\textwidth]{figs/5/ne_map_keyhole.png}
+    \includegraphics[width=\textwidth]{figs/4/ne_map_keyhole.png}
     \caption{The electron density map of the Keyhole Nebula.}
     \label{fig:ne_map_keyhole}
 \end{figure}
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\textwidth]{figs/5/ne_map_carina.png}
+    \includegraphics[width=\textwidth]{figs/4/ne_map_carina.png}
     \caption{The electron density map of Carina Extended.}
     \label{fig:ne_map_carina}
 \end{figure}

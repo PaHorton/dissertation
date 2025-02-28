@@ -789,7 +789,7 @@
 
 \providetoggle{usebiblatex}             % True = a biblatex package is being used;
                                         %   False = 'natbib' is being used
-\settoggle{usebiblatex}{true}           %~Set to 'false' to use 'natbib' intead of
+\settoggle{usebiblatex}{false}           %~Set to 'false' to use 'natbib' intead of
                                         %   biblatex; I strongly recommend using biblatex
                                         %   because natbib is rather old and will break
                                         %   for innocuous things like underscores in URLs
@@ -797,7 +797,7 @@
 %                                       % Settings for 'biblatex' or a version of
 %                                       %   'biblatex'
   \usepackage[authordate,%
-              backend=biber,%           % Recommend to use 'biber' instead of 'bibtex'
+              backend=bibtex,%           % Recommend to use 'biber' instead of 'bibtex'
               doi=only,%                % Avoid printing URLs
               isbn=false]%              % Don't print ISBN numbers
               {biblatex-chicago}        %~Other possibilities include: 'biblatex',
@@ -1167,8 +1167,10 @@
 % Body
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \mainmatter
+\include{src/chapters/chapter1}
 \include{src/chapters/chapter2}                     %   \include rather than \input for chapters
 \include{src/chapters/chapter3}
+\include{src/chapters/chapter4}
 \include{src/chapters/chapter5}
 %\include{chapter3}% etc.
                                         % Heading commands (in descending order):

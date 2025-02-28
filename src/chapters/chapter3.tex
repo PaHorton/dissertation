@@ -14,23 +14,23 @@ RMQ allows us to modularly build our readout system and create additional functi
 
 
 \section{Introduction}
-ASTHROS (Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths) is a high-altitude ballooning mission utilizing an array of sixteen spectrometers to create high spatial resolution 3D maps of ionized nitrogen gas in galactic and extragalactic star-forming regions \cite{siles2020asthros}. 
-On-the-fly (OTF) mapping will be employed during data collection where each spectrometer will continuously produce ON and OFF spectra as we scan across our target as show in in Figure \ref{chap3/fig:scan} \cite{mangum2007fly}. 
+ASTHROS (Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths) is a high-altitude ballooning mission utilizing an array of sixteen spectrometers to create high spatial resolution 3D maps of ionized nitrogen gas in galactic and extragalactic star-forming regions \citep{siles2020asthros}. 
+On-the-fly (OTF) mapping will be employed during data collection where each spectrometer will continuously produce ON and OFF spectra as we scan across our target as show in in Figure \ref{chap3/fig:scan} \citep{mangum2007fly}. 
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\linewidth]{figs/3/scan.png}
-    \caption{An example scanning pattern for OTF mapping. ASTHROS will continuously produce ON spectra while scanning across the target and OFF spectra when observing a calibration source from \cite[Mangum, JG 2007]{mangum2007fly}.}
+    \caption{An example scanning pattern for OTF mapping. ASTHROS will continuously produce ON spectra while scanning across the target and OFF spectra when observing a calibration source from \cite{mangum2007fly}.}
     \label{chap3/fig:scan}
 \end{figure}
 
 Once data collection has started, our spectrometer array will continuously produce and timestamp spectra and save the raw time stream to itself and a separate storage device. 
-The clocks of all the computers on board ASTHROS will be synchronized using a local NTP server such that the timestamps can be harmonized with pointing data from the gondola to label ON and OFF spectra \cite{mills1991internet}.
+The clocks of all the computers on board ASTHROS will be synchronized using a local NTP server such that the timestamps can be harmonized with pointing data from the gondola to label ON and OFF spectra \citep{mills1991internet}.
 After a sweep across the target, we will find spectra taken during the OFF segments and use them to evaluate our system's performance.
 By generating an anomaly score for these calibrations, we can determine if our system is behaving differently than expected when compared to a series of past calibrations.
 
 Currently, the methods for evaluating system performance are done on the ground by checking spectra manually as they come down.
-This is an error prone process as it is difficult to manually check each calibration spectrum for anomalies.
+This is an error-prone process as it is difficult to manually check each calibration spectrum for anomalies.
 By implementing on-board anomaly detection, we can automate this process and prioritize analysis of anomalous spectra for review by the ground operations team.
 This will allow us to quickly identify and address any issues with the system during flight to catch errors while we're still able to correct them instead of waiting until the end of the mission to find out that our data is unusable.
 Even if the anomaly detection system is not perfect, any form of quantifiable measure of science data quality will be an improvement over the current manual process.
@@ -47,8 +47,8 @@ Finally, Section \ref{chap3/sec:future} will discuss future work for implementat
 \label{chap3/sec:system}
 The ASTHROS readout system is composed of three main computers that respectively handle commanding the instrument, storing science data, and analyzing our telemetry and science data. 
 Our goal with this readout system is to be able to collect and analyze data in real time so that any changes in detector behavior can be quickly identified and addressed during flight. 
-To achieve this, we utilize RabbitMQ (RMQ) to create a modular system that can be easily expanded to include additional functionality by creating a standard protocol for Remote Procedure Calls (RPC) and Publish/Subscribe (Pub/Sub) messaging \cite{dobbelaere2017kafkaversusrabbitmq}.
-RMQ is a lightweight messaging broker based communications to seamlessly create a network of computers that are able to share status and commands between multiple concurrent systems \cite{thompson2024architecture}.
+To achieve this, we utilize RabbitMQ (RMQ) to create a modular system that can be easily expanded to include additional functionality by creating a standard protocol for Remote Procedure Calls (RPC) and Publish/Subscribe (Pub/Sub) messaging \citep{dobbelaere2017kafkaversusrabbitmq}.
+RMQ is a lightweight messaging broker based communications to seamlessly create a network of computers that are able to share status and commands between multiple concurrent systems \citep{thompson2024architecture}.
 
 \begin{figure}
     \centering
@@ -57,17 +57,17 @@ RMQ is a lightweight messaging broker based communications to seamlessly create 
     \label{chap3/fig:system}
 \end{figure}
 
-The core of ASTHROS's readout are three systems: the Command, Storage, and Analysis computers as shown in Figure \ref{chap3/fig:system} \cite{horton2024readout}.
+The core of ASTHROS's readout are three systems: the Command, Storage, and Analysis computers as shown in Figure \ref{chap3/fig:system} \citep{horton2024readout}.
 The Command computer is responsible for sending commands to other processes and receiving status updates from the various publishers on the RMQ network. 
 This computer also manages telemetry through a connection to the gondola. 
 Key system devices, such as the power supplies and the antenna, are connected directly to this computer via serial connections to allow for real-time monitoring and control.
-Despite being physically on the same computer, control of each of these subsystems is handled by separate processes that communicate with the Central Central process through RMQ.
+Despite being physically on the same computer, control of each of these subsystems is handled by separate processes that communicate with the Central process through RMQ.
 This allows any of these processes to be moved to a different computer or replaced with a new process without changing the overall system architecture.
 As most of the systems are located on the Command computer, we host the RMQ broker on this computer to minimize latency and reduce the number of network hops between the Command computer and the other systems.
 
 The Storage computer is responsible for storing all science data and telemetry data collected during the flight.
-This computer is a custom built rugged Network Attached Storage (NAS) that is able to store all the data collected during the flight.
-This NAS houses 4 Solid State Drives in a RAID 10 configuration \cite{chen1994raid}.
+This computer is a custom-built rugged Network Attached Storage (NAS) that is able to store all the data collected during the flight.
+This NAS houses 4 Solid State Drives in a RAID 10 configuration \citep{chen1994raid}.
 Other computers on the network, such as the Command computer and the Analysis computer, are able to mount the storage computer as a network drive to read and write data.
 Additionally, this storage computer has two managed network switches that allow for networking to every system on ASTHROS.
 Our spectrometers, controlled by Raspberry Pi CM4s, are connected to this computer via Ethernet and are able to store their data locally on their own Solid State Drives and send a copy to the storage computer.
@@ -84,14 +84,14 @@ It does this by time harmonizing the science data with the pointing data from th
 
 Apart from the main three computers, the ASTHROS readout system also consists of a set of Raspberry Pi Compute Module 4s (CM4s) that control the spectrometers and a set of Arduino Nano Every microcontrollers that control the amplifier chains. 
 Both of these are configured to communicate over the RMQ network for Command and Control and produce status updates over the Status Exchange. 
-The CM4s are responsible for controlling the spectrometers and collecting the raw time stream data from the spectrometers \cite{mohammed2024digital}.
-The Arduinos are responsible for controlling the amplifier chains to adjust attenuation values for our variable attenuators \cite{Ricardo}.
+The CM4s are responsible for controlling the spectrometers and collecting the raw time stream data from the spectrometers \citep{mohammed2024digital}.
+The Arduinos are responsible for controlling the amplifier chains to adjust attenuation values for our variable attenuators \citep{Ricardo}.
 
 \section{Methods}
 \label{chap3/sec:methods}
-Anomaly detection, also known as outlier detection, is a way of finding out-of-distribution data points in a dataset \cite{kerner2022domain}.
+Anomaly detection, also known as outlier detection, is a way of finding out-of-distribution data points in a dataset \citep{kerner2022domain}.
 This works by comparing a data point to typical examples from the dataset and determining if the data point is significantly different from the rest of the data.
-Because of the nature of anomalies, we can't use traditional supervised learning methods to detect them as we don't have labeled examples of what an anomaly looks like \cite{horton2021integrating}.
+Because of the nature of anomalies, we can't use traditional supervised learning methods to detect them as we don't have labeled examples of what an anomaly looks like \citep{horton2021integrating}.
 In other words, we don't fully know what we don't know and, instead of training our system on known issues, we need to train our system to recognize when something is different from what it has seen before.
 To do this, we need to use unsupervised learning methods that learn the underlying structure of our data and determine if a new data point is significantly different from the rest of the data.
 Figure \ref{chap3/fig:examples} shows examples of the types of anomalies we have seen in past missions. 
@@ -110,7 +110,7 @@ For this implementation, we focus on two methods for determining if a calibratio
 Both have their strengths and weaknesses and we will compare their performance on the ASTHROS calibration spectra to determine which is the best fit for our system.
 
 \subsection{Variational AutoEncoders}
-VAEs are a class of AutoEncoders that learn the mean and variance of the latent space of the data \cite{kingma2022autoencodingvariationalbayes}.
+VAEs are a class of AutoEncoders that learn the mean and variance of the latent space of the data \citep{kingma2013auto}.
 This is done by training the model to encode the input data into a lower dimensional space and then decode it back to the original input.
 We selected VAEs for this task because they are able to learn the underlying structure of the data and generate new examples of the data by sampling from the latent space.
 This is useful for anomaly detection as we can compare a new spectrum to the reconstructed spectrum to determine if it is significantly different from the rest of the data.
@@ -134,7 +134,7 @@ This score can be used as a time series of anomaly scores to determine if a new 
 For flight, we will have to retrain the VAE on a subset of the data to account for changes in the system over time making more challenging for implementation.
 
 \subsection{Principal Component Analysis}
-PCA is a method that reduces the dimensionality of a dataset by finding the directions of maximum variance in the data \cite{wold1987principal}.
+PCA is a method that reduces the dimensionality of a dataset by finding the directions of maximum variance in the data \citep{wold1987principal}.
 This is done by finding the eigenvectors, called principal components, of the covariance matrix of the data and projecting the data onto these eigenvectors.
 The first principal component is the direction of maximum variance in the data, the second principal component is the direction of maximum variance orthogonal to the first principal component, and so on.
 Because our calibration spectra are high dimensional with $8192$ channels, we use PCA to reduce the dimensionality of our data to a lower dimensional space where we more easily compare the spectra.
@@ -160,8 +160,8 @@ We use this value as our anomaly score as it provides a measure of how different
 \section{Data}
 \label{chap3/sec:data}
 The data for these tests are taken from two separate data collection instances. 
-The first was a High-Altitude Student Platform (HASP) flight \cite{guzik2008development} that tested one of our Pacific MicroCHIP Corp (PMCC) Spectrometers  \cite{mohammed2024digital}.
-A team of students at Arizona State University test flew a spare PMCC spectrometer to measure the deuterium to hydrogen ratio in the atmosphere \cite{HADHR}.
+The first was a High-Altitude Student Platform (HASP) flight \citep{guzik2008development} that tested one of our Pacific MicroCHIP Corp (PMCC) Spectrometers  \citep{mohammed2024digital}.
+A team of students at Arizona State University test flew a spare PMCC spectrometer to measure the deuterium to hydrogen ratio in the atmosphere \citep{HADHR}.
 Unfortunately, the spectrometer was not calibrated properly so many of the spectra were unusable for science. 
 Additionally, due to the HASP payload's suite of student projects, we had many instances of changing RFI due to other instruments on board. 
 Ironically, with all these problems, this dataset is an ideal candidate for testing the anomaly detection system as we are able to use it to evaluate good and bad spectra. 
@@ -169,7 +169,7 @@ This dataset consists of about 7,000 spectra of varied levels of noise.
 
 The second dataset was taken from one of our 100GHz integration tests with a flight calibrated spectrometer. 
 This data is extremely stable and provides us an ideal baseline for what we expect to see during flight.
-Despite being extremely clean dataset of over 20,000 spectra, there are instances of RFI in the data that can be used to demonstrate the real time data quality assessment of the spectra. 
+Despite being an extremely clean dataset of over 20,000 spectra, there are instances of RFI in the data that can be used to demonstrate the real time data quality assessment of the spectra. 
 
 \begin{figure}
     \centering
@@ -182,7 +182,7 @@ Despite being extremely clean dataset of over 20,000 spectra, there are instance
 One limitation of this dataset is that there aren't examples of changes in the baseline shape or bias readout level. 
 These changes are rare and typically caused by physical changes in the instrument's hardware. 
 In order to account for these, we would need to inject simulated anomalies in the data.
-This is outside of the scope of this work but will be discussed in Section \ref{chap3/sec:future}.
+This is outside the scope of this work but will be discussed in Section \ref{chap3/sec:future}.
 
 \section{Results and Conclusions}
 \label{chap3/sec:results}
@@ -196,7 +196,7 @@ This is outside of the scope of this work but will be discussed in Section \ref{
 Both datasets are unlabeled, which makes measuring accuracy difficult so we have to use more qualitative methods to compare the two.
 The end use case of this is to provide a trackable metric that the operations team can use to monitor data quality.
 While accuracy is certainly important, any method that is able to enhance the manual monitoring process is sufficient. 
-As such, we compare the methods based on their ability to be implemented into the ASTHROS System Architecture and how well the the anomaly score metric tracks with manual monitoring of the time series of spectra over time. 
+As such, we compare the methods based on their ability to be implemented into the ASTHROS System Architecture and how well the anomaly score metric tracks with manual monitoring of the time series of spectra over time. 
 Additionally, we can compare the least and most anomalous spectra form the system to what sorts of anomalies produce high anomaly scores. 
 
 With both datasets, the large number of features in the $8192$ channels, made it difficult for the VAE to learn the latent space for the spectra. 
@@ -208,7 +208,7 @@ With more refining and tests with domain adaptation, we may be able to revisit t
 PCA was an ideal method for this use case. 
 We began with the HASP dataset to see how the method would be able to rank spectra from least to most anomalous.
 We first fit all of the $7000$ spectra with PCA to determine the number of components that would be optimal for comparison.
-Most of the variances was captured with the first two principal components but we opted to use five components as the variance increases when we're only looking at a portion of the dataset as shown in Figure \ref{chap3/fig:elbows}.
+Most of the variances was captured with the first two principal components but, we opted to use five components as the variance increases when we're only looking at a portion of the dataset as shown in Figure \ref{chap3/fig:elbows}.
 Using these number of components, we calculate the anomaly score for all of the spectra in the dataset to review the least and most anomalous spectra. 
 See Figure \ref{chap3/fig:hasp} for the least and most anomalous spectra in the dataset. 
 We've zoomed into a range of indices that were heavily affected by RFI, likely from another instrument. 
@@ -226,10 +226,10 @@ On the cleaner 100GHz dataset, the method truly shined.
 Using the same rolling window of 10 spectra and 5 principal components, we were able to produce a time series of anomaly scores for all 20,000 spectra as shown in Figure \ref{chap3/fig:timeseries}.
 These values on their own don't provide much information but, when compared with other values across the dataset, we are able to pick out instances where our anomaly scores spiked. 
 In the time series, there are two major spikes in the time series and a handful of smaller spikes throughout the test. 
-We looked into these larger spikes in anomaly score and they corresponded with spectrum that had changes in their RFI spikes.
+We looked into these larger spikes in anomaly score and, they corresponded with spectrum that had changes in their RFI spikes.
 Figure \ref{chap3/fig:100ghz} shows the affected channels of these anomalous spectra by overlapping them with the average of the previous 10 spectra. 
 As shown in both examples, the new spectra has an increase in RFI that is different from the most recent spectra. 
-On the other hand, the least anomalous spectra all closely match the their predecessors. 
+On the other hand, the least anomalous spectra all closely match their predecessors. 
 Of the tested methods, PCA has shown the most promise for implementation into the ASTHROS Readout System. 
 
 \section{Future Work}
@@ -238,7 +238,7 @@ The PCA method tested in this paper is currently being implemented onto the ASTH
 The method will run on the analysis computer and integrate with the rest of the ASTHROS network to provide real-time data quality status messages over the RMQ status exchange.
 During integration testing, the PCA method will be tested to ensure that it can handle the data rates and data sizes that will be produced during the flight. 
 
-While the VAE method was less suitable for our use case, with more fine tuning and optimization for the rolling window of past spectra, it could be a viable method for detecting anomalies in the future.
+While the VAE method was less suitable for our use case, with more fine-tuning and optimization for the rolling window of past spectra, it could be a viable method for detecting anomalies in the future.
 There are other methods, such as a Gaussian Mixture Model (GMM) or a Hidden Markov Model (HMM), that could be tested in the future to see if they are more suitable for our use case as well.
 
 A limitation of our datasets are the lack of changes in shape of the spectrum or changes in bias level. 
