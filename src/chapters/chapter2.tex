@@ -4,7 +4,8 @@ The readout system is responsible for controlling the detectors, reading out the
 The readout system is designed to be modular and scalable, allowing for easy integration of new detectors and readout systems.
 Each module is designed to be self-contained, focusing on a single device in the readout system so that changes to the hardware can be made without affecting the rest of the system.
 
-\section{Raspberry Pi Compute Module 4}
+\section{Network Architecture}
+\subsection{Raspberry Pi Compute Module 4}
 From a fresh install of Raspberry Pi OS, we need to install the necessary packages to run the readout system.
 The first step is to enable Secure Shell (SSH) so that we can remotely access the Raspberry Pi.
 This can be done in the Raspberry Pi Configuration tool by enabling SSH in the Interfaces tab.
@@ -24,18 +25,20 @@ Finally, the Gateway is set to \texttt{192.168.1.1} when attached to the gondola
 This is because, when connected to a test bench, we utilize the NAS as our router to access other devices on the network.
 When connected in flight configuration, we disable the NAS's router functionality and use the gondola's router instead.
 
-Next, we need to configure the SPI interface's buffer size and enable SPI on boot.
+Next, we need to configure the SPI interface to work with the PMCCs.
+This process is different for Compute Module 5s (CM5s) as they have a different SPI driver and interfaces for the GPIO pins.
+While we are in the process of upgrading to CM5s, the current version of the readout, and thus this documentation, is designed for CM4s.
+The first step is to increase the SPI buffer size.
 This is done by appending the following to the end of the \texttt{/boot/cmdline.txt} file:
 \begin{verbatim}
     spidev.bufsiz=65536
 \end{verbatim}
-This sets the SPI buffer size to 64KB which is the maximum size for the PMCC.
+This sets the SPI buffer size to 64KB which is the maximum size to support the burst readout of the PMCCs.
 For loading on boot, we need to add the SPI device to the \texttt{/etc/modules} file.
 This is done by adding the following line to the file:
 \begin{verbatim}
     spi_bcm2835
 \end{verbatim}
-
 Each of the CM4s will control up to four PMCCs, so we need to enable unique SPI busses for each PMCC.
 This is done on the \texttt{/boot/config.txt} file by adding the following lines:
 \begin{verbatim}
@@ -48,10 +51,10 @@ This enables the SPI0, SPI3, SPI4, and SPI5 busses on the CM4.
 While we could, in theory, only use two SPI busses and use the chip select lines to control two PMCCs on each bus, we decided to use a single chip select line for each PMCC to simplify the wiring harness and ensure our bandwidth is not saturated.
 
 At this point, it is a good idea to reboot the CM4 to ensure that all changes have taken effect.
-To verify the SPI busses are enabled, we check the \texttt{/dev} directory for the SPI devices which should be \texttt{/dev/spidevX.0} where \texttt{X} is the SPI bus number.
-After rebooting and verifying the SPI has been setup, we recommend connecting the CM4 to the internet through a wireless hotspot so we can install the necessary packages.
-The first package we need to install is the pigpio library.
-This is a library that allows us to control the GPIO pins on the CM4.
+To verify the SPI busses are enabled, we check the \texttt{/dev} directory for the SPI devices which should be \texttt{/dev/spidevX.0} where \texttt{X} is the SPI bus number (0, 3, 4, or 5).
+After rebooting and verifying the SPI has been set up, we recommend connecting the CM4 to the internet through a wireless hotspot in order to install the necessary libraries.
+The first library we need to install is the pigpio.
+This is a library that allows us to control the GPIO pins on the CM4 without needing root access.
 To install the pigpio library, we need to run the following commands:
 \begin{verbatim}
     sudo apt-get update
@@ -64,7 +67,7 @@ This is done by running the following command:
 \end{verbatim}
 
 Finally, we need to install the actual Python packages that we will use to control the PMCC.
-First we need to clone the PyMCC repository from GitHub.
+First we need to clone the \texttt{PyMCC} repository from GitHub.
 This is done by running the following command:
 \begin{verbatim}
     git clone https://github.com/asthros/pymcc.git
@@ -76,10 +79,12 @@ This is done by running the following command:
 \begin{verbatim}
     pip3 install -r pymcc/requirements.txt
 \end{verbatim}
-This will install all the necessary packages to run the PyMCC module.
+This will install all the necessary packages to run the \texttt{PyMCC} package.
 
 Finally, we need to edit the hosts file on the CM4 to ensure that we can access the other devices on the readout network by name.
 This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{chap2/appendix:hosts}.
+
+\section{RabbitMQ and RMQTools}
 
 \section{PMCC}
 For ASTHROS, we utilize an array of 4GHz spectrometers called the PMCC ASIC P19800B ASIC RF Spectrometer, henceforth referred to as the PMCC.
@@ -92,14 +97,14 @@ The custom harness used to connect the PMCCs to the CM4 mounts onto the CM4 IO b
 Additionally, the CM4 has an SSD mounted to the side of it's IO board enclosure for raw spectra storage and easier local debugging when the device is not connected to the rest of the readout network.
 Finally, two CM4s and eight PMCCs are mounted in a custom enclosure that is designed to be mounted on the back of the ASTHROS primary mirror.
 
-PyMCC is the Python module developed to interface with the PMCCs and communicate with the rest of the readout system.
+\texttt{PyMCC} is the Python package developed to interface with the PMCCs and communicate with the rest of the readout system.
 Originally, the PMCCs were controlled by a C program that was designed to provide a simple CLI for manually controlling the PMCCs.
 As we needed to control multiple PMCCs and have them communicate with the rest of the readout system, we decided to rewrite the control software and drivers in Python.
-The core of PyMCC is a Python driver for the PMCCs that provides an interface for controlling the PMCCs and reading out the data.
+The core of \texttt{PyMCC} is a Python driver for the PMCCs that provides an interface for controlling the PMCCs and reading out the data.
 Built on top of the driver are Python programs that allow for manual control of the PMCCs, as well as a server that allows for control of the PMCCs over the RabbitMQ network.
 
 \subsection{\texttt{spi\_utils}}
-At the lowest level of the PyMCC driver is the \texttt{spi\_utils} module.
+At the lowest level of the \texttt{PyMCC} driver is the \texttt{spi\_utils} module.
 This module provides an interface for communicating with the PMCCs over SPI using the \texttt{spidev} Python library.
 The \texttt{spidev} library provides an interface to the Linux kernel's SPI device driver \citep{spidev}.
 Additionally, the PMCC has 16-bit registers that require us to send and receive 16-bit words instead of the typical 8-bit bytes that \texttt{spidev} expect. 
@@ -224,7 +229,7 @@ While we may create different configurations for different experiments, such as 
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
-        \texttt{spec\_file} & string & Path to the spectrometer hardware file \\
+        \texttt{spec\_file} & path & Path to the spectrometer hardware file \\
         \texttt{int\_time} & int & Integration time in milliseconds \\
         \texttt{clock\_freq} & int & Reference clock frequency in MHz \\
         \texttt{resolution} & int & 16 or 32 for 16-bit or 32-bit readout resolution \\
@@ -294,17 +299,17 @@ If the chip is not found in the file, we raise an exception that the configurati
 The final product is a \texttt{PMCC\_Config} object that contains all the necessary information to configure both the CM4 and any number of PMCCs connected to it. 
 
 \subsection{\texttt{consts}}
-The \texttt{consts} module is simply a collection of constants used throughout the PyMCC module.
+The \texttt{consts} module is simply a collection of constants used throughout the \texttt{PyMCC} module.
 Many of these are register addresses so that we can easily reference them in the code without having to go back and forth between the PMCC manual and the code.
 Additionally, we have some large arrays that are used in configuration that we don't want to hard code into the code.
 For example, \texttt{WINDOW\_COEFFS} is a vector of 513 values used to configure the symmetrical 1024 point FFT on the DSP. 
 In addition to addresses and coefficients, we keep an array of default values for the PMCC registers so that we can easily identify issues with the device after reset. 
 
 \subsection{\texttt{driver}}
-The \texttt{driver} module is the highest level of the PyMCC module and is responsible for providing all functionality for the PMCCs. 
+The \texttt{driver} module is the highest level of the \texttt{PyMCC} package and is responsible for providing all functionality for the PMCCs. 
 Each PMCC is controlled by a \texttt{PMCC\_Driver} object that is initialized with a \texttt{PMCC\_Config} object and the index of the spectrometer in the config that we want to control.
-After initializing the object, the user must call the \texttt{initialize\_interface()} method to setup a \texttt{PMCC\_SPI} object to communicate with the PMCC.
-Following SPI setup, the user must call the \texttt{initalize\_gpio()} method to setup the GPIO pin for the reset signal.
+After initializing the object, the user must call the \texttt{initialize\_interface()} method to set up a \texttt{PMCC\_SPI} object to communicate with the PMCC.
+Following SPI set up, the user must call the \texttt{initalize\_gpio()} method to set up the GPIO pin for the reset signal.
 Both of these methods check the wiring configuration in the \texttt{PMCC\_Config} object to ensure that the correct wiring is provided.
 With both of these methods called, the \texttt{PMCC\_Driver} object is ready to start the PMCC configuration. 
 
@@ -316,7 +321,7 @@ This is done by calling the \texttt{reset()} method with a boolean value to set 
     \textbf{Note:} The PMCC documentation specifies individual bit fields for each register. 
     When referring to a specific register in the documentation, we will use the format \texttt{reg\_name} with lowercase letters. 
     These will be identical to the register names in the documentation. 
-    During the development of PyMCC, we often had to refer to SPI addresses that contain multiple PMCC registers. 
+    During the development of \texttt{PyMCC}, we often had to refer to SPI addresses that contain multiple PMCC registers. 
     When referring to these addresses, we will use the format \texttt{REG\_NAME} with all uppercase letters.
     These are not documented in the PMCC manual but are used to reference addresses defined in the \texttt{consts} module.
 \end{quote}
@@ -528,7 +533,7 @@ The \texttt{retrieve\_data()} method follows the following process to read a spe
         Otherwise, for 16-bit readouts, we use NumPy to return a view of the data as an array of 16-bit unsigned integers.
 \end{enumerate}
 
-Another common operation after setup is to read raw data from the ADC. 
+Another common operation after set up is to read raw data from the ADC. 
 This can be useful to ensure that the ADC is working correctly by measuring the mean and swing of the digitized signal. 
 The \texttt{retrieve\_adc()} method does just this using the following procedure. 
 \begin{enumerate}
@@ -680,3 +685,363 @@ This class is used to write data to multiple files at once.
 This is useful for writing data to both HDF5 and CSV files at the same time as well as data to multiple locations, such as locally on the CM4 and remotely on the NAS. 
 \texttt{new\_file()} and \texttt{write\_spectra()} simply call the same methods on all of the writers in the array.
 This wrapper also keeps track of the total number of spectra written which is useful for housekeeping and telemetry. 
+
+\subsection{RabbitMQ Control Loop}
+
+\section{Cryocool}
+ASTHROS uses a closed loop cryocooler to cool the receiver system to 4K during flight.
+The cooler is a low-power, 4-stage, pulse tube refrigerator built by Lockheed Martin Corp. through the NASA Advanced Cryocooler Technology Development Program (ACTDP) for the James Webb Space Telescope (JWST) \citep{olson2005lockheed} \citep{coulter2003nasa}.
+The specific cooler we are using was, fortuitously, a leftover prototype from the ACTDP that was not selected for the JWST mission and can be repurposed for ASTHROS \cite{kawamuraterahertz}.
+
+To interface with the cryocooler we have three main components: the cryocooler controller, the temperature sensors, and the pressure sensors.
+All three of these devices are connected to our central command computer. 
+The cryocooler controller uses an RS-422 interface to read and write parameters to the device.
+The temperature sensors are connected to a Lakeshore 240 temperature controller which is connected via USB to the command computer.
+The pressure sensor is connected to the central command computer via an RS-485 interface.
+
+These three systems are split into different modules in the \texttt{cryocool} package.
+
+\subsection{\texttt{cryocool}}
+\begin{table}[h]
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
+        \texttt{CONN} & dict & Connection parameters for the RS-422 connection specifying \texttt{PORT}, \texttt{BAUD}, and \texttt{READ\_TIMEOUT} \\
+        \texttt{TELEMETRY} & list & List of registers read when issuing a telemetry command \\
+        \texttt{TEMP\_RAMP} & path & Path to the temperature ramp file \\
+        \texttt{REGS} & path & Path to the register configuration file
+    \end{tabularx}
+    \label{chap2/table:cryocool_config}
+    \caption{Cryocooler Configuration Parameters}
+\end{table}
+
+Within the \texttt{cryocool} package, we have the \texttt{cryocool} module that is used to control the cryocooler.
+The \texttt{Cryocool} class is instantiated with a configuration YAML that contains the parameters for the cryocooler. 
+The necessary fields for configuration are shown in Table \ref{chap2/table:cryocool_config}.
+We first set up the serial communication with the cryocooler using the \texttt{CONN} parameters and the Python serial library.
+We then make note of the status registers that are read out when we issue a status command to the cryocooler.
+After this, we read in the temperature ramp as a pandas dataframe from the \texttt{TEMP\_RAMP} file \citep{reback2020pandas}.
+This file contains points for a calibration curve to convert voltage from the internal temperature sensors to temperature.
+
+\begin{table}[h]
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
+        Name & str & Full name of the register \\
+        Label & str & Parameterized name of the register \\
+        Address & int & Address of the register \\
+        Write & bool & True if the register is writable \\
+        Units & str & Units of the register \\
+        Inverse & int & Blank if the value is not inverted, value to multiply by if the value is to be inverted \\
+        MinVal & float & Minimum value of the register \\
+        MaxVal & float & Maximum value of the register \\
+        MinCount & int & Minimum digital value of the register \\
+        MaxCount & int & Maximum digital value of the register \\
+        Housekeeping & bool & True if the register is a housekeeping value \\
+        Temperature & bool & True if the register is a temperature value \\
+    \end{tabularx}
+    \label{chap2/table:cryocool_regs}
+    \caption{Cryocooler Register Configuration Parameters}
+\end{table}
+
+
+Finally, we read in the register configuration file from the \texttt{REGS} path.
+This file is a CSV table that contains information for each register on the cryocooler and how to convert read values to their intended units. 
+Table \ref{chap2/table:cryocool_regs} shows the fields in the register configuration file.
+Each row of the table is read in as a \texttt{Reg} object that allows us to more easily convert between the raw register values and the intended units.
+The \texttt{Reg} object takes in the configuration row and saves the values as attributes.
+If a register specifies an inversion or min/max values, we label the register as convertible. 
+If convertible, the \texttt{Reg} object has \texttt{convert\_to\_count()} and \texttt{convert\_to\_val()} methods that convert between the raw register value and the intended units.
+This is accomplished by a simple linear conversion as shown in Equation \ref{chap2/eq:reg_convert}.
+\begin{equation}
+    \label{chap2/eq:reg_convert}
+    y = \max\left(\min\left(\frac{Y_{max} - Y_{min}}{X_{max} - X_{min}}\left(x - X_{min}\right) + Y_{min}, Y_{max}\right), Y_{min}\right)
+\end{equation}
+Additionally, if the value is converting to a count, we round the result to the nearest integer.
+Note that the conversion is clamped to the min and max values of the register. 
+This is to ensure that the conversion does not exceed the bounds of the register.
+
+It is also worth noting that the \texttt{Reg} object, despite knowing if a register is a temperature value or not, does not convert the temperature values to Kelvin.
+This is handled by the \texttt{Cryocool} object as there are multiple ways of providing and displaying temperature values.
+When converting between count and value, the \texttt{Reg} object will return a voltage value as per the documentation of the cryocooler.
+The \texttt{Cryocool} object will then convert this voltage to a temperature using the temperature ramp as explained later. 
+
+Once the \texttt{Cryocool} object is initialized and the \texttt{Reg} objects are created and stored in a dictionary for easy access.
+Because we may refer to registers by their label or their address, we have implemented a \texttt{get\_reg()} method that takes in either the label or the address and returns the corresponding \texttt{Reg} object.
+If the label or address is not found, the method will raise an exception indicating that the register was not found.
+
+\subsubsection{Serial Communication}
+There are three main commands that we can issue to the cryocooler, \texttt{get()}, \texttt{set()}, and \texttt{status()}.
+All three of these commands are issued by writing to the cryocooler and reading the response.
+The sent command needs to have a checksum appended to the end of the command to ensure that the cryocooler receives the command correctly.
+We implemented a \texttt{calc\_checksum()} method that calculates the checksum for a given byte array. 
+This method of calculating the checksum is as follows:
+\begin{enumerate}
+    \item Initialize the checksum to 0.
+    \item For each byte in the byte array, add the byte to the checksum.
+    \item If the checksum is greater than 255, subtract 256 from the checksum and add 1 to the checksum.
+    \item Take the two's complement of the checksum and mask it with 0xFF.
+    \item Return the checksum.
+\end{enumerate}
+To encode the checksum we have also implemented an \texttt{encode\_checksum()} method that takes in a byte array and appends the checksum to the end of the array.
+
+In addition to the checksum, the cryocooler control software requires byte stuffing to ensure a start frame delimiter is not present in the data.
+For our cryocooler, we use the byte sequence \texttt{0x01 0x02} as the start frame delimiter.
+To ensure that this sequence is not present in the data, we insert a \texttt{0x01} byte after every \texttt{0x01} byte in the data. 
+This occurs after the checksum is calculated and before the data is sent to the cryocooler.
+To accommodate this, we have implemented a \texttt{stuff\_bytes()} and \texttt{unstuff\_bytes()} method that will add and remove the extra \texttt{0x01} bytes respectively.
+
+Commands sent to the croycooler are done using the serial library in Python.
+To support the serial communication, we have implemented \texttt{serial\_write()} and \texttt{serial\_read()} methods to act as the barebones for the \texttt{get()}, \texttt{set()}, and \texttt{status()} methods.
+The \texttt{serial\_write()} command simply takes in a byte array and writes that on the serial buffer.
+In most cases, we want to flush the input and output on a write to ensure that the command is sent and received correctly.
+This is done using an optional \texttt{flush} argument in the \texttt{serial\_write()} method.
+
+The \texttt{serial\_read()} method is a bit more complicated.
+This method takes no arguments and simply reads the serial buffer until it hits a predetermined timeout or we stop receiving bytes.
+We loop through the serial buffer checking how many bytes are waiting to be read.
+Once the number of bytes waiting to be read stops increasing, we perform a read of the buffer and store the data.
+After that, we unstuff the bytes and check the checksum. 
+If the checksum is correct, we return the data.  
+
+The \texttt{get()} method is the next level of abstraction above the \texttt{serial\_read()} method.
+This method creates a command to read a register from the cryocooler, sends the command, and then returns the response. 
+The returned value will be the raw digital value from the register and is converted to the intended units in another method.
+The method builds the byte array command as follows.
+\begin{enumerate}
+    \item Start with the start frame delimiter \texttt{0x01 0x02}.
+    \item Add a \texttt{0x02} to specify the command will be 2 bytes (a command and a register address).
+    \item Add the command byte \texttt{0x02} to specify that we are reading a register.
+    \item Add the register address to the byte array in big endian format.
+    \item Calculate, encode, and add the checksum to the byte array.
+    \item Byte stuff everything after the start frame delimiter.
+\end{enumerate}
+After sending the command, we read the response from the serial buffer and then convert the value from bytes in an array to an ingeter. 
+
+The \texttt{set()} method is structurally similar to the \texttt{get()} method but is used to write to a register on the cryocooler.
+The method builds the byte array command as follows.
+\begin{enumerate}
+    \item Start with the start frame delimiter \texttt{0x01 0x02}.
+    \item Add a \texttt{0x04} to specify the command will be 4 bytes (one for the command, one for the register address, and two for the value)
+    \item Add the command byte \texttt{0x01} to specify that we are writing to a register.
+    \item Add the register address to the byte array in big endian format.
+    \item Add the value to the byte array in big endian format.
+    \item Calculate, encode, and add the checksum to the byte array.
+    \item Byte stuff everything after the start frame delimiter.
+\end{enumerate}
+The set method has an optional \texttt{skip} parameter to read the response from the cryocooler.
+If \texttt{skip} is set to True, the method will return None and not read the response.
+If \texttt{skip} is set to False, the method will read the response from the cryocooler and return the value of the register after writing.
+
+Finally, we have the \texttt{status()} method which is a special case of the \texttt{get()} method.
+The cryocooler has implemented a status command that reads 14 status registers at once.
+These registers are regulalry read out to monitor the health of the cryocooler.
+The \texttt{status()} method builds the byte array command as follows.
+\begin{enumerate}
+    \item Start with the start frame delimiter \texttt{0x01 0x02}.
+    \item Add a \texttt{0x01} to specify the command will be 1 byte (one command).
+    \item Add the command byte \texttt{0x05} to specify that are reading the status.
+    \item Calculate, encode, and add the checksum to the byte array.
+    \item Byte stuff everything after the start frame delimiter.
+\end{enumerate}
+The \texttt{status()} method then reads the response from the cryocooler and splits the 14 values into an integer array. 
+
+\subsubsection{User Facing Methods}
+With all of the serial communications methods in place, we can now build off of those to create the user-facing methods.
+The first of these is the \texttt{reset()} method.
+This method uses the \texttt{set()} method to write a 1 to the reset register on the cryocooler.
+It skips the response from the cryocooler as the reset command does not return a value.
+
+Next we have a \texttt{get\_data()} method that reads the value for a specific register on the cryocooler.
+This method can take either a \texttt{Reg} object, a label, or an address as an argument.
+The method will then call the \texttt{get()} method with the register address to obtain the digital count from the register.
+Optional parameters for \texttt{convert} and \texttt{in\_kelvin} are available to conver the digital count to the intended units.
+The result after conversion of temperature registers will be in Voltage.
+If both \texttt{convert} and \texttt{in\_kelvin} are set to True, the method will convert the voltage to temperature using the temperature ramp.
+This level of control over the conversion allows for more flexibility in how the data is displayed to the user.
+
+The \texttt{set\_data()} method is the next user-facing method.
+Like the \texttt{get\_data()} method, this method can take a \texttt{Reg} object, a label, or an address as an argument.
+The method also takes in a value to write to the register and parameters specifying any preprocessing that needs to be done on the value.
+The \texttt{in\_kelvin} and \texttt{convert} parameters make their return here to specify if the value needs to be converted from temperature to voltage and if the value needs to be converted to a digital count.
+When providing a temperature in Kelvin, both \texttt{in\_kelvin} and \texttt{convert} should be set to True.
+The method will convert the value into a digital count and then use the \texttt{set()} method to write the value to the register.
+The response from the cryocooler is then read and reconverted to the original units provided by the user.
+
+\texttt{get\_status()} is similar to the \texttt{get\_data()} method but does not take any arguments for the register.
+Instead, it simply takes the optional paramters for \texttt{convert} and \texttt{in\_kelvin} to convert the status registers to the intended units.
+Get status calls the \texttt{status()} method to read the status registers and then iterates over the \texttt{TELEMETRY} registers specified in the configuration file to match the read values to their \texttt{Reg} objects. 
+For each register, the method will convert the value to the intended units and return a dictionary of the register labels and values.
+
+Finally, we have a \texttt{get\_all()} method which gets every register specified in the configuration file.
+This method is used to get a snapshot of the cryocooler's state and is used for debugging and monitoring the health of the cryocooler during the flight. 
+We first read the status registers using the \texttt{get\_status()} method.
+We then iterate over all registers in the configuration file and read the value of each register
+that wasn't read in the status command.
+This method accepts keyword arguments for \texttt{convert} and \texttt{in\_kelvin} to convert the values to the intended units in the \texttt{get\_status()} and \texttt{get\_data()} methods.
+
+\subsection{\texttt{cryotemp}}
+The \texttt{cryotemp} module wraps the lakeshore package with a \texttt{Lakeshore} class that can be used to read values from a Lakeshore 240. 
+The configuration for the Lakeshore devices is stored in the YAML file that contains the connection parameters for the device.
+On ASTHROS, we have two Lakeshore 240s that are connected to the central command computer via USB.
+The configuration file for the Lakeshore devices is shown in Table \ref{chap2/table:lakeshore_config}.
+
+\begin{table}[h]
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
+        \texttt{ID} & str & Manufacturer ID for the device \\
+        \texttt{NAME} & str & Full name of the device \\
+        \texttt{LABEL} & str & Parameterized name of the device \\
+        \texttt{TYPE} & str & Type of readout for the device (Sensor, Kelvin, Celcius, or Fahrenheit) \\
+        \texttt{CHANNELS} & list & List of channels on the device with the \texttt{NAME} and \texttt{CHANNEL} number of the channel
+    \end{tabularx}
+    \label{chap2/table:lakeshore_config}
+    \caption{Lakeshore Configuration Parameters}
+\end{table}
+
+The \texttt{Lakeshore} class is initialized with one of the Lakeshore configurations from the array of configurations in the YAML file.
+The class then implements three simple methods to read the values from the Lakeshore device.
+\texttt{read\_channel()} and \texttt{read\_index()} are used to read data from the Lakeshore device for a specific channel number or index in the configuration file.
+The \texttt{read\_all()} method reads all channels on the Lakeshore device and stores them in a dictionary with the channel name as the key and the value as the value.
+
+\subsection{\texttt{pressure}}
+The \texttt{pressure} module is used to read data from the pressure sensor on ASTHROS.
+This method is relatively simple as the pressure sensor is a single device connected to the central command computer via RS-485.
+The only configuration needed for the pressure sensor is the connection parameters for the RS-485 connection (\texttt{PORT}, \texttt{BAUD}, and \texttt{READ\_TIMEOUT}).
+The \texttt{Pressure} class is initialized with the connection parameters and implements a \texttt{get\_pressure()} method that reads the pressure from the sensor.
+This method has helper methods to \texttt{write()} and \texttt{readall()} data from the device. 
+As we only have one command to read the pressure from the sensor, we hard code the command in the \texttt{get\_pressure()} method.
+This command is \texttt{@253PR1?;FF} and is sent to the pressure sensor using the \texttt{write()} method.
+We then read the response from the sensor and find the pressure value in the response between the 
+\texttt{ACK} and \texttt{;} characters.
+
+\subsection{RabbitMQ Control Loop}
+
+\section{Motor}
+Behind the antenna is a small stepper motor used to chop between the sky and the internal calibration source.
+This motor is controlled using the intelligent motion systems MDrive Motion Control System \cite{mdrive}.
+The motor is connected to the command computer via a serial RS-485 connection. 
+The MDrive system is a command language used to program and configure the motor.
+While we could use the MDrive software to control the motor, we have implemented a Python interface to control the motor to better integrate with the rest of our architecture. 
+
+The \texttt{motor} package consists of a single \texttt{motor} module that contains the \texttt{Motor} class.
+The \texttt{Motor} class is initialized with a configuration as outlined in Table \ref{chap2/table:motor_config}.
+
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
+        \texttt{CONN} & dict & Connection parameters for the RS-485 connection specifying \texttt{PORT}, \texttt{BAUD}, and \texttt{READ\_TIMEOUT} \\
+        \texttt{HWVARS} & dict & Dictionary of hardware variables for the motor, described in \texttt{set\_hwvars()}\\
+        \texttt{FUNCTIONS} & dict & Dictionary of functions for the motor, described in \texttt{set\_functions()}\\
+    \end{tabularx}
+    \label{chap2/table:motor_config}
+    \caption{Motor Configuration Parameters}
+\end{table}
+
+After initializing the serial connection with the motor, an optional parameter \texttt{reset} can be passed to the \texttt{Motor} class to reset the motor and initiliaze the hardware variables and program functions.
+This is done by running \texttt{reset()} followed by \texttt{set\_hwvars()} and \texttt{set\_functions()}.
+Both of these methods will be explained after discussing the barbones methods for serial communication with the motor.
+
+Like most serial connections thus far, we have implemented \texttt{write()} and \texttt{readall()} methods to write commands and read responses from the motor.
+These are nearly identical to the \texttt{write()} and \texttt{readall()} methods in the \texttt{pressure} module with slight changes to the command and response formats.
+The \texttt{write()} method takes in a command as a string and writes it to the serial buffer.
+It appends a \texttt{CR} character to the end of the command to signify the end of the command before encoding the string to bytes and writing it to the buffer.
+If an optional \texttt{flush} parameter is set to True, the method will flush the input and output buffers before writing the command.
+Also optionally, the \texttt{write()} method can take a \texttt{readwait} parameter that will read the response from the motor after writing the command using the \texttt{readall()} method.
+The \texttt{readall()} method reads the serial buffer until it hits a timeout or stops receiving bytes.
+It then takes the byte array from the read and decodes it to a string.
+
+To reset the motor, we have implemented a \texttt{reset()} method that sends a reset command to the motor.
+This command is simply the string \texttt{\textbackslash x03} which is the ASCII character indicating the end of text.
+This command resets the motor and clears the buffer.
+
+The MDrive system has a set of hardware variables that can be set and read to control the motor.
+\texttt{set\_hwvars()} is a method that initializes the hardware variables for the motor.
+During initialization, we take the \texttt{HWVARS} dictionary from the configuration file and pass that as a paramter to the \texttt{set\_hwvars()} method.
+\texttt{set\_hwvars()} iterates over the dictionary provided and calls \texttt{set\_hwvar()} for each key-value pair.
+\texttt{set\_hwvar()} takes in a key and value and writes the command to set the hardware variable to the motor as simply \texttt{<key> <value>}.
+The reponse for this command is then read and returned.
+The values we define in the \texttt{HWVARS} configuration are shown in Table \ref{chap2/table:motor_hwvars}.
+
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Key} & \textbf{Name} & \textbf{Description} \\ \hline    
+        \texttt{HC} & Hold Current & Current in the motor used to hold it in place after a movement. Entered as an integer percentage of the maximum current.\\
+        \texttt{RC} & Run Current & Current in the motor used to run the motor. Entered as an integer percentage of the maximum current.\\
+        \texttt{VM} & Velocity Maximum & Maximum velocity of the motor in steps per second.\\
+        \texttt{A} & Acceleration & Acceleration of the motor in steps per second squared.\\
+        \texttt{D} & Deceleration & Deceleration of the motor in steps per second squared.
+    \end{tabularx}
+    \label{chap2/table:motor_hwvars}
+    \caption{Motor Hardware Variables}
+\end{table}
+
+The MDrive system supports programming functions that can be called to move the motor.
+In the \texttt{FUNCTIONS} configuration, we define a dictionary of functions that can be called to move the motor.
+The name of each function is the key in the dictionary and the value is a dictionary defining the function.
+Each function has a \texttt{LB} label and \texttt{ADDR} address that maps to a memory label and address location on the motor.
+Finally, the configuration has an array of \texttt{STEPS} that define the commands we would like the motor to execute.
+These steps can be anything from the manual but we primarily use the following for motor movement.
+\begin{itemize}
+    \item \texttt{P <position>} - Position Counter, used to mark the current position of the motor for future movements as a frame of reference
+    \item \texttt{MA <position>} - Move Absolute, used to move the motor to a certain position based on the position counter
+    \item \texttt{MR <steps>} - Move Relative, used to move the motor a certain number of steps relative to its current position 
+    \item \texttt{H} - Hold Program Execution, used to wait for the motor to finish moving 
+\end{itemize}
+
+The \texttt{set\_functions()} method initializes the functions for the motor.
+It iterates over the \texttt{FUNCTIONS} dictionary from the configuration file and calls \texttt{set\_function()} for each key-value pair.
+To program a new function we first write to the motor with a command to enter programming mode at a specific address in memory (\texttt{PG <ADDR>}). 
+From there we write a command to label the current address in memory for future reference ( \texttt{LB <LB>}).
+We then iterate over the steps written in the configuration file and write each step to the motor.
+After all steps are written, we write an \texttt{E} command to indiate to the runtime to End Program Execution.
+Finally, we write a \texttt{PG} to exit the programming mode. 
+For ASTHROS, we have a few pre defined functions we use to interact with the motor. 
+These are shown in Table \ref{chap2/table:motor_functions}.
+
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{l|X}
+        \textbf{Key} & \textbf{Description} \\ \hline    
+        \texttt{INIT} & Initializes the motor by moving it as far in the positive direction as possible until it hits the physical stop, programs that position as 0, and then moves back to the open position.\\
+        \texttt{FLIP} & Flips the motor close then open for debugging \\
+        \texttt{CAL} & Closes the motor so that our detectors are pointed at the calibration source \\
+        \texttt{SKY} & Opens the motor so that our detectors are pointed at the sky \\
+        \texttt{TOGGLE} & Uses conditional branches to toggle between the \texttt{CAL} and \texttt{SKY} functions using our position. If the position is outside of the expected range, the motor will run the \texttt{INIT} function to reset the position.\\
+    \end{tabularx}
+    \label{chap2/table:motor_functions}
+    \caption{Motor Functions}
+\end{table}
+
+To run a function on the motor, we have implemented a \texttt{run\_function()} method that takes in the name of the function to run.
+This name needs to match the key in the \texttt{FUNCTIONS} configuration.
+The method then uses \texttt{write()} to write an execute command with the label of the function to the motor (\texttt{EX <LB>}).
+This echos the function back after writing.  
+After running the function, the method runs a print command to obtain the current position of the motor (\texttt{PR P}).
+The method then returns the name of the command sent, the response from running the function, and the current position of the motor.
+
+Finally, we have a \texttt{status()} method that writes a print all command to the motor to get the status of the motor (\texttt{PR AL}).
+This prints out every register in memory and returns a dictionary of the labels and values of the registers.
+This is useful when debugging functions to ensure that they have been programmed properly. 
+Additionally, the values of the registers can be used to monitor the health of the motor during flight.
+
+\subsection{RabbitMQ Control Loop}
+
+\section{Antenna}
+
+\subsection{RabbitMQ Control Loop}
+
+\section{Power Supply Unit}
+
+\subsection{RabbitMQ Control Loop}
+
+\section{Variable Attenuator}
+
+\subsection{Control Loop}
+
+\section{Housekeeping}
+
+\section{Central Command}
