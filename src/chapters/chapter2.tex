@@ -225,7 +225,7 @@ The format for the global configurations is shown in Table \ref{chap2/table:pmcc
 These configurations are used to set values we don't expect to individually change for each PMCC.
 While we may create different configurations for different experiments, such as integration time and magnitude or power mode, we will likely make these changes to all PMCCs at once and not individually.
 
-\begin{table}[h!]
+\begin{table}[ht!]
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -252,7 +252,7 @@ The only exception to this is the lone 100GHz PMCC connected to its own CM4.
 The wiring for this PMCC is simply the first index in the wiring array will still work with the rest of the system.
 Each item in the wiring configuration is as follows in Table \ref{chap2/table:wiring}.
 
-\begin{table}[h!]
+\begin{table}[ht!]
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -648,7 +648,7 @@ The \texttt{data} dataset is a 2D array with a shape of \texttt{max\_writes} by 
 A header is added to the \texttt{data} dataset and contains the attributes shown in Table \ref{chap2/table:h5_header}.
 After creating the file, we start a counter at 0 to keep track of the number of spectra in the file. 
 
-\begin{table}[h!]
+\begin{table}[ht!]
     \centering
     \begin{tabularx}{\textwidth}{l|X}
         \textbf{Attribute} & \textbf{Description} \\ \hline    
@@ -702,7 +702,7 @@ The pressure sensor is connected to the central command computer via an RS-485 i
 These three systems are split into different modules in the \texttt{cryocool} package.
 
 \subsection{\texttt{cryocool}}
-\begin{table}[h]
+\begin{table}[ht]
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -723,7 +723,7 @@ We then make note of the status registers that are read out when we issue a stat
 After this, we read in the temperature ramp as a pandas dataframe from the \texttt{TEMP\_RAMP} file \citep{reback2020pandas}.
 This file contains points for a calibration curve to convert voltage from the internal temperature sensors to temperature.
 
-\begin{table}[h]
+\begin{table}[ht!]
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -886,7 +886,7 @@ The configuration for the Lakeshore devices is stored in the YAML file that cont
 On ASTHROS, we have two Lakeshore 240s that are connected to the central command computer via USB.
 The configuration file for the Lakeshore devices is shown in Table \ref{chap2/table:lakeshore_config}.
 
-\begin{table}[h]
+\begin{table}[ht!]
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -1138,7 +1138,7 @@ By deafult messages published via MQTT are sent to the \texttt{amq.topic} exchan
 At the end of \texttt{setup()}, we initialize all of the attenuators to 31.75 dB and set the state to \texttt{IDLE}.
 
 The \texttt{loop()} function is the main function that runs the finite state machine.
-On top of the state and system variables, we have array buffers for \textt{addr}, \texttt{attn}, and \texttt{status} to store the address, attenuation value, and status of the current function call. 
+On top of the state and system variables, we have array buffers for \texttt{addr}, \texttt{attn}, and \texttt{status} to store the address, attenuation value, and status of the current function call. 
 There is also a flag for \texttt{single} that is used to indicuate if the current call is for a single channel or all channels.
 
 In the \texttt{IDLE} state, we begin by checking if there is a message available on the serial interface. 
