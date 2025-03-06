@@ -142,7 +142,7 @@ If our transaction is unsuccessful, instead of returning zeroes, we will receive
 For single register reads, the \texttt{xfer()} method sends the TX bytes followed by a dummy word to the PMCC.
 While we are sending the dummy word over the MOSI line, the PMCC is sending the data we requested over the MISO line that is returned by the \texttt{xfer3()} function along with the original TX bytes.
 After checking that we have received data from the PMCC, we return the data as an array of 16-bit words.
-This is done by utilizing NumPy to cast the output as a \texttt{np.uint8} array and then returning a view of that array with big-endian 16-bit unsigned integer data type \cite{numpy}.
+This is done by utilizing NumPy to cast the output as a \texttt{np.uint8} array and then returning a view of that array with big-endian 16-bit unsigned integer data type \citep{numpy}.
 For reads that are longer than a single register, we send the TX bytes followed by a dummy word for each word we want to read and follow the same process as a single register read.
 
 For simple reads, \texttt{PMCC\_SPI} has a \texttt{read()} method that takes the address of the register we want to read from and optionally the number of words we want to read.
@@ -691,7 +691,7 @@ This wrapper also keeps track of the total number of spectra written which is us
 \section{Cryocool}
 ASTHROS uses a closed loop cryocooler to cool the receiver system to 4K during flight.
 The cooler is a low-power, 4-stage, pulse tube refrigerator built by Lockheed Martin Corp. through the NASA Advanced Cryocooler Technology Development Program (ACTDP) for the James Webb Space Telescope (JWST) \citep{olson2005lockheed} \citep{coulter2003nasa}.
-The specific cooler we are using was, fortuitously, a leftover prototype from the ACTDP that was not selected for the JWST mission and can be repurposed for ASTHROS \cite{kawamuraterahertz}.
+The specific cooler we are using was, fortuitously, a leftover prototype from the ACTDP that was not selected for the JWST mission and can be repurposed for ASTHROS \citep{kawamuraterahertz}.
 
 To interface with the cryocooler we have three main components: the cryocooler controller, the temperature sensors, and the pressure sensors.
 All three of these devices are connected to our central command computer. 
@@ -920,7 +920,7 @@ We then read the response from the sensor and find the pressure value in the res
 
 \section{Motor}
 Behind the antenna is a small stepper motor used to chop between the sky and the internal calibration source.
-This motor is controlled using the intelligent motion systems MDrive Motion Control System \cite{mdrive}.
+This motor is controlled using the intelligent motion systems MDrive Motion Control System \citep{mdrive}.
 The motor is connected to the command computer via a serial RS-485 connection. 
 The MDrive system is a command language used to program and configure the motor.
 While we could use the MDrive software to control the motor, we have implemented a Python interface to control the motor to better integrate with the rest of our architecture. 
@@ -1039,9 +1039,155 @@ Additionally, the values of the registers can be used to monitor the health of t
 \subsection{RabbitMQ Control Loop}
 
 \section{Variable Attenuator}
+ASTHROS utilizes a custom built five-stage Intermediate Frequency (IF) Low Noise Amplifier (LNA) in the readout chain to amplify the signal after the mixer in the cryocooler \citep{mathewson2024customizable}.
+Each one of these amplifier stages is housed with a variable attenuator to control the gain of the amplifier \citep{Ricardo}.
+Specifically, we utilize the F1956NBGI8 from Renesas Electronics for adjusting our attenuation levels \citep{Renesas}.
+As this is a standalone device on the system, it is controlled by it's own Arduino Nano Every microcontroller and interacts with the rest of system as a networked device using MQTT (Message Queuing Telemetry Transport) \citep{mqtt}.
+Each Arduino Nano Every is configured to control up to 8 variable attenuators.
+Each IF slice has a separate variable attenuator to control the gain of the amplifier.
+The F1956NBGI8 is set using eight digital channels that can be used to set the attenuation level.
+A PCA9571 is used as an I$^2$C I/O expander to control the digital channels on the F1956NBGI8 \cite{pca9571}.
+These expanders all have the same address of \texttt{0b0100101X} where \texttt{X} is the read/write bit. 
+Because of this, we utilize an LTC4305 to multiplex the I$^2$C bus to provide each PCA9571 with a unique address \cite{ltc4305}.
+Each multiplexer is set with a unique address utilizing hardware dip switches on the board.
+For the sake of simplicity, these multiplexers are given indexed addresses starting at 0 based on their position in the stack of slices. 
 
-\subsection{Control Loop}
+\subsection{Amplifier Control Library}
+To control the variable attenuator, we developed a C++ library, \texttt{if\_amp} that can be used in our Arduino sketches.
+The \texttt{if\_amp} library is a simple library that utilizes the \texttt{Wire} library to provide intuitive functions to control multiple variable attenuators.
+The most barebones function in \texttt{if\_amp} is the \texttt{rw\_pca()} function.
+This function takes in the address of a multiplexer, a pointer to an attenuation value, and a read/write bit.
+The sequence of commands to write to the expander is as follows:
+\begin{enumerate}
+    \item Start a transmission to the multiplexer's address.
+    \item Write a value to the multiplexer indicating to act as a repeater for the next transmission.
+    \item End transmission to the multiplexer.
+    \item If we are writing to the expander,
+    \begin{enumerate}
+        \item Start a transmission to the expander's address.
+        \item Write the value at the pointer to the expander.
+        \item End transmission to the expander.
+    \end{enumerate}
+    \item If we are reading from the expander,
+    \begin{enumerate}
+        \item Send a request for data to the expander.
+        \item Read the data from the expander.
+        \item Save the data to the pointer.
+        \item End transmission to the expander.
+    \end{enumerate}
+    \item Start a transmission to the multiplexer's address.
+    \item Write a value to the multiplexer indicating to stop repeating transmissions.
+    \item End transmission to the multiplexer.
+\end{enumerate}
+At multiple points during this sequence, end transmission may produce an error. 
+If that is the case, we return the status of the error.
+If the sequence completes successfully, we return 0.
+These errors are handlded by the user-facing functions in the \texttt{if\_amp} library.
 
+To build off of the \texttt{rw\_pca} function, we have implemented a few helper functions that can be used in the final, user-facing functions.
+\texttt{convert\_addr()} and \texttt{convert\_attn()} are used to convert the addresses and attenuation values to the correct format for the \texttt{rw\_pca()} function.
+\texttt{convert\_addr()} takes in the index for an IF slice and converts it to the address for the multiplexer by formatting it as \texttt{0b11XXXXX} where \texttt{XXXXX} is the index in binary.
+\texttt{convert\_attn()} takes in an attenuation value between 0 and 31.75 and converts it to a value between 0 and 255.
+The attenuator can only be set in 0.25 dB steps so we multiply the input by 4 and round to the nearest integer.
+Conversely, \texttt{convert\_attn\_back()} is a function that takes in the value from the expander and converts it back to the attenuation value by dividing the value by 4.
+Finally, \texttt{check\_addr()} and \texttt{check\_attn()} are helper functions to verify a given address or attenuation value is valid.
+
+The user-facing functions in the \texttt{if\_amp} library are \texttt{set\_attn()} and \texttt{get\_attn()} functions.
+In both cases, the function takes in the index of the IF slice and either the attenuation value to set or a pointer to store the read attenuation value.
+The address and, if necessary, the attenuation value are checked and converted to the correct format.
+Both functions then call the \texttt{rw\_pca()} function to write or read the value from the expander, specifying the read/write bit as necessary.
+Finally, both functions return the status of the function call, which is nonzero for any error that may occur from invalid input or a failed transmission.
+A listing of all the possible errors can be found in Appendix \ref{app:if_amp_errors}.
+
+\subsection{Arduino Control Loop}
+\begin{figure}
+    \centering
+    \includegraphics[width=.8\textwidth]{figs/2/FSM_IF.png}
+    \caption[Finite State Machine for the IF Amplifier Control Loop]{Finite State Machine for the IF Amplifier Control Loop. Each state shows the current step in the process followed by the system that requested the action.}
+    \label{chap2/fig:if_amp_fsm}
+\end{figure}
+
+For the Arduino control loop, we have implemented multiple ways to interact with the device using the \texttt{if\_amp} library.
+For flight, we will be using the MQTT protocol to send messages to the Arduino to set the attenuation values and read the current attenuation values.
+For testing, we have implemented both a simple serial interface. 
+A web interface was also developed to control the attenuators using a web browser but was later removed to save on memory. 
+Including the web interface adds additional static memory usage to the Arduino Nano Every in the form of large HTML strings.
+
+The structure for the Arduino control loop is a fininte state machine that keeps track of the current request and which system requested it.
+Figure \ref{chap2/fig:if_amp_fsm} shows the state diagram for the finite state machine.
+
+The system starts with \texttt{setup()} which initliaizes all of the hardware interfaces and sets our initial state to \texttt{IDLE}.
+Within \texttt{setup()}, we start our serial interface and initialize the I$^2$C bus.
+Because of a hardware issue on the Printed Circuit Board (PCB), the \texttt{Wire} library needs to be patched to include timeouts on the I$^2$C bus.
+This is because of a hardware issue where the Arduino has power but the rest of the system is off.
+In this scenario, there is a floating voltage on the I$^2$C bus that causes the \texttt{Wire} library to hang indefinitely.
+The patched \texttt{Wire} library has a new \texttt{setTimoout()} method that sets a timeout for the I$^2$C bus to prevent this from happening.
+
+After setting up serial and I$^2$C, teh system sets up our Ethernet and MQTT connections.
+For Ethernet, we are using the W5500 Ethernet shield from Wiznet \cite{w5500}.
+This shield is connected to the Arduino using SPI and enables us to connect the Arduino to the rest of the readout network. 
+To setup the networking, we give the Arduino a unique MAC address and a static IP address.
+On ASTHROS, we have two of these systems so we provide them with addresses based on their hardcoded ID. 
+In the case that the Arduino is not connected to the network, the system will continue to run but will only accept messages from the serial interface.
+After setting up the Ethernet connection, we setup a client to connect to the MQTT broker.
+This client takes the IP address of the broker and the port to connect to and attaches a callback function to handle incoming messages.
+We then attempt a connection to the broker through the client using the name of our device and an account on our RabbitMQ server setup for handling MQTT requests.
+Once connected, we subscribe to the \texttt{mqtt/comm/<ID>} topic where \texttt{<ID>} is the ID of the Arduino.
+While AMQP and MQTT are different protocols, RabbitMQ has a plugin to handle MQTT messages and route them to the correct AMQP exchange.
+By deafult messages published via MQTT are sent to the \texttt{amq.topic} exchange with the MQTT topic as the routing key, replacing the forward slashes with periods.
+At the end of \texttt{setup()}, we initialize all of the attenuators to 31.75 dB and set the state to \texttt{IDLE}.
+
+The \texttt{loop()} function is the main function that runs the finite state machine.
+On top of the state and system variables, we have array buffers for \textt{addr}, \texttt{attn}, and \texttt{status} to store the address, attenuation value, and status of the current function call. 
+There is also a flag for \texttt{single} that is used to indicuate if the current call is for a single channel or all channels.
+
+In the \texttt{IDLE} state, we begin by checking if there is a message available on the serial interface. 
+Using the \texttt{StaticSerialCommands} library, we can parse messages and call the appropriate callback function. 
+Available commands are \texttt{w <addr> <attn>}, \texttt{wa <attn>}, \texttt{r <addr>}, and \texttt{ra} for writing and reading a single channel or all channels.
+These commands do not actually execute the function but instead set the state to \texttt{WRITE} or \texttt{READ} with the appropriate address, attenuation value, and single flag.
+We also set the system to \texttt{CONSOLE} to indicate that the serial interface requested the action.
+In the case of a single channel operation, the first index of \texttt{addr} and \texttt{attn} are used. 
+If the command is not recognized, an error message is sent back to the serial interface and we stay in the \texttt{IDLE} state.
+
+If there are no commands waiting in the buffer and we are connected to the MQTT broker, we check for incoming messages.
+If there is a message, we parse the message and set the state to \texttt{WRITE} or \texttt{READ} with the appropriate address, attenuation value, and single flag.
+Messages from the MQTT broker are JSON strings with a \texttt{cmd} key that specifies the command and \texttt{addr} and \texttt{attn} keys that specify the address and attenuation value.
+Additionally, we record the \texttt{routing\_ID} of the message in order to respond directly to the sender.
+MQTT does not support direct addressing so we workaround this by sending a message to the topic exchange with the \texttt{routing\_ID} as the route. 
+Whomever sends the request will need to subscribe to the \texttt{mqtt/comm/<routing\_ID>} topic to receive the response.
+
+In the \texttt{READ} state, we call the \texttt{read()} command which begins a read operation on the Arduino. 
+\texttt{read()} iterates over either all of the channels or just the first index and calls \texttt{single\_read()}.
+The \texttt{single\_read()} function calls the \texttt{set\_attn()} function from the \texttt{if\_amp} library with the address and a pointer to the attenuation value.
+We then store the status of the \texttt{set\_attn()} call in the corresponding index of \texttt{status}.
+There is an error offset parameter that is used to add an offset to the status in case of errors.
+This is used later in \texttt{single\_write()} to differenate between an error in writing and reading back the value. 
+After reading all of the specified channels, we set the state to \texttt{RESPOND}.
+
+In the \texttt{WRITE} state, we call the \texttt{write()} command which begins a write operation on the Arduino.
+\texttt{write()} iterates over either all of the channels or just the first index and calls \texttt{single\_write()}.
+\texttt{single\_write()} calls the \texttt{set\_attn()} function from the \texttt{if\_amp} library with the address and the attenuation value and saves the status. 
+If the status is nonzero, we set the corresponding index in the attenuation buffer to -1 to indicate an error.
+If not, we perform a \texttt{single\_read()} with an offset of 100 to indicate any errors in reading back the value came from the read operation. 
+
+After either a read or write operation, the system ends up in the \texttt{RESPOND} state.
+In this state, we check the system variable to see who requested the operation.
+If the system is \texttt{CONSOLE}, we print out the status, attenuation, and address of either the single channel or all channels.
+If the system is \texttt{MQTT}, we package the status, attenuation, and address into a JSON string and publish to the MQTT broker with the \texttt{mqtt/comm/<routing\_ID>} topic.
+In either case, after sending the response, we clear the three buffers and set our state back to \texttt{IDLE}.
+
+The firmware also has a few extra features to help configure the system.
+The console also accepts an \texttt{mqtt} command that enables or disables the MQTT interface.
+This is useful as, if the system is not connected to the network, the MQTT interface will continually try to connect and fail.
+At a predefeined interval, the system will publish a message to the \texttt{mqtt/comm/<ID>} topic with the status of the system.
+This is integrated into our state machine while checking for MQTT message by comparing the last time we published a status message with the current clock time and setting the state to \texttt{READ} and system to \texttt{MQTT} if the time has elapsed.
+This read will read all channels and have an additional flag, \texttt{mqttStatus} that is checked in the \texttt{RESPOND} state to publish the status message to the MQTT broker with the \texttt{mqtt/comm/<ID>} topic instead of the routing ID.
+
+There are also some quriks to the system that we attempt to mitigate in the firmware.
+In addition to the I$^2$C bus issue, there is a hardware issue where the Ethernet shield will not initialize properly if the IF slices are powered on before the Arduino. 
+In this case, we have a \texttt{pulseReset()} function that pulses the reset pin on the Ethernet shield to reset the shield and attempt to initialize the connection.
+This occurs because power will leak through the SPI bus and partially power the shield.
+When the system is fully on, the shield has an incorrect reference voltage and will not initialize properly during \texttt{setup()}.
 \section{Housekeeping}
 
 \section{Central Command}
