@@ -1,0 +1,1 @@
+{"rule":"A_INSTALL","sentence":"^\\QFrom a fresh install of Raspberry Pi OS, we need to install the necessary packages to run the readout system.\\E$"}

@@ -2,9 +2,12 @@
 ASTHROS, the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths, is a balloon-borne observatory designed to study the universe in the submillimeter wavelength range.
 The readout system is responsible for controlling the detectors, reading out the data, and storing the data on a solid state drive.
 The readout system is designed to be modular and scalable, allowing for easy integration of new detectors and readout systems.
-Each module is designed to be self-contained, focusing on a single device in the readout system so that changes to the hardware can be made without affecting the rest of the system.
+Each package is designed to be self-contained, focusing on a single device in the readout system, so that changes to the hardware can be made without affecting the rest of the system.
 
 \section{Network Architecture}
+\subsection{Command}
+\subsection{Storage}
+\subsection{Analysis}
 \subsection{Raspberry Pi Compute Module 4}
 From a fresh install of Raspberry Pi OS, we need to install the necessary packages to run the readout system.
 The first step is to enable Secure Shell (SSH) so that we can remotely access the Raspberry Pi.
@@ -85,6 +88,8 @@ Finally, we need to edit the hosts file on the CM4 to ensure that we can access 
 This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{chap2/appendix:hosts}.
 
 \section{RabbitMQ and RMQTools}
+\label{chap2/section:rmqtools}
+
 
 \section{PMCC}
 For ASTHROS, we utilize an array of 4GHz spectrometers called the PMCC ASIC P19800B ASIC RF Spectrometer, henceforth referred to as the PMCC.
@@ -1013,7 +1018,7 @@ These are shown in Table \ref{chap2/table:motor_functions}.
         \texttt{TOGGLE} & Uses conditional branches to toggle between the \texttt{CAL} and \texttt{SKY} functions using our position. If the position is outside of the expected range, the motor will run the \texttt{INIT} function to reset the position.\\
     \end{tabularx}
     \label{chap2/table:motor_functions}
-    \caption{Motor Functions}
+    \caption{User Programmed Motor Functions}
 \end{table}
 
 To run a function on the motor, we have implemented a \texttt{run\_function()} method that takes in the name of the function to run.
@@ -1031,6 +1036,78 @@ Additionally, the values of the registers can be used to monitor the health of t
 \subsection{RabbitMQ Control Loop}
 
 \section{Antenna}
+ASTHROS flys with a 2.5m diameter antenna to collect far-infared light. 
+The antenna and the structure surrounding it have built in heaters and temperature sensors to ensure the antenna is at the correct temperature during flight.
+Additionally the secondary hexapod mirror is affixed above the antenna and can be moved to adjust the focus of the telescope.
+The antenna and hexapod are controlled by an on board computer embedded in the structure of the telescope.
+This computer is connected directly to the central command computer via RS-485 as well as broadly to the rest of the system via Ethernet through the readout network.
+
+The \texttt{antenna} package includes the \texttt{antenna} module that contains the \texttt{Antenna} class which is used for all communication with the computer controlling the antenna.
+The \texttt{Antenna} class is initialized with a configuration file that contains the connection parameters for the RS-485 connection as well as a path to a YAML file that contains the register configuration for the antenna.
+This YAML file outlines the reigsters on the antenna as shown in Table \ref{chap2/table:antenna_regs}.
+
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
+        \texttt{INFO} & str & Description of the register \\
+        \texttt{FIELDS} & list & List of the fields contained in the register \\
+        \texttt{STRUCT} & str & Struct format string for the register to split into fields \\
+        \texttt{R} & int & Register read address (optional for write only addresses)\\
+        \texttt{W} & int & Register write address (optional for read only addresses)\\
+    \end{tabularx}
+    \label{chap2/table:antenna_regs}
+    \caption{Antenna Register Configuration Parameters for a Single Register}
+\end{table}
+
+At the bottom of the YAML file are arrays for \texttt{ALARMS} and \texttt{NACK} errors. 
+In the case that we recieve an error from the antenna, we can check the error code against the \texttt{ALARMS} and \texttt{NACK} arrays to determine the error.
+
+For communication with the antenna, our most barebones method is the \texttt{decode\_read()} method which reads whatever is in the serial buffer and returns the byte array.
+It accomplishes this by reading the first four bytes of the buffer to determine the length of the message in the header. 
+It then reads the message from the buffer plus the checksum and returns the header plus the message as a byte array.
+This method is used primarily in \texttt{command()} which is used to send read and write commands to the antenna.
+This method takes a \texttt{message\_id}, \texttt{payload} and \texttt{encoding} for the payload.
+The payload is a dictionary matching the \texttt{FIELDS} in the register configuration file for writes. 
+The method then uses \texttt{encode\_frame()} to encode the message and add the checksum.
+If any of the data in the payload is in the wrong format, we cast it to the correct format based on the encoding using \texttt{fix\_payload()}.
+For the checksum, the antenna utilizes a CRC-16 CCITT checksum with a precomputed lookup table computed table \cite{koopman2004cyclic}.
+The process for calculating the checksum is as follows:
+\begin{enumerate}
+    \item Initialize the checksum to 0xFFFF.
+    \item For each \texttt{byte} in the message, use the following equation:
+    \begin{equation}
+        \texttt{crc = ((crc < < 8 ) XOR table[(crc > > 8 ) XOR byte])}
+    \end{equation}
+    \item To keep the checksum as a 16 bit integer, mask the checksum with \texttt{0xFFFF}.
+    \item After iterating through all the bytes in the message, the checksum is the final value.
+\end{enumerate}
+After a request byte array is created, the method writes the request using the serial buffer and then uses \texttt{decode\_read()} to read the response from the antenna.
+Similar to \texttt{encode\_frame()} we have a decode frame that takes in a byte array and the encoding for the payload.
+During decoding, we check the checksum of the message and return the payload if the checksum is correct.
+In the case of an error from the antenna, we unpack the message as bytes and return the error message.
+
+With \texttt{command()} in place, we have implemented the user facing methods for the \texttt{Antenna} class.
+These methods are \texttt{read\_reg()}, \texttt{read\_all()}, \texttt{write\_reg()} and \texttt{read\_write\_reg()}.
+\texttt{read\_reg()} takes in a register label and reads the register from the antenna.
+It checks if the register has a read address and then calls \texttt{command()} to read the register.
+We then map the fields in the register to the values in the response and return 0 and a dictionary of the fields and values.
+If the message is an error, we check the error against the \texttt{NACK} table and return 1 and the error message.
+\texttt{read\_all()} simply iterates over all of the registers in the configuration file, checks if the register has a read address, and then runs \texttt{read\_reg()}.
+
+\texttt{write\_reg()} is used to write to a register on the antenna.
+The method takes in a register label and fields as keyword arguments (\texttt{kwargs}) to write to the register.
+After checking that the label exists and the register has a write address, the method creates a payload dictionary. 
+First, we check if the \texttt{default}  was passed to the method, giving us a default value for any fields not passed.
+Then we iterate through all of the fields in the register, checking if they're in the fields passed to the method and adding them to the payload.
+If a field is missing from the \texttt{kwargs} it will be set to the default value if provided or raise an exception. 
+Once the payload is created, we call the \texttt{command()} method to write the register and return the response or error message if necessary. 
+
+Finally, \texttt{read\_write\_reg()} is used to read and write to a register on the antenna.
+This is primariliy used to make changes to a specific field in a register without changing the other fields.
+The method takes in a register label and \texttt{kwargs} for any fields to write to the register.
+The method first reads the register using \texttt{read\_reg()} and then updates the fields in the register with the fields passed to the method.
+After updating the fields, the method calls \texttt{write\_reg()} to write the register back to the antenna, returning the response. 
 
 \subsection{RabbitMQ Control Loop}
 

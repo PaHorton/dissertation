@@ -212,7 +212,7 @@ This makes the Statistical Threshold method faster than PCA in every experiment 
 As for performance, both methods are over-sensitive to false positives.
 The PCA method found less groupings than the statistical thresholding method but many of the omitted locations are false negatives.
 We chose to use two principal components as any higher numbers of components would have fit to jumps in the ramp and caused lower errors.
-Two components also gives us an overall shape that matches a typical ramp and explains most of the variance of the exposure's ramps without over fitting to the curve as shown in in Figure \label{chap5/fig:elbow}.
+Two components also gives us an overall shape that matches a typical ramp and explains most of the variance of the exposure's ramps without over fitting to the curve as shown in Figure \ref{chap5/fig:elbow}.
 This false negative rate varies from exposure to exposure but ranged from 65 to 80\% missed anomalies. 
 Despite being overly sensitive to any jump in the ramp, the statistical thresholding method is preferred here due to it's higher accuracy and lower runtime.
 This method had a false negative rate of 10\% across the entire labeled dataset of over 5000 hand labeled events. 
