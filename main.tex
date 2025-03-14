@@ -59,7 +59,7 @@
   {Dissertation}                        %<Enter the type of document (capitalized)
 \newcommand*{\degreename}
   {Doctor of Philosophy}                %<Enter the type of degree (capitalized)
-\newcommand*\defdate{June 2024}        %<Give month (written out fully) and year of
+\newcommand*\defdate{May 2025}        %<Give month (written out fully) and year of
                                         %   the oral defense
 \listadd{\committeechair}{Chris Groppi}   %<Enter committee chair name; use \listadd for
 \listadd{\committeechair}{Jim Bell}%   for additional names
@@ -71,7 +71,7 @@
 
 \newcommand*{\gradmonth}{August}         %<Enter the graduation date; month can only be:
                                         %  May, August, or December
-\newcommand*{\gradyear}{2024}           %<Enter the graduation year, e.g. 2014
+\newcommand*{\gradyear}{2025}           %<Enter the graduation year, e.g. 2014
 
 \listadd{\keywords}{keyword 1}          %<Enter keywords; use \listadd for
 \listadd{\keywords}{keyword 2}          %   additional names (up to 6)
@@ -956,7 +956,7 @@
  %pdfproducer={},                       % Let 'pdfproducer' be filled automatically
   pdfsubject={\pdfsummary},             % Subject of the document
   pdfkeywords=\thepdfkeywordsstring,    % List of keywords
-  hidelinks={true},                     % Links look like regular text (no colors, boxes)
+  hidelinks,                            % Links look like regular text (no colors, boxes)
   breaklinks={true},                    % Allow links to break across lines
 }
 \ifxetex                                % If processing with XeTeX
@@ -1174,7 +1174,6 @@
 \include{src/chapters/chapter3}
 \include{src/chapters/chapter4}
 \include{src/chapters/chapter5}
-%\include{chapter3}% etc.
                                         % Heading commands (in descending order):
                                         % \chapter
                                         % \section

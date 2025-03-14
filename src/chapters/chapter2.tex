@@ -85,7 +85,7 @@ This is done by running the following command:
 This will install all the necessary packages to run the \texttt{PyMCC} package.
 
 Finally, we need to edit the hosts file on the CM4 to ensure that we can access the other devices on the readout network by name.
-This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{chap2/appendix:hosts}.
+This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{chap2/app:hosts}.
 
 \section{RabbitMQ and RMQTools}
 \label{chap2/section:rmqtools}
@@ -1174,7 +1174,7 @@ In both cases, the function takes in the index of the IF slice and either the at
 The address and, if necessary, the attenuation value are checked and converted to the correct format.
 Both functions then call the \texttt{rw\_pca()} function to write or read the value from the expander, specifying the read/write bit as necessary.
 Finally, both functions return the status of the function call, which is nonzero for any error that may occur from invalid input or a failed transmission.
-A listing of all the possible errors can be found in Appendix \ref{app:if_amp_errors}.
+A listing of all the possible errors can be found in Appendix \ref{chap2/app:if_amp_errors}.
 
 \subsection{Arduino Control Loop}
 \begin{figure}
