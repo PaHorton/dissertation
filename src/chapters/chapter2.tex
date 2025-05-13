@@ -4,10 +4,16 @@ The readout system is responsible for controlling the detectors, reading out the
 The readout system is designed to be modular and scalable, allowing for easy integration of new detectors and readout systems.
 Each package is designed to be self-contained, focusing on a single device in the readout system, so that changes to the hardware can be made without affecting the rest of the system.
 
+TODO:
+
 \section{Network Architecture}
+TODO:
 \subsection{Command}
+TODO:
 \subsection{Storage}
+TODO:
 \subsection{Analysis}
+TODO:
 \subsection{Raspberry Pi Compute Module 4}
 From a fresh install of Raspberry Pi OS, we need to install the necessary packages to run the readout system.
 The first step is to enable Secure Shell (SSH) so that we can remotely access the Raspberry Pi.
@@ -87,9 +93,133 @@ This will install all the necessary packages to run the \texttt{PyMCC} package.
 Finally, we need to edit the hosts file on the CM4 to ensure that we can access the other devices on the readout network by name.
 This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{chap2/app:hosts}.
 
-\section{RabbitMQ and RMQTools}
+\section{RabbitMQ}
 \label{chap2/section:rmqtools}
+The ASTHROS readout system relies on RabbitMQ to communicate between different devices and systems on the readout network.
+Past ballooning missions, such as BLAST-TNG, utilize sockets to communicate between systems \citep{gordon2019highly}.
+The resulting network of sockets across multiple devices becomes difficult to manage and debug as many of the definitions for the sockets are hard coded into the software.
+Devices in such a system often use User Datagram Protocol (UDP) to broadcast messages across the network.
+This approach requires each device to listen for messages on a specific port and parse the messages to determine if they are intended for that device.
+For systems that require multiple devices to communicate with each other, this can become cumbersome as each device must be aware of the other devices on the network and the ports they are listening on.
+Additionally, UDP is a connectionless protocol, meaning that there is no guarantee that a message will be received by the intended recipient.
+To work around this, some ballooning readout systems would be built as a single monolithic program that orchestrates all the devices on the network \citep{gordon2019highly}.
+This approach is not scalable and makes it difficult to debug and maintain the system.
 
+For ASTHROS, we wanted to build a system that was modular, consisting of microservices that can easily be integrated into the rest of the system using a shared protocol.
+To accomplish this, we needed to decouple the devices in a way that data production and consumption are separated.
+Services that produce housekeeping data are not concerned with who needs the data, and services that consume housekeeping data are not concerned with where the data comes from, simply how the data is formatted. 
+This is where a message broker like RabbitMQ comes in.
+RabbitMQ is an open-source Advances Messaging Queue Protocol (AMQP) implementation that serves as a broker for incoming and outgoing messages by routing messages to bound destination queues located on an exchange \citep{dunne2018comparison}.
+We chose RabbitMQ because of the centralized message broker architecture that allows for easy integration of new devices and services \citep{toshev2015learning}.
+All of our devices are networked together, making a centralized message broker the ideal solution for our readout system.
+
+The core of RabbitMQ is explained on the documentation as well as \cite{toshev2015learning}.
+We like to use a post office analogy to explain how RabbitMQ works.
+Within RabbitMQ are three main components: producers, queues, and consumers. 
+Producers are the senders of a message, which is analogous to a person sending a letter.
+In our case a message is any binary of blob of data, but we typically use JSON formatted strings.
+When a producer sends a message, it addresses the message with a routing key.
+A queue is similar to a mailbox where letters are stored until they are picked up by the recipient.
+The recipient of the message is the consumer, who retrieves the message from the queue.
+Just like a normal mailbox, a queue can have multiple producers sending data to it and multiple consumers who can try and read the data.
+
+In all of this, the message broker is the post office and postal workers.
+When a producer makes a message, it hands it to the post office to be delivered to all who need it.
+This is done using the routing key that specifies the queue the message should be delivered to.
+The post office then takes the message and delivers it to the correct mailbox. 
+When a consumer is ready to read a message, it checks its mailbox for any messages and reads them.
+If the consumer is not ready to read the message, the message stays in the mailbox until the consumer is ready.
+
+Behind the scenes, there is a fourth concept important to RabbitMQ: exchanges.
+Exchanges are the post office's sorting facility.
+Typically, producers are not typically sending messages directly to queues. 
+Instead, they publish messages to an exchange with a specific routing key.
+When a queue is made, it can be bound to an exchange with routing keys.
+If the routing key of the messages matches one of the routing keys bound to the queue, the message is delivered to that queue.
+Routing keys can be wildcards, allowing queues to subscribe to specific types of messages. 
+For ASTHROS, we follow the format of \texttt{<type>.<device>.<subtype>} for our routing keys.
+For example, a housekeeping value from temperature sensors on PSU 4 would be \texttt{housekeeping.temp.4}.
+This allows a queue to be bound broadly to a specific type of message, such as \texttt{housekeeping.*.*} to receive all housekeeping messages or \texttt{*.temp.*} to receive all temperature messages.
+For systems that have multiple devices, this allows us to easily ingest all data from those devices without having to know the specific routing keys for each device.
+
+\subsection{RMQTools}
+While RabbitMQ serves as a powerful backbone for our networking infrastructure, we needed to develop a way to wrap our devices in ways that will communicate with the RabbitMQ server.
+To accomplish this, we developed a Python package called \texttt{RMQTools} that provides a simple interface for creating both publisher to subscriber systems as well as Remote Procedure Call (RPC) frameworks.
+At its core is the \texttt{RmqConnection} class that wraps the \texttt{pika} library to add additional functionality and simplify the process of creating a RabbitMQ connection \citep{pika}.
+Pika is a single threaded RabbitMQ client library in python that provides an implementation of the AMQP protocol.
+Many of our modules will require threading as we will often have a main thread running processes on the hardware while a second thread is running the RabbitMQ connection making it difficult to use the \texttt{pika} library directly.
+\texttt{RmqConnection} handles this threading by allowing us to create a connection to the RabbitMQ server and run the connection in a separate thread from the main thread.
+
+As a simple example of publisher to subscriber systems, we instantiate the \texttt{RmqConnection} class as an \texttt{rmq} object with the RabbitMQ server address and port as well as the username and password for the server.
+We can then use \texttt{@rmq.set\_status\_exchange(name)} to specify which status exchange we will be using. 
+These are done for on both the publisher and subscriber side, ensuring that both are using the same server and exchange. 
+Now that we have configured the setup, we can implement a publisher.
+This is done using the \texttt{@rmq.publish\_status(interval, routing\_key)} decorator around a function that returns a dictionary.
+This creates a new threading object that will run the function at the specified interval and publish the status to the RabbitMQ server.
+This is accomplished by creating a new thread that creates a connection to the RabbitMQ server, sets the exchange, and creates a \texttt{Publisher} with the specified routing key.
+Then the function is run at the specified interval and the resulting dictionary is published to the RabbitMQ server.
+
+The subscriber is also implemented using a decorator, \texttt{@rmq.subscribe\_status( queue\_name, routing\_key(s))}.
+The wrapped function must take four arguments; the channel, the method, the properties, and the body.
+For the most part, the channel, method, and properties are not used by the callback function but are useful when debugging received messages or differentiating between multiple routing keys.
+Body is the actual method that is received from the RabbitMQ server in the form of a JSON string. 
+The decorator wrapped callback function can then process the message in whatever way it needs to.
+
+For RPC executions, we've implemented a similar system using the \texttt{RmqConnection} class.
+On the server side of the RPQ call, we create a new \texttt{RmqConnection} object and set the command exchange using \texttt{rmq.set\_command\_exchange(name)}.
+After this is done, we can use the decorator \texttt{@rmq.handle\_commnd(queue\_name)} to wrap a function that we want to be called when a command is received.
+This command receives the positional and keyword arguments from the RPC execution and returns a \texttt{ResponseObject} with the result of the function.
+The \texttt{ResponseObject} is a simple class that contains args and kwargs attributes that are used to send the response back to the caller.
+The client of the RPC execution uses the decorators \texttt{@rmq.send\_command(command\_id, queue\_name)} and \texttt{@rmq.handle\_response(command\_id)}.
+This works well for threaded applications as the decorated function will run in a separate thread from the main thread once all threads are started. 
+When the thread is started and the command is sent and executed, the decorated \texttt{handle\_response()} corresponding to the \texttt{command\_id} will be called to handle the response.
+For most of our use cases, we would like to be able to control when these commands are sent so we often times use the back end \texttt{\_send\_command()} helper function to manually send the command to the RabbitMQ server.
+This works similar to the decorator's use of \texttt{@rmq.handle\_response()} decorated functions to handle responses but instead of starting a thread to send the command, we simply call the \texttt{rmq.\_send\_command()} function with a lambda function that creates the \texttt{ResponseObject} for the specific command we want to send.
+This is useful for sending commands across the server from a centralized application that interfaces with the ground control system.
+In addition to \texttt{handle\_response}, we also can implement \texttt{handle\_error()} and \texttt{handle\_timeout()} to handle errors and timeouts from the RPC execution.
+These are useful for creating workflows that require an error or timeout response to be handled differently by the system, such as sending a warning to the ground control system that the command failed or timed out.
+
+\subsection{Hardware Locks}
+While not specific to RabbitMQ, as a result of the threading model we use, we need to implement a way to lockout commands from being sent to hardware while the hardware is being used by another thread. 
+This can occur when a publisher thread is collecting data to send a status update at the same time a command is being sent through an RPC execution.
+This is to prevent conflicts on the serial or SPI bus when two threads are trying to send bytes to the same device at the same time.
+In addition to protecting the device, we also need to ensure that high prioity commands, like user executions, are not blocked by low priority commands, such as sending a status update.
+To accomplish this, we created a simple priority lock system that allows us to create a lock object that we can then use to decorate functions that may be called at the same time.
+
+As we could not find a suitable implementation of a priority lock in Python, we created our own.
+\cite{prioritylock} of StackOverflow proposed the theory behind this lock and we implemented and modified it to fit our needs.
+To start, we create a \texttt{PriorityLock} object that takes a default timeout length and a number of priority levels.
+In initialization, we create a boolean, \texttt{data\_free} to determine if the data is free, a lock object using the \texttt{threading} library, and an array of \texttt{Queue} objects whose length is equal to the number of priority levels.
+This lock object is not used to protect the hardware but instead used to protect modification of the Queues and the \texttt{data\_free} boolean.
+When a function is decorated with \texttt{PriorityLock.with\_lock()}, the function will not execute until the \texttt{PriorityLock} is acquired.
+The decorator takes in the priority level of the function, a timeout length, and optional arguments for return values in case of a timeout or reject. 
+When a decorated function is called, the decorator calls \texttt{request\_access(priority)} with the priority level of the function.
+\texttt{request\_access()} first checks if the requesting priority level is less than the minimum priority level of the \texttt{PriorityLock}.
+\texttt{set\_min\_priority()} can adjust the minimum priority level of the \texttt{PriorityLock} to stop lower priority functions from executing.
+This is useful during critical operations when we want to stop functions like status calls from executing.
+If the rejecting priority level is less than the current minimum priority level, we return \texttt{False}, which will result in the decorated function returning the reject value.
+We now acquire the queue lock and check \texttt{data\_free} to see if there is another thread using the resource. 
+If the resource is free, we set \texttt{data\_free} to \texttt{False} and return \texttt{True} to the decorator.
+If the resource is not free, we create a new \texttt{Event} object and put it to the queue of the requesting priority level.
+We then return the \texttt{Event} object to the decorator.
+Regardless of what we return, we release the queue lock at the end of the function.
+
+Once the result of \texttt{request\_access()} is returned to the decorator, perform any necessary waiting before executing the function.
+If the result was an \texttt{Event} object, we wait for the event to be set, using either the default timeout or the timeout specified in the decorator. 
+If the timeout is reached, we run \texttt{remove\_event()} to remove the event from the queue and return the timeout value as the result of the decorated function.
+\texttt{remove\_event()} needs to be a bit more complex than simply removing the event from the queue in order to ensure that the queue doesn't change while we are removing the event.
+With the queue lock acquired, we create a new queue object and iterate through the queue of events in the requesting priority level.
+We put all events that are not the one we are removing into the new queue, skipping the event we are removing. 
+Once we are done populating the new queue, we replace the old queue in the array with the new one and release the queue lock.
+
+After we're done waiting for the event to be set, we can finally execute the decorated function to obtain our result.
+As a final step, we run \texttt{release\_lock()} to release the \texttt{PriorityLock} before returning the result.
+This is vital as it accounts for any additional calls that may have been made while we were waiting for the function to execute.
+\texttt{release\_lock()} obtains the queue lock and iterates through the array of queues in reverse order to check the high priority queues first.
+If there are any events in the queue, we get the most recent event, set it, and return.
+If there are no events in the queue, we set \texttt{data\_free} to \texttt{True} and return.
+This allows us to have multiple threads waiting for the same resource and ensures that the highest priority thread is executed first.
+Because we run \texttt{release\_lock()} at the end of each decorated function, we can be sure all function calls are executed. 
 
 \section{PMCC}
 For ASTHROS, we utilize an array of 4GHz spectrometers called the PMCC ASIC P19800B ASIC RF Spectrometer, henceforth referred to as the PMCC.
@@ -482,6 +612,7 @@ The configuration process is as follows:
         The 16 most significant bits are stored in the \texttt{dsp\_acc\_num\_msb} register and the 8 least significant bits are stored in the \texttt{dsp\_acc\_num\_lsb} register.
     \item 
         If we are in power accumulation mode, we need to set the data shift for the DSP. 
+        TODO: Add get\_data\_shift()
         The maximum output resolution is <40 bits so we need to shift the data to the right depending on the integration time.
         We calculate this by taking the binary logarithm of the number of accumulations per integration and subtracting 8.
         We get eight because there is a maximum output resolution of 40 bits and the most we can shift the value is 32.
@@ -602,10 +733,10 @@ The \texttt{retrieve\_adc()} method does just this using the following procedure
     \item Return the buffer of ADC readouts, the mean, the standard deviation, and the swing.
 \end{enumerate}
 
-% The next method in the \texttt{PMCC\_Driver} object is the \texttt{prbs_test()} method.
+% The next method in the \texttt{PMCC\_Driver} object is the \texttt{prbs\_test()} method.
 % The PRBS is the Pseudo-Random Binary Sequence that can be injected into readout data to test the system.
 % % We use this method to test the LVDS readout which we never use so I don't know why we have this method???
-
+% TODO: Ask Jose why we do this?
 
 Finally, we provide two methods to read and write to all of the PMCC registers. 
 These methods are \texttt{fetch\_registers()} and \texttt{write\_registers()}.
@@ -922,6 +1053,41 @@ We then read the response from the sensor and find the pressure value in the res
 \texttt{ACK} and \texttt{;} characters.
 
 \subsection{RabbitMQ Control Loop}
+Using the drivers in the \texttt{cryocool}, \texttt{cryotemp}, and \texttt{pressure} modules and the \texttt{rmqtools} package, we can create a control loop for the cryocooler to interact with ther est of the system.
+To start, we instantiate \texttt{Cryocool} and \texttt{Pressure} objects using the configuration file.
+For temperatures, we create a dictionary of \texttt{Lakeshore} devices using the configuration file. 
+\texttt{LAKESHORE} in the configuration file is an array of configurations for each Lakeshore device so we need to iterate over the array and create separate \texttt{Lakeshore} objects for each device, mapping them to the dictioanry using \texttt{LABEL} as the key.
+Once all of the hardware is initialized, we create a RabbitMQ connection using parameters under the \texttt{RMQ} key in the configuration file. 
+
+With all of our pieces in place, we can now begin connecting them together to work with the \texttt{rmqtools} package.
+First, we initialize a \texttt{PriorityLock} so that we don't end up with multiple threads trying to access the same hardware at the same time.
+In theory, we could have multiple locks for each device, but for simplicity we have a single lock for any hardware access under the cryocool umbrella. 
+For status publishers, we define three functions: \texttt{cryocool\_status()}, \texttt{pressure\_status()}, and \texttt{lakeshore\_status()}.
+These functions run their respective status commands and wrap the response as a dictionary under the \texttt{data} key.
+A \texttt{status} and \texttt{time} key are added to the dictionary and returned.
+In the case of an error, the \texttt{status} key is set to 1 and the \texttt{data} key is replaced with \texttt{error} and the error message.
+
+These functions are wrapped with \texttt{rmq.publish\_status()} at intervals of 20 seconds, offsetting by 5 seconds for each function to stagger the responses. 
+These functions are also wrapped with our \texttt{PriorityLock} at the lowest priority level with a \texttt{timeout\_return} set to a dictionary with the timeout error message.
+Each status buffer is set with a different queue name as follows: \texttt{housekeeping.cryo}, \texttt{housekeeping.pressure}, and \texttt{housekeeping.lakeshore.<label>}.
+
+Finally, we create a \texttt{cryocool\_command()} function to handle any command sent to the cryocooler.
+This function is decorated with \texttt{rmq.handle\_command()} and a priority lock of 1 to ensure that it is handled before any routine status commands.
+As described in \ref{chap2/section:rmqtools}, this decorated function will recieve a string for the command name as well as any positional arguments or kewyord arguments.
+The following commands are supported:
+
+\begin{itemize}
+    \item \texttt{read\_all} - Read all of the values from the \texttt{Cryocool} object. 
+    \item \texttt{read} - Read from a specific register of the \texttt{Cryocool} object.
+    \item \texttt{write} - Write to a specific register of the \texttt{Cryocool} object.
+    \item \texttt{pressure} - Read the pressure from the \texttt{Pressure} object.
+    \item \texttt{lakeshore} - read all values from the \texttt{cal} and/or the \texttt{temp} \texttt{Lakeshore} objects.
+\end{itemize}
+
+Finally, after the command is executed, the response payload is updated with the status of the command and the data returned from the command.
+This is returned in the rmqtools wrapper to be packaged and sent back to the sender.
+
+After defining all of these functions, we simply run \texttt{rmq.start()} to start the threads and begin listening for commands.
 
 \section{Motor}
 Behind the antenna is a small stepper motor used to chop between the sky and the internal calibration source.
@@ -1034,7 +1200,7 @@ This is useful when debugging functions to ensure that they have been programmed
 Additionally, the values of the registers can be used to monitor the health of the motor during flight.
 
 \subsection{RabbitMQ Control Loop}
-
+TODO:
 \section{Antenna}
 ASTHROS flys with a 2.5m diameter antenna to collect far-infared light. 
 The antenna and the structure surrounding it have built in heaters and temperature sensors to ensure the antenna is at the correct temperature during flight.
@@ -1112,9 +1278,9 @@ After updating the fields, the method calls \texttt{write\_reg()} to write the r
 \subsection{RabbitMQ Control Loop}
 
 \section{Power Supply Unit}
-
+TODO:
 \subsection{RabbitMQ Control Loop}
-
+TODO:
 \section{Variable Attenuator}
 ASTHROS utilizes a custom built five-stage Intermediate Frequency (IF) Low Noise Amplifier (LNA) in the readout chain to amplify the signal after the mixer in the cryocooler \citep{mathewson2024customizable}.
 Each one of these amplifier stages is housed with a variable attenuator to control the gain of the amplifier \citep{Ricardo}.
@@ -1265,6 +1431,9 @@ In addition to the I$^2$C bus issue, there is a hardware issue where the Etherne
 In this case, we have a \texttt{pulseReset()} function that pulses the reset pin on the Ethernet shield to reset the shield and attempt to initialize the connection.
 This occurs because power will leak through the SPI bus and partially power the shield.
 When the system is fully on, the shield has an incorrect reference voltage and will not initialize properly during \texttt{setup()}.
+
 \section{Housekeeping}
+TODO:
 
 \section{Central Command}
+TODO:
