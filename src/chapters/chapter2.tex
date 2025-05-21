@@ -4,8 +4,9 @@ The readout system is responsible for controlling the detectors, reading out the
 The readout system is designed to be modular and scalable, allowing for easy integration of new detectors and readout systems.
 Each package is designed to be self-contained, focusing on a single device in the readout system, so that changes to the hardware can be made without affecting the rest of the system.
 
+The primary function of this chapter is to describe the readout system in excruciating detail so future users can understand how every part of ASTHROS works as well as the design decisions made during the development of the system.
+While this is not a traditional chapter in the dissertation sense, it is an important part of the work done during my research and documenting the system is vital to the success of the project.
 TODO:
-
 \section{Network Architecture}
 TODO:
 \subsection{Command}
@@ -612,7 +613,6 @@ The configuration process is as follows:
         The 16 most significant bits are stored in the \texttt{dsp\_acc\_num\_msb} register and the 8 least significant bits are stored in the \texttt{dsp\_acc\_num\_lsb} register.
     \item 
         If we are in power accumulation mode, we need to set the data shift for the DSP. 
-        TODO: Add get\_data\_shift()
         The maximum output resolution is <40 bits so we need to shift the data to the right depending on the integration time.
         We calculate this by taking the binary logarithm of the number of accumulations per integration and subtracting 8.
         We get eight because there is a maximum output resolution of 40 bits and the most we can shift the value is 32.
@@ -732,11 +732,6 @@ The \texttt{retrieve\_adc()} method does just this using the following procedure
     \end{equation}
     \item Return the buffer of ADC readouts, the mean, the standard deviation, and the swing.
 \end{enumerate}
-
-% The next method in the \texttt{PMCC\_Driver} object is the \texttt{prbs\_test()} method.
-% The PRBS is the Pseudo-Random Binary Sequence that can be injected into readout data to test the system.
-% % We use this method to test the LVDS readout which we never use so I don't know why we have this method???
-% TODO: Ask Jose why we do this?
 
 Finally, we provide two methods to read and write to all of the PMCC registers. 
 These methods are \texttt{fetch\_registers()} and \texttt{write\_registers()}.
@@ -863,18 +858,18 @@ This file contains points for a calibration curve to convert voltage from the in
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
-        Name & str & Full name of the register \\
-        Label & str & Parameterized name of the register \\
-        Address & int & Address of the register \\
-        Write & bool & True if the register is writable \\
-        Units & str & Units of the register \\
-        Inverse & int & Blank if the value is not inverted, value to multiply by if the value is to be inverted \\
-        MinVal & float & Minimum value of the register \\
-        MaxVal & float & Maximum value of the register \\
-        MinCount & int & Minimum digital value of the register \\
-        MaxCount & int & Maximum digital value of the register \\
-        Housekeeping & bool & True if the register is a housekeeping value \\
-        Temperature & bool & True if the register is a temperature value \\
+        \texttt{Name} & str & Full name of the register \\
+        \texttt{Label} & str & Parameterized name of the register \\
+        \texttt{Address} & int & Address of the register \\
+        \texttt{Write} & bool & True if the register is writable \\
+        \texttt{Units} & str & Units of the register \\
+        \texttt{Inverse} & int & Blank if the value is not inverted, value to multiply by if the value is to be inverted \\
+        \texttt{MinVal} & float & Minimum value of the register \\
+        \texttt{MaxVal} & float & Maximum value of the register \\
+        \texttt{MinCount} & int & Minimum digital value of the register \\
+        \texttt{MaxCount} & int & Maximum digital value of the register \\
+        \texttt{Housekeeping} & bool & True if the register is a housekeeping value \\
+        \texttt{Temperature} & bool & True if the register is a temperature value \\
     \end{tabularx}
     \label{chap2/table:cryocool_regs}
     \caption{Cryocooler Register Configuration Parameters}
@@ -1200,7 +1195,28 @@ This is useful when debugging functions to ensure that they have been programmed
 Additionally, the values of the registers can be used to monitor the health of the motor during flight.
 
 \subsection{RabbitMQ Control Loop}
-TODO:
+For the motor's main control loop we utilize \texttt{rmqtools} to expose methods defined in the \texttt{Motor} class to publish housekeeping data and handle commands. 
+To begin, we load in the configuration for the motor and RabbitMQ from the YAML file.
+In starting this script, we have the option to pass a \texttt{--quiet} flag that disables the motor reset on startup.
+This is useful when testing the motor to avoid having it move to the reset position every time the script is run.
+We create our \texttt{Motor} and \texttt{RmqConnection} objects and then begin the main loop.
+
+In this main loop, we create a \texttt{PriorityLock} to avoid collisions when writing commands to the motor. 
+We then define two functions to publish status over the status exchange and handle RPC executions.
+The first is simply \texttt{motor\_status()} which is decorarted with both the \texttt{rmq.publish\_status()} and \texttt{lock.with\_lock()} decorators outlining a 15 second interval for publishing and lowest leve of priority.
+The function iteslf simply calls \texttt{motor.status()} and packages the reponse as a dictionary with the \texttt{status} and \texttt{time} keys.
+Any errors are caught and placed in the return dictionary with the \texttt{status} key set to 1 and the \texttt{data} key replaced with the error message.
+When the function is called by the status thread, it will obtain this dictionary and format it so that it can be published to the status exchange with the queue name \texttt{housekeeping.motor}.
+
+The second function is \texttt{motor\_command()} which is decorated with \texttt{rmq.handle\_command()} with the \texttt{motor.command} key and a priority lock of 1 to ensure that it is handled before any routine status commands.
+The command parses the command string from the RPC execution and matches it to one of the following commands:
+\begin{itemize}
+    \item \texttt{execute} - Executes a funciton on the motor based on the label in the configuration file. 
+    \item \texttt{write} - Writes a specific hardware value to the motor based on the passed variable and value.
+    \item \texttt{status} - Recieves the status of the motor from \texttt{motor.status()}
+\end{itemize}
+The response from the command is packaged as a \texttt{ResponseObject} and returned from the function to be handled by the \texttt{rmqtools} package to return to the sender. 
+
 \section{Antenna}
 ASTHROS flys with a 2.5m diameter antenna to collect far-infared light. 
 The antenna and the structure surrounding it have built in heaters and temperature sensors to ensure the antenna is at the correct temperature during flight.
@@ -1276,22 +1292,209 @@ The method first reads the register using \texttt{read\_reg()} and then updates 
 After updating the fields, the method calls \texttt{write\_reg()} to write the register back to the antenna, returning the response. 
 
 \subsection{RabbitMQ Control Loop}
+For the antenna's main control loop, we utilize \texttt{rmqtools} to manage sending housekeeping at regular intervals and handling commands from other parts of the network.
+We load the configuration file and separate the antenna configuration from the RabbitMQ configuration.
+We then create and configure \texttt{Antenna} and \texttt{RmqConnection} objects and start the main loop.
+Much like other control loops, we define a \texttt{PriorityLock} and will be utilizing this to prevent collisions when communicating with the antenna. 
+
+For status publishing, we define a \texttt{antenna\_status()} function that is decorated with \texttt{rmq.publish\_status()} at a 15 second interval and the lowest level of priority lock. 
+\texttt{antenna.read\_all()} is called and the response is wrapped with the status of the command as well as the time of the response for time harmonization.
+If any error occurs when reading the values, the status is set to 1 and the error message is returned in place of the data.
+These values are sent to \texttt{housekeeping.antenna} on the status exchange.
+
+Unlike other systems, we also have a \texttt{antenna\_position()} function that provides a higher temporal resolution status of just the antenna position.
+This is decorated with \texttt{rmq.publish\_status()} at a 1 second interval and the lowest level of priority lock.
+This function calls \texttt{antenna.read\_reg()} twice with \texttt{ELEVATION\_MEAS} and \texttt{HEXA\_POS\_REAL} to obtain the elevation and position of the hexapod. 
+These values are packaged handled exactly like the \texttt{antenna\_status()} function and published to the status exchange with the queue name \texttt{pointing.antenna} on the status exchange.
+
+Finally, we define a \texttt{antenna\_command()} function that is decorated with \texttt{rmq.handle\_command()} with the \texttt{antenna.command} key and a priority lock of 1 to prioritize it over status and pointing publishing. 
+To expose the methods in the \texttt{Antenna} class, we define a set of commands that can be sent to the antenna: 
+\begin{itemize}
+    \item \texttt{read} - Reads a specific regisger based on an ID label in the configuration file.
+    \item \texttt{write} - Writes to a specific register using the ID label in the configuration file and keyword arguments for the fields to write.
+    \item \texttt{read\_write} - Performs a read and write on a specific register using the ID label in the configuration file and keyword arguments for the fields to write, falling back to the read values if not provided.
+    \item \texttt{specsheet} - Returns a listing of all of the registers in the configuration file along with their descriptions and ability to read and write. Useful when you forget the label of a register.
+\end{itemize}
+The response from these commands is packed as a \texttt{ResponseObject} and sent back to the sender as a response.
 
 \section{Power Supply Unit}
-TODO:
+On ASTHROS, we use custom Smart Power Supply Units (PSU) to provide power to almost every component on the readout system.
+A Smart PSU allows us to set the voltage and current for each channel independently and monitor the current and voltage on each channel.
+This level of granularity is vital for components on ASTHROS like the mixer and amplifiers that require precise voltages and currents to operate properly.
+The Smart PSUs are controlled over SPI using command line tools provided by the manufacturer, with six addressable Smart PSUs connected to two RS-485 ports on the command computer.
+These tools handle most of the low level details of packetizing and parsing the data from the Smart PSU so that end users can easily interact with the Smart PSU. 
+This method of operating the Smart PSU is not ideal for in flight operations as the command line tools are not designed with real time operations in mind. 
+As such, we have developed and implemented a Python package that essentially wraps the command line tools as a driver for the Smart PSU so that it can be integrated into the rest of the readout system. 
+
+The core of the design for the ASTHROS Smart PSU drivers is the \texttt{SmartPsu} class that contains a set of \texttt{channels} through witch the Smart PSU can be controlled.
+The \texttt{SmartPsu} is instantiated using a pointer to an \texttt{Environment} object that contains information about the execution enviornment for the Smart PSU.
+Because our only method for communicating with the Smart PSU is through precomiled command line tools, our \texttt{Environment} object is necessary to provide paths to the tools so that the rest of the system can function properly. 
+The \texttt{Environment} object is a simple class that contains a set of paths to the tools as well as setting up a logging system that other classes can use to log messages, warnings, and errors. 
+
+\texttt{Channel} is a class that defines a single channel on the Smart PSU and contains the base functions to read and write to that channel.
+These channels are defined by the following parameters:
+\begin{itemize}
+    \item \texttt{PORT} - The device port for the channel (e.g. \texttt{/dev/ttyS7}).
+    \item \texttt{ADDRESS} - The address of the channel on that port (e.g. \texttt{0}).
+    \item \texttt{BANK} - The bank of the channel within that address (e.g. \texttt{A}, \texttt{B}, \dots).
+    \item \texttt{CHANNEL} - The channel number within that bank (e.g. \texttt{0}, \texttt{1}, \dots).
+\end{itemize}
+In addition to these parameters, during initialization within the \texttt{SmartPsu} class, we store a host of other default parameters for the channel that will be explained later in this section. 
+The \texttt{Channel} object has methods to \texttt{read}, \texttt{write}, and \texttt{safe\_write()} the defined channel using the tools outlined in the \texttt{Environment} object.
+The \texttt{read()} method simply reads the channel using the \texttt{read\_voltage\_current\_tool} defined in the \texttt{Environment} object and returns the voltage, current and enabled status of the channel.
+Likewise, the \texttt{write()} method takes in a voltage and enable integer and writes to the channel using the \texttt{configure\_supply\_tool}. 
+Additionally, a delay parameter is typically 0 but can be set to a non-zero value to specify a ramping time for the voltage to reach the requested value.
+For most use cases, we use \texttt{safe\_write()} which takes an additional maximum current parameter to check after writing to the channel.
+When \texttt{Channel} is setup within the \texttt{SmartPsu} class, minimum and maximum allowed voltages are defined for the channel such that any \texttt{safe\_write()} will validate the requested voltage is within the allowed range and raise an exception if it is not.
+After verifying the input, the method will write to the channel using \texttt{write()} and then read the channel using \texttt{read()}.
+If the current is above the maximum current, the method will raise an exception.
+We also check if the read voltage and enable status is within a certain tolerance of the requested voltage as well as ensuring the channel was correctly enabled, raising exceptions if not. 
+
+\begin{table}[h]
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
+        \texttt{ADDRESS} & int & The address of the Smart PSU on the port. \\
+        \texttt{PORT} & str & The port of the Smart PSU (e.g. \texttt{/dev/ttyS7}). \\
+        \texttt{BANK} & str & The bank of the channel within that address (e.g. \texttt{A}, \texttt{B}, \dots). \\
+        \texttt{CHANNEL} & int & The channel number within that bank (e.g. \texttt{0}, \texttt{1}, \dots). \\
+        \texttt{V\_INI} & V & The initial voltage of the channel. \\
+        \texttt{V\_NOM} & V & The default voltage of the channel when enabled. \\
+        \texttt{RAMP} & steps & How many steps to ramp the voltage to the nominal voltage when enabled. \\
+        \texttt{I\_RFOFF} & mA & The RF off current of the channel. \\
+        \texttt{I\_TOFF} & \% & The tolerance for the RF off current. \\
+        \texttt{I\_RFON} & mA & The RF on current of the channel. \\
+        \texttt{I\_TON} & \% & The tolerance for the RF on current. \\
+        \texttt{V\_MIN} & V & The minimum allowed voltage of the channel. \\
+        \texttt{V\_MAX} & V & The maximum allowed voltage of the channel. \\
+        \texttt{I\_MAX} & mA & The maximum allowed current of the channel. \\
+        \texttt{ORDER} & int & The priority order of the channel during a sequenced startup. \\
+        \texttt{ENABLE} & int & Whether or not the channel should be enabled during a sequenced startup or a secret third thing \\
+        \texttt{DELAY} & s & The delay value when writing to the channel. \\
+        \texttt{SYSTEM\_ID} & str & The high level system name for the channel (e.g. \texttt{LO\_1A}, \texttt{RFE\_1A}, \texttt{RBE\_1CTRL}, \dots). \\
+        \texttt{TYPE} & str & The type of channel within the system (e.g. \texttt{MULT}, \texttt{SYNTH}, \texttt{SPECT}, \dots). \\
+        \texttt{SUBTYPE} & str & The specific subtype of the channel within the system (e.g. \texttt{REF}, \texttt{CM4}, \texttt{PMCC}, \dots). \\
+        \texttt{DESCRIPTION} & str & The full name of the channel.\\
+    \end{tabularx}
+    \label{chap2/table:psu_config}
+    \caption{Power Supply Unit Configuration Parameters}
+\end{table}
+
+\texttt{SmartPsu} is initialized using an \texttt{Environment} object and a configuration file that contains the channel configurations.
+The configuration file can be either a CSV or INI file, CSV being the preferred format but INI files are supported for backwards compatibility with the original implementation.
+Regardless of the format, the configuration file specifies the following information for each channel as shown in Table \ref{chap2/table:psu_config}.
+Each line of the file is read and a \texttt{Channel} object is created with these attributes for usage within \texttt{SmartPsu}.
+When calling \texttt{safe\_write()} within the \texttt{Channel} class, we use these parameters to verify the voltage and current are within the allowed ranges.
+These objects are stored in a dictionary with the key being a combination of the \texttt{ADDRESS}, \texttt{BANK} and \texttt{CHANNEL} values.
+\texttt{SmartPsu} has a \texttt{get\_channels()} method that allows a user to specify an attribute of a channel and return a dictonary of channels that match that attribute.
+This is useful when wanting to get all of the channels for a specific \texttt{SYSTEM\_D}, \texttt{TYPE} and/or \texttt{SUBTYPE}.
+Once a user collects the channels they want to modify, they can use \texttt{initialize()} to initiliaze the channels to their initial voltages, \texttt{read\_all()} to read all of the channels, \texttt{check\_current()} to check if all currents are within the allowed ranges, \texttt{change\_voltage()} to change the voltage to a specific value, and \texttt{shutdown()} to shutdown all of the channels.
+
+In addition to setting voltages, we are able to run a diode check on channels using \texttt{check\_diodes()}. 
+This method sets a range of voltages to the channels and returns the voltage and current over the interval.
+Optionally, when in command line mode, this method will plot the curve of the diode check. 
+When these voltages are set, we use a special enable value of 2 to indicate that the channel is in diode check mode. 
+In order to closely match the original drivers, we have also implemented a \texttt{check\_mixers()} method which runs a check on the mixers with minor modifications.
+There is also a \texttt{check\_amps()} method that validates the performances of the power amplifiers by gradually increasing or decreasing the drain voltage by a pinch voltage and measuring the current.
+
+Apart from being a power supply, the Smart PSU also controls the synthesizer and some of the temperature sensors on the readout system. 
+We utilize the Micro Lambda (MLVS) Voltage Controlled Oscillator (VCO) based synthesizer in our readout pipeline \cite{mlvs}. 
+This synthesizer is built into the Smart PSU and is controlled over SPI using the \texttt{spi\_readwrite\_tool} provided by the manufacturer.
+We have wrapped the \texttt{spi\_readwrite\_tool} in a \texttt{SPIReadWrite} class to handle most of these additional interactions.
+A general purpose \texttt{read()} method is provided to utilize the tool with the necessary parameters, such as the port and address of the Smart PSU.
+Higher level methods are provided for the following interactions:
+\begin{itemize}
+    \item \texttt{get\_ID()} - Returns the ID of the synthesizer.
+    \item \texttt{get\_freq()} - Returns the frequency of the synthesizer.
+    \item \texttt{set\_freq()} - Sets the frequency of the synthesizer between 500 and 20000 MHz.
+    \item \texttt{get\_status()} - Returns the status of the synthesizer.
+    \item \texttt{get\_temperature()} - Returns the temperature of the synthesizer.
+    \item \texttt{get\_highest\_temperature()} - Returns the highest recorded temperature of the synthesizer.
+    \item \texttt{run\_self\_test()} - Returns the results of a self test on the synthesizer.
+    \item \texttt{get\_ref\_source()} - Returns the reference source of the synthesizer (e.g. \texttt{INT}, \texttt{EXT}).
+    \item \texttt{set\_ref\_source()} - Sets the reference source of the synthesizer (e.g. \texttt{INT}, \texttt{EXT}).
+\end{itemize}
+
+For the temperature sensors, we utilize the \texttt{temperature\_tool} tool provided by the manufactuer to read all of the temperature sensors for a given Smart PSU. 
+When running the tool, we specify the resolution of the temperature sensor in bits and the number of milliseconds to wait while reading.
+If a resolution is not specified, it defaults to the previously set resolution.
+When changing resolutions, we specify a 4000 ms delay as the command takes longer to execute. 
+The delay value for the \texttt{temperature\_tool} needs to be long enough to recieve values from each sensor but not too long that it causes the system to hang unnecessarily.
+The result from the tool is a list of temperature sensors by their ID and their associated temperature.
+The \texttt{Temperature} class is initalized with the \texttt{port} and \texttt{address} of a Smart PSU and uses the \texttt{Environment} object to load a configuration file. 
+This configuration file contains a mapping of temperature sensor IDs to unique labels for each sensor.
+The \texttt{read()} wraps the \texttt{temperature\_tool} and returns a dictionary of the sensors keyed by their ID and matched with their associated readout.
+For human legibility, we also have a \texttt{get\_temps()} method that maps the sensor IDs to their labels and returns a dictionary of the labels and their associated readouts.
+
+\subsection{Command Line Interface}
+
+Often times during testing, we need to run the Smart PSU without the overhead of having the RabbitMQ control loop running.
+This is especially true when we don't have the complete network setup or are testing specific components on the bench, detached from the physical payload. 
+In previous a previous iteration of the Smart PSU control system, we had a command line interface that allowed us to issue commands to the Smart PSU and get responses back.
+To ensure that the scientists and engineers on the team can continue their work uninterrupted, we have implemented a one to one command line interface that allows us to run the Smart PSU using an identical control scheme as the previous iteration.
+This command line interface can be executed as one off commands or as an open control loop to allow for interactive testing.
+Table \ref{chap2/table:psu_cli} shows the menu of commands a user may select when running the interactive testing loop.
+
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{l|X}
+        \textbf{Command} & \textbf{Description} \\
+        \hline
+        \texttt{start} & Start a subsystem on the PSU. \\
+        \texttt{checkdiodes} & Run a diode check on a specific channel. \\
+        \texttt{checkamp} & Check the amplifiers on a specific channel. \\
+        \texttt{readinifile} & Read the initialization file. \\
+        \texttt{readall} & Read the voltage and current of all channels. \\
+        \texttt{checkpart\_RFoff} & Check the status of a part connected to an output absed on the specified current nominal values and tolerances with RFoff. \\
+        \texttt{checkpart\_RFon} & Check the status of a part connected to an output absed on the specified current nominal values and tolerances with RFon. \\
+        \texttt{stop} & Stop a subsystem on the PSU. \\
+        \texttt{changevoltage} & Safely change the voltage of the given channel. \\
+        \texttt{safesynth} & Safely turn on the synthesizer. \\
+        \texttt{forcestop} & Turn off PSU without specifying config file (best effort guess of priorities based on current output settings). \\
+        \texttt{checkmixers} & Check HEB mixers I-V reading the current from the isense ADC inputs.
+    \end{tabularx}
+    \label{chap2/table:psu_cli}
+    \caption{Power Supply Unit Command Line Interface}
+\end{table}
+
 \subsection{RabbitMQ Control Loop}
-TODO:
+Unlike the driver implementation and the Command Line Interface, which were developed to function exactly like the original implementation for backwards compatability, the RabbitMQ Control Loop for the Smart PSU wraps the driver in a more modern interface that allows for easier integration with the rest of the system.
+In other implementations on the system, we have initalized our drivers with a YAML configuration file that contains all necessary parameters to setup the driver. 
+This is not the case for \texttt{SmartPsu} as the original implementaiton was designed to have every parameter hard coded into the driver.
+For our RabbitMQ Control Loop, we pass a configuration file that we will use to override any default values in the driver when the function is called. 
+This allows us to maintain exact functionality with the original implementation while also allowing us to modify the parameters of the driver when necessary.
+This configuration file has each of the potential commands that can be sent to the driver and provides configurable default valuesf for each of the arguments.
+
+The actual control loop is setup using \texttt{rmqtools} and is similar to the other control loops in the system but has an added complexity of multiple Smart PSUs. 
+We load in the configuration file and setup the \texttt{RmqConnection} object as we would for any other control loop.
+Within the main loop we implement a \texttt{PriorityLock} to prevent collisions when writing to the Smart PSU.
+This is especially important given we have multiple Smart PSUs that can be controlled at the same time, resulting in multiple threads who may potentially be trying to write to the same Smart PSU.
+For RPC commands, we setup two threads, one for the \texttt{SmartPsu} object and one for the \texttt{SPIReadWrite} object which primariliy controls the synthesizer.
+The commands handled by the \texttt{SmartPsu} object are identical to the command line interface but are wrapped using \texttt{rmq.handle\_command()} to allow for RPC execution.
+There is one additional command, \texttt{temperature}, which is used to read a temperature sensor on the Smart PSU using a \texttt{Temperature} object.
+The \texttt{safesynth} command is moved from  \texttt{SmartPsu}'s \texttt{handle\_command()} to \texttt{SPIReadWrite}'s \texttt{handle\_synth\_command()} as it is specific to the synthesizer and not the Smart PSU.
+The rest of the \texttt{SPIReadWrite} commands are accessed through the handler, providing access to the synthesizer through RPC executions.
+
+For housekeeping, we define \texttt{psu\_housekeeping()} and \texttt{psu\_temperatures} methods that takes in a \texttt{SmartPsu} object and \texttt{psu\_id}.
+We do this because we have six Smart PSUs that each need their own status threads for power and temperature readings. 
+Using \texttt{partial} from \texttt{functools}, we're able to iterate over the Smart PSUs and create a thread for each one, wrapping the partial function with the \texttt{rmq.publish\_status()} decorator with \texttt{housekeeping.psu.<psu\_id>} and \texttt{housekeeping.temp.<psu\_id>} as the queue names.
+These methods will be setup with a staggered delay to prevent all of the threads from executing at the same time when \texttt{rmq.run()} is called. 
+
+Finally, all of these decorated methods are setup with the same \texttt{PriorityLock} to prevent collisions when reading and writing to the Smart PSU.
+In theory, we could use two separate locks for each of the ports but this would require more complex logic to handle the locks and would not be as clean as using a single lock.
+Additionally, there is little benefit to using the two locks as the cadence in which we expect to send status messages allows us to easily handle houskeeping one at a time without needing two parallel processes. 
+
 \section{Variable Attenuator}
 ASTHROS utilizes a custom built five-stage Intermediate Frequency (IF) Low Noise Amplifier (LNA) in the readout chain to amplify the signal after the mixer in the cryocooler \citep{mathewson2024customizable}.
 Each one of these amplifier stages is housed with a variable attenuator to control the gain of the amplifier \citep{Ricardo}.
-Specifically, we utilize the F1956NBGI8 from Renesas Electronics for adjusting our attenuation levels \citep{Renesas}.
+Specifically, we utilize the F1956NBGI8 Attenuator from Renesas Electronics for adjusting our attenuation levels \citep{Renesas}.
 As this is a standalone device on the system, it is controlled by it's own Arduino Nano Every microcontroller and interacts with the rest of system as a networked device using MQTT (Message Queuing Telemetry Transport) \citep{mqtt}.
 Each Arduino Nano Every is configured to control up to 8 variable attenuators.
 Each IF slice has a separate variable attenuator to control the gain of the amplifier.
-The F1956NBGI8 is set using eight digital channels that can be used to set the attenuation level.
-A PCA9571 is used as an I$^2$C I/O expander to control the digital channels on the F1956NBGI8 \cite{pca9571}.
+The attenuator is set using eight digital channels that can be used to set the attenuation level.
+A PCA9571 is used as an I$^2$C I/O expander to control the digital channels on the attenuator \cite{pca9571}.
 These expanders all have the same address of \texttt{0b0100101X} where \texttt{X} is the read/write bit. 
-Because of this, we utilize an LTC4305 to multiplex the I$^2$C bus to provide each PCA9571 with a unique address \cite{ltc4305}.
+Because of this, we utilize an LTC4305 to multiplex the I$^2$C bus to provide each expander with a unique address \cite{ltc4305}.
 Each multiplexer is set with a unique address utilizing hardware dip switches on the board.
 For the sake of simplicity, these multiplexers are given indexed addresses starting at 0 based on their position in the stack of slices. 
 
@@ -1433,7 +1636,251 @@ This occurs because power will leak through the SPI bus and partially power the 
 When the system is fully on, the shield has an incorrect reference voltage and will not initialize properly during \texttt{setup()}.
 
 \section{Housekeeping}
-TODO:
+In our initial implementaiton of housekeeping, we intended to conform to the structure necessary for downstream processing using GSEOS (Ground Support Equipment Operating System) \citep{hauck2003use}.
+GSEOS is the ground station software previously used by the ASTHROS team to digest and visualize telemetry data from the gondola.
+Due to changes on the gondola's software side, the housekeeping system will need to be modified to conform a different framework.
+For now, this section will outline the current implementation of the housekeeping system as the connections to the rest of our readout system are still valid. 
+Steps for implementing the new system will be outlined in a subsection below.
+
+At it's core, the housekeeping system is the culmination of every other system in the readout pipeline.
+Every system previously defined produces some sort of status message that needs to be captured, analyzed, and forwarded to the operations team.
+Thanks to all of the groundwork done by \texttt{rmqtools}, we are able to very easily implement a system that can receive messages from every other system on the network and publish them to the GSEOS. 
+
+For the readout system, our route to sending data to GSEOS is a socket open on one of the gondola computers that expects our data in a very specific format such that it can packetize the data and downlink it to the ground station.
+Once at the ground station, we are able to take the formatted data and monitor it using the GSEOS software.
+Because we have a single pipeline for all of our data, we need to segment and packetize the data into different blocks such that we do not exceed our downlink bandwidth.
+To packetize the data properly, we have implemented a \texttt{Housekeeping} library that handles harmonizing data from various subsystems, formatting it for GSEOS, and sending it to the socket at regular intervals. 
+
+At its core, the \texttt{Housekeeping} library is a set of data queues in a fixed sequence, where each data queue is checked in a pre-defined order on a set interval.
+A good analogy for this is a clock, where each position on the clock is a data queue.
+When the clock ticks and points to a new position, the data queue at that position is checked for new data.
+If there is new data, it is formatted and sent to the socket.
+We call these data queues \texttt{blocks}, with each block being unique to the type of data it is processing.
+
+Regardless of the data that is being processed, each block has the following characteristics and behaviors. 
+Blocks are setup with a \texttt{msg\_id} signifying the type of data being processed. 
+This is used on GSEOS to identify where the data needs to be loaded in the system after it is received.
+Following that is \texttt{route} which is a list of all of the RabbitMQ routing keys that this block needs to subscribe to.
+Next we have a \texttt{data} class which is a custom \texttt{QueueTTL} object that acts as a dictionary with a time to live (TTL) for each key.
+This allows us to consolidate data from multiple sources into a single block without having to worry about sending stale data if one of the sources goes down.
+Finally, we have a \texttt{data\_queue} objct which is simply a Queue that contains encoded data that is ready to be sent to the socket.
+
+Each block then has a set of methods that are used to handle acquiring and processing the data.
+First, the block has a \texttt{subscriber()} method that is structured to be decorated with \texttt{rmqtools} to handle the incoming messages.
+As each subsystem may need a different method to handle incoming messages, each block has their own \texttt{subscriber()} method unique to the block's datatype.
+Within this method, we retreive the data, place it in the \texttt{data} object, and then call the \texttt{encode()} method to encode the data for GSEOS before placing it in the \texttt{data\_queue}.
+The \texttt{encode()} method is highly dependent on the type of data being processed and is unique to each subsystem, which we will further discuss in subsections for each block. 
+At the start of each encoded message is a stamp from \texttt{get\_stamp()}, a utility method that creates a header for the data with a timestamp and the \texttt{msg\_id} of the block.
+The end result of the \texttt{encode()} method is a byte array that contains the pre-defined encoding format for GSEOS.
+Finally, we have a \texttt{simulate\_data()} method that is used to simulate data for testing purposes.
+This is a counterpart to the \texttt{subscriber()} method as instead of receiving data from RabbitMQ, we generate random data, place it in our \texttt{data} object, and call the \texttt{encode()} method to encode the data for GSEOS.
+
+These blocks handle the logic behind acquiring and encoding data but need to be implemented in the main housekeeping loop.
+Before we get to the main loop where our sequenced clock sends data at regular intervals, we need to setup the blocks to recieve data. 
+This is done by wrapping the \texttt{block.subscriber()} method with \texttt{subscribe\_status} and passing the \texttt{block.route} list to the decorator.
+We give these queues the unique name \texttt{housekeeping\_<seq\_id>} where \texttt{<seq\_id>} is the index of the block in the sequence.
+When looking at the RabbitMQ console, we are able to easily see which queues are reciving data and which ones are not.
+Once all of the blocks are attached to the RabbitMQ server, we can start the listeners and begin the housekeeping loop.
+Each listener is on a separate thread and will asynchronously process messages as they come in.
+When the houskeeping loop gets to the block's index in the sequence, it will check the \texttt{data\_queue} for any data that is ready to be sent.
+In order to get the most recent data, the queue is read until it is empty and the data is sent to the socket.
+If there is no data in the queue by the time the clock is ready to move, we skip the block and the loop continues, checking the next block in the sequence for data. 
+If there is data, we encode it along with the status of the system and send it to the socket.
+Afterwards, we sleep until the next tick of the clock and repeat the process.
+In practice, this looks like the following sequence, where the clock has a 12 second cycle and each block is checked every second:
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Timing} & \textbf{Message ID} & \textbf{Block} \\
+        \hline
+        1 &\texttt{4} & PSU Block for Smart PSU 4 \\
+        2 &\texttt{7} & PSU Block for Smart PSU 7 \\
+        3 &\texttt{5} & PSU Block for Smart PSU 5 \\
+        4 &\texttt{8} & PSU Block for Smart PSU 8 \\
+        5 &\texttt{6} & PSU Block for Smart PSU 6 \\
+        6 &\texttt{10} & PSU Block for Smart PSU 10 \\
+        8 &\texttt{2} & Antenna Block \\
+        9 & \texttt{3} & Motor Block \\
+        10 & \texttt{1} & Temperature Block \\
+        11 & \texttt{11} & Cryocooler Block \\
+        12 & \texttt{12} & Intermediate Frequency Block \\
+    \end{tabularx}
+    \label{chap2/table:housekeeping_sequence}
+    \caption{Housekeeping Sequence}
+\end{table}
+
+\subsection{Antenna Block}
+The anntenna system is fairly straightforward. 
+There is a single \texttt{housekeeping.antenna} routing key to subscribe to and the data is a simple dictionary packed with various readout values from the antenna.
+Below is a list of the values that are packed into the data dictionary. 
+\begin{itemize}
+    \item \texttt{M1\_HW\_VER} - The hardware version of the M1 antenna system.
+    \item \texttt{M1\_SW\_VER} - The software version of the M1 antenna system.
+    \item \texttt{M2\_HW\_VER} - The hardware version of the M2 antenna system.
+    \item \texttt{M2\_SW\_VER} - The software version of the M2 antenna system.
+    \item \texttt{M1\_TEMP} - The temperatures of M1's 9 Replicas and their average from -327.68 to 327.67 C. 
+    \item \texttt{M2\_TEMP} - The temperatures of M2's 3 Legs, the Leg Average, and the M2 Mirror and Board from -327.68 to 327.67 C.
+    \item \texttt{M2\_TEMP\_THRESH} - The lower and upper limits for the thermostat on the M2 from -327.68 to 327.67 C.
+    \item \texttt{GPS\_POS} - The Latitude, Longitude, and Alititude of the GPS system from -90 to 90 deg , -180 to 180 deg, and 0 to 428496.7296 m respectively.
+    \item \texttt{ELEVATION\_MEAS} - The elevation of the antenna from -90 to 90 deg.
+    \item \texttt{HEXA\_POS\_SET} - The current desired position and rotation of the hexapod from -214,748.3648 to 214,748.3647 mm and -214,748.3648 to 214,748.3647 deg respectively.
+    \item \texttt{HEXA\_POS\_CORR} - The correction position and rotation of the hexapod from -214,748.3648 to 214,748.3647 mm and -214,748.3648 to 214,748.3647 deg respectively.
+    \item \texttt{HEXA\_POS\_REAL} - The actual position and rotation of the hexapod from -214,748.3648 to 214,748.3647 mm and -214,748.3648 to 214,748.3647 deg respectively.
+    \item \texttt{FLAGS} - Status enabled flags from the M1 and M2 Heaters, the M2 thermostat, and the Hexapod correction. 
+    \item \texttt{ALARMS} - Status alarms indicating issues communicating with the M2 or Hexapod controllers, the legs being too cold from the M2 thermostat, or a bad elevation reading.
+\end{itemize}
+
+\subsection{Cryocooler Block}
+The cryocooler block is similar to the antenna block in that it is a simple dictionary of values from the cryocooler system.
+Unlike the antenna block, the cryocooler block has three routes to listen to, \texttt{housekeeping.cryo}, \texttt{housekeeping.lakeshore.cal}, and \texttt{housedeeping.lakeshore.temp}.
+Within the \texttt{subscriber()} method, we check the routing key of the incoming messsage and handled each one accordingly. 
+Because our \texttt{QueueTTL} object handles the TTL of each key, we simply \texttt{put()} the data into the \texttt{data} object and the logic for handling stale data is handled when we call \texttt{get()}. 
+
+As for the data, the cryocooler provides these values as bytes so all we need to do is ensure the data is in the right order and then pass the bytes to the \texttt{data\_queue}. 
+This results in minimal processing for the data from \texttt{houskeeping.cryo} but we will still need to process the data from \texttt{houskeeping.lakeshore.cal} and \texttt{houskeeping.lakeshore.temp} as they are not in the correct format for GSEOS.
+Below is the complete list of values that are packed into the data dictionary for the cryocooler block.
+\begin{itemize}
+    \item \texttt{status} - The current status byte of the cryocooler.
+    \item \texttt{caseTemp} - The temperature of the case.
+    \item \texttt{reserve} - Reserved value (typically not used).
+    \item \texttt{piOut} - Voltage output of the PI Loop.
+    \item \texttt{busVoltPeak} - Bus voltage at the motor voltage peak.
+    \item \texttt{controlTemp} - The temperature of the control sensor.
+    \item \texttt{auxTemp} - The temperature of the auxiliary sensor.
+    \item \texttt{busCurr} - The current of the bus.
+    \item \texttt{busVoltAvg} - The average voltage of the bus.
+    \item \texttt{opMode} - The current operating mode.
+    \item \texttt{compFreq} - The frequency of the compressor motor.
+    \item \texttt{tempSet} - The desired temperature for Cold Head 1.
+    \item \texttt{motorDrive} - The peak output of the voltage drive.
+    \item \texttt{intGain} - The integral factor of the PI temperature and voltage controller.
+    \item \texttt{propGain} - The proportional factor of the PI temperature and voltage controller.
+    \item \texttt{peakDrive} - The voltage limit on the peak output of the bus.
+    \item \texttt{motorPeakPos} - The peak positive voltage of the motor.
+    \item \texttt{motorPeakNeg} - The peak negative voltage of the motor.
+    \item \texttt{avcPeakPos} - The peak positive voltage of the AVC (Adaptive Vibration Control).
+    \item \texttt{avcPeakNeg} - The peak negative voltage of the AVC.
+    \item \texttt{voltRamp} - The maximum voltage ramp rate.
+    \item \texttt{lsCal} - The calibration temperatures (2) of the Lakeshore, encoded as data from 0 to 65535 to be later converted to a float
+    \item \texttt{lsCryo} - The cryocooler temperatures (8) of the Lakeshore from 0 to 65,535.99 K. 
+\end{itemize}
+
+\subsection{Intermediate Frequency Block}
+The IF block is one of the more simple blocks in the system.
+Unlike the other systems, the IF systems does not use the traditional \texttt{status} exhcnage as it operates using the MQTT protocol. 
+Our RabbitMQ server has a plugin to handle MQTT messages and route them to the \texttt{amq.topic} exchange. 
+As such, we have a separate \texttt{RmqConnection} object whose status exchange is set to \texttt{amq.topic} and use this object to wrap the block's \texttt{subscriber()} method.
+For routing, we subscribe to \texttt{mqtt.status.0}, \texttt{mqtt.status.1} and \texttt{mqtt.status.2} for the three IF slices.
+Each slice has up to 8 channels, except for slice 0 which only has 1 for the 100GHz reciever. 
+This is a total of 17 channels that we need to monitor.
+The data from the IF block is a simple dictionary of attenuation values in dB as well as the status flag from each channel.
+We pack this data into a byte array, consisting of all of the attenuation values followed by the status flags.
+
+\subsection{Motor Block}
+The motor block is another relatively simple system.
+The motor only has one route, \texttt{housekeeping.motor}, which receives the mirror position from the motor controller.
+The following values are packed into the byte array for the motor block.
+\begin{itemize}
+    \item \texttt{HC} - Hold Current as a percentage of the maximum current\footnote{\label{chap2/footnote:motor}This value is a user set value and should not change during operations. We downlink this value in case it does change due to an error in the system.}.
+    \item \texttt{RC}- current as a percentage of the maximizem current\footnotemark[\ref{chap2/footnote:motor}].
+    \item \texttt{A} - The acc of the motor in steps per second squared\footnotemark[\ref{chap2/footnote:motor}].
+    \item \texttt{D} - The decelerationotor in steps per second squared\footnotemark[\ref{chap2/footnote:motor}].
+    \item \texttt{VM} - The maximum velocity of te motor in steps per second\footnotemark[\ref{chap2/footnote:motor}].
+    \item \texttt{VI} - The initial velocity in steps per second\footnotemark[\ref{chap2/footnote:motor}].
+    \item \texttt{P} - The current position of the motor in steps.
+    \item \texttt{CB} - The current control bounds, a mode selection for torque performance \footnotemark[\ref{chap2/footnote:motor}].
+    \item \texttt{ER} - The error code from the motor controller.
+\end{itemize}
+
+\subsection{Smart PSU Block}
+The Smart PSU block is one of the more densely packed blocks in the system.
+Because we have so many Smart PSUs, we actually have multiple \texttt{PsuBlock} objects in the sequencer so that we can have separate threads for each PSU and spread out the bandwidth to the GSEOS socket.
+The route for each of these blocks is variable and set to \texttt{housekeeping.psu.<psu\_id>} where \texttt{<psu\_id>} is the ID of the PSU, which is also the \texttt{msg\_id} for the block. 
+The actual data from the Smart PSUs are the voltages, currents, and enabled status from each channel as well as some overhead data for the PSU itself.
+The data is packed into a byte array with the following values:
+\begin{itemize}
+    \item \texttt{A\_Voltage} - The voltage from bank A, channels 0 to 7, from -32.76 to 32.76 V.
+    \item \texttt{B\_Voltage} - The voltage from bank B, channels 0 to 3, from -32.76 to 32.76 V.
+    \item \texttt{C\_Voltage} - The voltage from bank C, channels 0 to 4, from -32.76 to 32.76 V.
+    \item \texttt{D\_Voltage} - The voltage from bank D, channels 0 to 3, from -32.76 to 32.76 V.
+    \item \texttt{E\_Voltage} - The voltage from bank E, channels 0 to 7, from -32.76 to 32.767 V.
+    \item \texttt{S\_Voltage} - The voltage from bank S (the synthesizer), channels 0 and 1, from -32.76 to 32.76 V.
+    \item \texttt{A\_Current} - The current from bank A, channels 0 to 7, from -99.99 to 99.99 A.
+    \item \texttt{B\_Current} - The current from bank B, channels 0 to 3, from -99.99 to 99.99 A.
+    \item \texttt{C\_Current} - The current from bank C, channels 0 to 4, from -99.99 to 99.99 A.
+    \item \texttt{D\_Current} - The current from bank D, channels 0 to 3, from -99.99 to 99.99 A. This value is actually read from the voltage of the X bank divided by a scaling factor. 
+    \item \texttt{E\_Current} - The current from bank E, channels 0 to 7, from -99.99 to 99.99 A.
+    \item \texttt{S\_Current} - The current from bank S (the synthesizer), channels 0 and 1, from -99.99 to 99.99 A.
+    \item \texttt{Enabled} - The status of each channel as a big endian bit array with each bit representing the status of a channel for banks A, B, C, D, E, and S.
+    \item \texttt{Synth\_ID} - The ID of the synthesizer, should be "MLVS-1520AS" and is downlinked for verifcation we have an SPI connection.
+    \item \texttt{Synth\_Freq} - The frequency of the synthesizer in MHz, from 0 to 99999.99 MHz.
+    \item \texttt{Synth\_Temp} - The internal temperature of the synthesizer in C, from -327.68 to 327.67 C.
+    \item \texttt{Synth\_Max\_Temp} - The maximum temperature of the synthesizer in C, from -327.68 to 327.67 C.
+    \item \texttt{Synth\_Status} - The status code from the system, a bit array with each bit representing a different status flag. This value is acutlaly 9 bits long so we zero pad the value to 16 bits.
+    \item \texttt{Error\_Codes} - 4 bit error codes for each channel indicating: OK, Voltage Low, Voltage High, Current Low, Current High, Out of Tolerance, and Channel enabled/disabled when expected to be disabled/enabled.
+\end{itemize}
+\subsection{Temperature Block}
+The temperature block also interacts with the Smart PSU system but is focused on the temperature sensors attached to each PSU.
+We don't need to split the temperature block into multiple blocks as we're able to fit all of our combined data into a single block.
+For routing, we have 6 routing keys for the 6 power supplies on the gondola, \texttt{housekeeping.temp.<psu\_id>} where \texttt{<psu\_id>} is the ID of the PSU.
+Apart from that, the rest of the block is very simple. 
+We load in a configuration file that contains a mapping of every temperature sensor's ID and a description of the sensor's location. 
+We use the ordering of this configuration file to determine the order of the sensors in the data array.
+Other than that, we simply iterate over the sensors in the configuration file and use the ID as a key in the \texttt{data} object to order and encode each value from -327.68 to 327.67 C.
 
 \section{Central Command}
-TODO:
+The core of the entire readout network is the central command system.
+In developing the central command system, we had two goals in mind: develop something that was easily adaptable to whatever subsystems we needed to control and develop something that whose iterface would be identical in both testing and in flight.
+This led us to looking towards \texttt{click}, a Python library for building command line applications \citep{click}.
+Click enabled us to create a custom command line interface (CLI) that consolidated all of our systems into a single interface.
+Additionally, with \texttt{click\_repl}, we were able to create a read-eval-print loop (REPL) that would act as a terminal interface to the system, allowing us to chain commands together and interact with the system in a more natural way.
+
+To accomplish the first of these two goals, we utilzie click's ability to add groups and subcommands to the CLI.
+We call these \texttt{plugins} and simply developed a plugin for each subsystem that we needed to control. 
+Separating each of the subsystems into their own plugins allow us to easily develop new plugins for new subsystems without having to modify the core of the system.
+At the core of each plugin is a unique \texttt{Controller}, which handles methods necessary for interacting with the subsystem in the plugin.
+Usually, this interaction with the subsystem is done through a RabbitMQ connection, sending RPC executions to the subsystem and waiting for a response.
+Normally, each command sent is atomic, where each command's execution exists in a vaccuum, but we can work around this by storing a persistent \texttt{Controller} in within \texttt{click.get\_current\_context()}. 
+This allows us to store the state of the system between commands, create global variables that are accessible to all commands, and, most importantly, only need to create a single instance of the \texttt{Controller} for each plugin.
+
+In terminal mode, we are able to accomplish our second goal of having a single interface for both testing and flight.
+Terminal mode is a speical mode of the CLI that uses a REPL to allow the user to interact with the system in a more natural way, without having to type out \texttt{python central\_command.py --config config.yml ...} every time.
+Within terminal mode, the first thing you type is the name of the plugin you want to interact with, which loads the plugin and gives you access to all of the commands in that plugin.
+It also has tab completion for all of the commands in the plugin, so you can easily see what commands are available.
+There is additionally a history feature that allows you to scroll through the previous commands you have entered, and use reverse search to find commands you have entered in the past.
+We primiarily use this terminal interface for testing, as it allows us to easily interact with the system in an isolated environment.
+To match the flight system, we have implemented a version of Central Command that listens to a socket and recieves strings from the ACE computer on the gondola. 
+The string is then parsed exactly as it would be in the terminal interface, and the command is executed as if it were entered in the terminal, making it identical to the REPL system when in flight. 
+The biggest challenge here is captuing the output of the command and sending it back to the ACE computer.
+This is done by exlusively using the \texttt{click.echo()} method to print to the terminal in REPL mode and then overriding the behavior of \texttt{click.echo()} to send the output to the socket instead of printing it to the terminal.
+
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{l|X}
+        \textbf{Plugin} & \textbf{Description} \\
+        \hline
+        \texttt{antenna} & Controls the Antenna Systems. \\
+        \texttt{cryo} & Controls the Cryocooler Systems. \\
+        \texttt{fabric} & An implementation of the \texttt{fabric} allowing us to execute commands on any computer on the network in case of emergency. \\
+        \texttt{ifsys} & Controls the Intermediate Frequency Systems. \\
+        \texttt{motor} & Controls the Mirror's Motor Systems. \\
+        \texttt{pressure} & Controls the Pressure Systems. \\
+        \texttt{psu} & Controls the Smart PSU Systems. \\
+        \texttt{seq} & A special system that allows us to execute commands in a sequence, similar to a script. \\
+        \texttt{spec} & Controls the Spectrometer Systems. \\
+        \texttt{synth} & Controls the Synthesizer Systems. \\
+    \end{tabularx}
+    \label{chap2/table:click_plugins}
+    \caption{Plugins for the Central Command System}
+\end{table}
+
+Table \ref{chap2/table:click_plugins} shows a list of the plugins that are currently implemented or planned for the system.
+Two plugins do not control a specific subsystem but are instead used to provide broad functionality to ASTHROS.
+\texttt{seq} is a special scripting plugin that allows us to write a sequence of commands to be executed in order as a text file. 
+When the file is executed, it is parsed and each command is executed in order.
+This makes running a sequence of commands, such as starting up the spectrometer, or running a test sequence, much easier.
+For flight, we will develop sequences for most operations that need to be performed as it allows us to reduce our required bandwidth to the ground station when issuing multiple commands. 
+Likewise, the \texttt{fabric} plugin is a special plugin that allows us to execute commands on any computer on the network.
+\texttt{fabric} is a Python library that allows us to execute commands on remote computers over SSH. 
+While we would hope that our Central Command system is able to handle all required commands, there may be times when we need to execute a raw command on a remote computer.
+This is especially useful in flight, when SSHing into a computer may not be possible and we need a backup plan.
