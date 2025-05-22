@@ -1780,14 +1780,14 @@ The motor block is another relatively simple system.
 The motor only has one route, \texttt{housekeeping.motor}, which receives the mirror position from the motor controller.
 The following values are packed into the byte array for the motor block.
 \begin{itemize}
-    \item \texttt{HC} - Hold Current as a percentage of the maximum current\footnote{\label{chap2/footnote:motor}This value is a user set value and should not change during operations. We downlink this value in case it does change due to an error in the system.}.
-    \item \texttt{RC}- current as a percentage of the maximum current\footnotemark[\ref{chap2/footnote:motor}].
-    \item \texttt{A} - The acc of the motor in steps per second squared\footnotemark[\ref{chap2/footnote:motor}].
-    \item \texttt{D} - The decelerationotor in steps per second squared\footnotemark[\ref{chap2/footnote:motor}].
-    \item \texttt{VM} - The maximum velocity of the motor in steps per second\footnotemark[\ref{chap2/footnote:motor}].
-    \item \texttt{VI} - The initial velocity in steps per second\footnotemark[\ref{chap2/footnote:motor}].
+    \item \texttt{HC} - Hold Current as a percentage of the maximum current\footnote{\label{chap2/footnote:motor}This value is a user set value and should not change during operations. We downlink this value in case it does change due to an error in the system.}
+    \item \texttt{RC}- current as a percentage of the maximum current$^{\ref{chap2/footnote:motor}}$
+    \item \texttt{A} - The acceleration of the motor in steps per second squared$^{\ref{chap2/footnote:motor}}$.
+    \item \texttt{D} - The deceleration in steps per second squared$^{\ref{chap2/footnote:motor}}$.
+    \item \texttt{VM} - The maximum velocity of the motor in steps per second$^{\ref{chap2/footnote:motor}}$.
+    \item \texttt{VI} - The initial velocity in steps per second$^{\ref{chap2/footnote:motor}}$.
     \item \texttt{P} - The current position of the motor in steps.
-    \item \texttt{CB} - The current control bounds, a mode selection for torque performance \footnotemark[\ref{chap2/footnote:motor}].
+    \item \texttt{CB} - The current control bounds, a mode selection for torque performance$^{\ref{chap2/footnote:motor}}$.
     \item \texttt{ER} - The error code from the motor controller.
 \end{itemize}
 
@@ -1811,11 +1811,11 @@ The data is packed into a byte array with the following values:
     \item \texttt{E\_Current} - The current from bank E, channels 0 to 7, from -99.99 to 99.99 A.
     \item \texttt{S\_Current} - The current from bank S (the synthesizer), channels 0 and 1, from -99.99 to 99.99 A.
     \item \texttt{Enabled} - The status of each channel as a big endian bit array with each bit representing the status of a channel for banks A, B, C, D, E, and S.
-    \item \texttt{Synth\_ID} - The ID of the synthesizer, should be "MLVS-1520AS" and is downlinked for verifcation we have an SPI connection.
+    \item \texttt{Synth\_ID} - The ID of the synthesizer, should be "MLVS-1520AS" and is downlinked for verification we have an SPI connection.
     \item \texttt{Synth\_Freq} - The frequency of the synthesizer in MHz, from 0 to 99999.99 MHz.
     \item \texttt{Synth\_Temp} - The internal temperature of the synthesizer in C, from -327.68 to 327.67 C.
     \item \texttt{Synth\_Max\_Temp} - The maximum temperature of the synthesizer in C, from -327.68 to 327.67 C.
-    \item \texttt{Synth\_Status} - The status code from the system, a bit array with each bit representing a different status flag. This value is acutlaly 9 bits long so we zero pad the value to 16 bits.
+    \item \texttt{Synth\_Status} - The status code from the system, a bit array with each bit representing a different status flag. This value is actually 9 bits long so we zero pad the value to 16 bits.
     \item \texttt{Error\_Codes} - 4 bit error codes for each channel indicating: OK, Voltage Low, Voltage High, Current Low, Current High, Out of Tolerance, and Channel enabled/disabled when expected to be disabled/enabled.
 \end{itemize}
 \subsection{Temperature Block}
@@ -1829,29 +1829,29 @@ Other than that, we simply iterate over the sensors in the configuration file an
 
 \section{Central Command}
 The core of the entire readout network is the central command system.
-In developing the central command system, we had two goals in mind: develop something that was easily adaptable to whatever subsystems we needed to control and develop something that whose iterface would be identical in both testing and in flight.
+In developing the central command system, we had two goals in mind: develop something that was easily adaptable to whatever subsystems we needed to control and develop something that whose interface would be identical in both testing and in flight.
 This led us to looking towards \texttt{click}, a Python library for building command line applications \citep{click}.
 Click enabled us to create a custom command line interface (CLI) that consolidated all of our systems into a single interface.
 Additionally, with \texttt{click\_repl}, we were able to create a read-eval-print loop (REPL) that would act as a terminal interface to the system, allowing us to chain commands together and interact with the system in a more natural way.
 
-To accomplish the first of these two goals, we utilzie click's ability to add groups and subcommands to the CLI.
+To accomplish the first of these two goals, we utilize click's ability to add groups and subcommands to the CLI.
 We call these \texttt{plugins} and simply developed a plugin for each subsystem that we needed to control. 
 Separating each of the subsystems into their own plugins allow us to easily develop new plugins for new subsystems without having to modify the core of the system.
 At the core of each plugin is a unique \texttt{Controller}, which handles methods necessary for interacting with the subsystem in the plugin.
 Usually, this interaction with the subsystem is done through a RabbitMQ connection, sending RPC executions to the subsystem and waiting for a response.
-Normally, each command sent is atomic, where each command's execution exists in a vaccuum, but we can work around this by storing a persistent \texttt{Controller} in within \texttt{click.get\_current\_context()}. 
+Normally, each command sent is atomic, where each command's execution exists in a vacuum, but we can work around this by storing a persistent \texttt{Controller} in within \texttt{click.get\_current\_context()}. 
 This allows us to store the state of the system between commands, create global variables that are accessible to all commands, and, most importantly, only need to create a single instance of the \texttt{Controller} for each plugin.
 
 In terminal mode, we are able to accomplish our second goal of having a single interface for both testing and flight.
-Terminal mode is a speical mode of the CLI that uses a REPL to allow the user to interact with the system in a more natural way, without having to type out \texttt{python central\_command.py --config config.yml ...} every time.
+Terminal mode is a special mode of the CLI that uses a REPL to allow the user to interact with the system in a more natural way, without having to type out \texttt{python central\_command.py --config config.yml ...} every time.
 Within terminal mode, the first thing you type is the name of the plugin you want to interact with, which loads the plugin and gives you access to all of the commands in that plugin.
 It also has tab completion for all of the commands in the plugin, so you can easily see what commands are available.
 There is additionally a history feature that allows you to scroll through the previous commands you have entered, and use reverse search to find commands you have entered in the past.
-We primiarily use this terminal interface for testing, as it allows us to easily interact with the system in an isolated environment.
-To match the flight system, we have implemented a version of Central Command that listens to a socket and recieves strings from the ACE computer on the gondola. 
+We primarily use this terminal interface for testing, as it allows us to easily interact with the system in an isolated environment.
+To match the flight system, we have implemented a version of Central Command that listens to a socket and receives strings from the ACE computer on the gondola. 
 The string is then parsed exactly as it would be in the terminal interface, and the command is executed as if it were entered in the terminal, making it identical to the REPL system when in flight. 
-The biggest challenge here is captuing the output of the command and sending it back to the ACE computer.
-This is done by exlusively using the \texttt{click.echo()} method to print to the terminal in REPL mode and then overriding the behavior of \texttt{click.echo()} to send the output to the socket instead of printing it to the terminal.
+The biggest challenge here is capturing the output of the command and sending it back to the ACE computer.
+This is done by exclusively using the \texttt{click.echo()} method to print to the terminal in REPL mode and then overriding the behavior of \texttt{click.echo()} to send the output to the socket instead of printing it to the terminal.
 
 \begin{table}
     \centering
