@@ -25,13 +25,13 @@ There are many different sources that might cause errors in our detectors' data,
 Both cosmic rays and snowballs are transient events that result in sudden increases in charges and pixels’ Data Number (DN) values, compared to their typical neighboring pixels.
 These events are also rare.
 Therefore, we can use anomaly detection to identity these outliers.
-Figure \ref{chap5/fig:anomalies} shows examples of these two events.
+Figure \ref{rst/fig:anomalies} shows examples of these two events.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=.75\linewidth]{figs/5/Examples_fixed.png}
+    \includegraphics[width=.75\linewidth]{figs/rst/Examples_fixed.png}
     \caption{An example of a cosmic ray (left) and snowball (right) in RST's detector data. The top frames show the frame prior to the event and the bottom frames show the area after the event occurred. The bottom graphs show the overall DN value across the entirety of the exposure, showing large jumps at the time of the event for the cosmic ray (top) and snowball (bottom).}
-    \label{chap5/fig:anomalies}
+    \label{rst/fig:anomalies}
 \end{figure}
 
 An anomaly is defined as an unexpected occurrence in a sequence based on a data set of typical sequences \cite{horton2021integrating}. 
@@ -50,13 +50,13 @@ To address this challenge, raw data is automatically processed into interpretabl
 As this anomaly detection system will be part of the SDP pipeline as an additional data product, the runtime of any method must be taken into account along with the method's accuracy. 
 
 The rest of this paper is organized as follows.
-First we go over the methods for identifying and classifying snowballs and cosmic rays in Section \ref{chap5/sec:methods}.
-Then, in Section \ref{chap5/sec:data} we explain the dataset chosen and how labels for the dataset were generated.
-After that, we discuss the results of the different methods and draw conclusions about which methods to implement in the SDP pipeline in Section \ref{chap5/sec:results}.
-Finally, we go over future works in Section \ref{chap5/sec:future}.
+First we go over the methods for identifying and classifying snowballs and cosmic rays in Section \ref{rst/sec:methods}.
+Then, in Section \ref{rst/sec:data} we explain the dataset chosen and how labels for the dataset were generated.
+After that, we discuss the results of the different methods and draw conclusions about which methods to implement in the SDP pipeline in Section \ref{rst/sec:results}.
+Finally, we go over future works in Section \ref{rst/sec:future}.
 
 \section{Methods}
-\label{chap5/sec:methods}
+\label{rst/sec:methods}
 To identify the anomalies in our data, we split our problem into two distinct tasks: 1) locating and grouping pixels that have irregular ramps and 2) classifying those pixels as cosmic rays, snowballs, or something else entirely.
 By splitting our anomaly detection into two tasks, we can use the first step to identify regions of interest and reduce our search area for snowballs and cosmic rays to that of anomalous pixels.
 This can drastically reduce the amount of pixels we have to classify as we also identify the frame that the anomaly occurred in, reducing our focus to a smaller window around the event. 
@@ -69,24 +69,24 @@ The following are potential candidate methods for accomplishing these two tasks.
         Statistical Thresholding & Heuristic Rules\cite{cillis2018snowballs} \\
         Principal Component Analysis (PCA)\cite{wold1987principal} & Convolutional Neural Network (CNN)\cite{gu2018recent}
     \end{tabular}
-    \label{chap5/tab:methods}
+    \label{rst/tab:methods}
 \end{table}
 
-There are other viable methods for accomplishing these tasks, such as Reed-Xiaoli (RX), Localized Reed-Xiaoli (LRX), and James Webb Space Telescope's (JWST) Bayesian Generalized Least Squares (GLS) for locating anomalies, but the scope of this work will focus on the methods in Table \ref{chap5/tab:methods}.
+There are other viable methods for accomplishing these tasks, such as Reed-Xiaoli (RX), Localized Reed-Xiaoli (LRX), and James Webb Space Telescope's (JWST) Bayesian Generalized Least Squares (GLS) for locating anomalies, but the scope of this work will focus on the methods in Table \ref{rst/tab:methods}.
 RX is an unsupervised learning methods that uses a window around a test pixel to compare with the local background \cite{reed1990adaptive}.
 LRX is similar to RX but instead uses a double concentric window to compare the test pixel with a guarded local background \cite{molero2013analysis}.
 JWST's GLS estimator is also an unsupervised method that calculates the slope, or ramp, of each pixel along the time domain and determines the probability that discontinuities in the ramp occurred due to cosmic rays \cite{robberto2015cr}.
 Please note that the JWST data was constructed similarly to the RST's, resulting in non-destructive accumulating frames. 
 
 Before any of the data is used for these methods, they must be loaded and pre-processed.
-For more information about this and the dataset selection, see Section \ref{chap5/sec:data}.
+For more information about this and the dataset selection, see Section \ref{rst/sec:data}.
 
 \subsection{Locating Anomalies}
 \begin{figure}[b]
     \centering
-    \includegraphics[width=1\linewidth]{figs/5/Threshold.png}
+    \includegraphics[width=1\linewidth]{figs/rst/Threshold.png}
     \caption{The readout values for a flagged pixel. The read out values are the amount of DN gained in a given frame. We compare this value to our calculated threshold and, if surpassed, that specific location and frame is flagged for classification.}
-    \label{chap5/fig:threshold}
+    \label{rst/fig:threshold}
 \end{figure}
 To locate the anomalies, we looked for methods that would be able to not only identify where a potential anomaly is located but when the event occurred that caused the anomaly. 
 \subsubsection{Statistical Thresholding}
@@ -107,13 +107,13 @@ We are then left  with groupings of pixels that could potentially be either a co
 Given the majority of pixels within our image aren not affected by anomalies, we can use a random subset of pixels within an exposure and fit PCA to the ramps of these samples.
 If we limit our principal components to two, we can create a fit for the majority of simple ramps. 
 Using our PCA fit, we can reduce all of the pixels in our image to our latent space representation and then inverse transform them to compare the original and reconstructed result \cite{wold1987principal}
-Examples of this are shown in Figure \ref{chap5/fig:PCA}. 
+Examples of this are shown in Figure \ref{rst/fig:PCA}. 
 \begin{figure}
     \centering
-    \includegraphics[width=0.49\linewidth]{figs/5/PCA_Good.png}
-    \includegraphics[width=0.49\linewidth]{figs/5/PCA_Bad.png}
+    \includegraphics[width=0.49\linewidth]{figs/rst/PCA_Good.png}
+    \includegraphics[width=0.49\linewidth]{figs/rst/PCA_Bad.png}
     \caption{Examples of reconstruction of ramps using PCA. The DN values for the reconstructed image are calculated by transforming the original values and then inverse transforming our original ramp using only a subset of the principal components (i.e. two) to reproduce the shape. By limiting the number of principal components to two, we can have the reconstructed image fit the shape fairly well for normal ramps and not fit ramps with anomalies.}
-    \label{chap5/fig:PCA}
+    \label{rst/fig:PCA}
 \end{figure}
 
 With the reconstructed values, we are able to calculate the residual ($Image_{Reconstructed} - Image_{Original}$) of the errors and identify where anomalies occur based on spikes in the ramp of the residual. 
@@ -143,7 +143,7 @@ We determine the circularity of the anomaly be comparing the minor and major axi
 From this we are able to produce two output products: a new data cube where each frame is a mask identifying pixels affected by anomalies, and an updated Event Table with information about each anomaly. 
 
 \subsubsection{Convolutional Neural Network}
-\label{chap5/sec:CNN}
+\label{rst/sec:CNN}
 For each listing in the Event Table, we take a 32 square pixel sample region around the central pixel spatially and the three frames around the event frame for a sample of $32 \times 32  \times 3$ pixels. 
 This is the input into our CNN which is trained using hand labeled data from the DCL dataset. 
 The CNN architecture processes input images through two convolutional layers followed by ReLU activations and max pooling, which flattens the output.
@@ -162,7 +162,7 @@ This allows us to visualize anomalies and see how they may change throughout an 
 Finally, the Event Table is formatted so that each row in the HDF5 array is an anomaly that has central pixel, size, shape (semi-major and semi-minor axis), and classification as columns. 
 These products are produced during SDP pipeline and added as part of the automated report. 
 \section{Data}
-\label{chap5/sec:data}
+\label{rst/sec:data}
 The H4RG detectors used in the WFI array are able to perform non-destructive reads while producing an exposure resulting in measurements through time, also referred to as up-the-ramp measurements. 
 This allows us to take the up-the-ramp measurements taken during an exposure and order them in a series to create frames within the exposure. 
 This results in a time series of frames for each integration from a detector's pixel values being reset at the beginning of an exposure to the final accumulated pixel values at the end of an exposure \cite{jwstjdoc} \cite{casertano2022determining}.
@@ -182,10 +182,10 @@ The data provided by the DCL lab contains labeled information about known snowba
 These snowballs are our preliminary ground truth for identifying the effectiveness of our methods. 
 In addition to these snowballs, the outputs for each method are reviewed to identify snowballs and cosmic rays that are not in the original labels
 Because the heuristic method is overly sensitive, each anomaly highlighted by the method was hand labeled as potential anomaly, cosmic ray, snowball, or non-anomaly. 
-These hand labels are used to measure the accuracy of each method and train methods such as the CNN in Section \ref{chap5/sec:CNN}.
+These hand labels are used to measure the accuracy of each method and train methods such as the CNN in Section \ref{rst/sec:CNN}.
 
 \section{Results and Conclusions}
-\label{chap5/sec:results}
+\label{rst/sec:results}
 
 As we are able to split our system into two different subsystems, the results here will discuss which of the methods are best for accomplishing each individual task. 
 Then we will go more in depth with the best pairing of methods integration into the RST WFI SDP. 
@@ -204,15 +204,15 @@ This makes the Statistical Threshold method faster than PCA in every experiment 
 
 \begin{figure}
     \centering
-    \includegraphics[width=.5\linewidth]{figs/5/elbow.png}
+    \includegraphics[width=.5\linewidth]{figs/rst/elbow.png}
     \caption{Elbow plot for the PCA method on typical ramps. A limit of 2 components was selected to ensure we aren't over fitting to the curve and missing anomalies.}
-    \label{chap5/fig:elbow}
+    \label{rst/fig:elbow}
 \end{figure}
 
 As for performance, both methods are over-sensitive to false positives.
 The PCA method found less groupings than the statistical thresholding method but many of the omitted locations are false negatives.
 We chose to use two principal components as any higher numbers of components would have fit to jumps in the ramp and caused lower errors.
-Two components also gives us an overall shape that matches a typical ramp and explains most of the variance of the exposure's ramps without over fitting to the curve as shown in Figure \ref{chap5/fig:elbow}.
+Two components also gives us an overall shape that matches a typical ramp and explains most of the variance of the exposure's ramps without over fitting to the curve as shown in Figure \ref{rst/fig:elbow}.
 This false negative rate varies from exposure to exposure but ranged from 65 to 80\% missed anomalies. 
 Despite being overly sensitive to any jump in the ramp, the statistical thresholding method is preferred here due to it's higher accuracy and lower runtime.
 This method had a false negative rate of 10\% across the entire labeled dataset of over 5000 hand labeled events. 
@@ -240,17 +240,17 @@ Of the methods tested, the best combination of methods for the SDP pipeline woul
 This combination method was able to find every pre-labeled snowball from the original dataset and correctly identify 85 out of 137 (62\%) of hand labeled snowballs. 
 The method also over classified cosmic rays by identifying many potential anomalies and non-anomalies as cosmic rays.
 This is likely due to the less rigid criteria for identifying cosmic rays compared to snowballs.
-Figure \ref{chap5/fig:heuristic_confusion} shows the confusion matrix for the Heuristic Rules method with the located data from the Statistical Thresholding method.
+Figure \ref{rst/fig:heuristic_confusion} shows the confusion matrix for the Heuristic Rules method with the located data from the Statistical Thresholding method.
 This method is currently being used in the SDP pipeline to identify anomalies in the WFI detector data.
 \begin{figure}[h]
     \centering
-    \includegraphics[width=.7\textwidth]{figs/5/heuristic_confusion.png}
+    \includegraphics[width=.7\textwidth]{figs/rst/heuristic_confusion.png}
     \caption{Confusion Matrix for the Heuristic Rules Method with Located Data from Statistical Thresholding.}
-    \label{chap5/fig:heuristic_confusion}
+    \label{rst/fig:heuristic_confusion}
 \end{figure}
 
 \section{Future Work}
-\label{chap5/sec:future}
+\label{rst/sec:future}
 This work is a preliminary analysis of the anomaly detection methods for the RST WFI SDP pipeline.
 There are many areas for improvement and future work to be done.
 First and foremost, more methods will need to be evaluated in order to determine a better alternative to the Heuristic Rules method for classification. 
@@ -261,7 +261,7 @@ With a more well defined dataset of labeled data, we will be able to better asse
 
 Another area for improvement may be finding better ways to locate anomalies.
 We may revisit PCA to see if we can adjust the parameters (number of components and threshold for error) to see if we can have it not discard real anomalies. 
-Additionally, other methods like RX, LRX and GLS, as described at the beginning of Section \ref{chap5/sec:methods}, could be better suited for filtering the initial exposure.
+Additionally, other methods like RX, LRX and GLS, as described at the beginning of Section \ref{rst/sec:methods}, could be better suited for filtering the initial exposure.
 
 The current implementation of the SDP pipeline uses a bad pixel mask to mask regions of the image that are problematic. 
 Because we didn't have a bad pixel mask for the data we were using, we had to analyze the entire image with our anomaly detection methods.

@@ -6,7 +6,7 @@ Each package is designed to be self-contained, focusing on a single device in th
 
 The primary function of this chapter is to describe the readout system in excruciating detail so future users can understand how every part of ASTHROS works as well as the design decisions made during the development of the system.
 While this is not a traditional chapter in the dissertation sense, it is an important part of the work done during my research and documenting the system is vital to the success of the project.
-
+This chapter starts with a section on the overall network architecture of 
 \section{Network Architecture}
 TODO:
 \subsection{Command}
@@ -92,10 +92,10 @@ This is done by running the following command:
 This will install all the necessary packages to run the \texttt{PyMCC} package.
 
 Finally, we need to edit the hosts file on the CM4 to ensure that we can access the other devices on the readout network by name.
-This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{chap2/app:hosts}.
+This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{readout/app:hosts}.
 
 \section{RabbitMQ}
-\label{chap2/section:rmqtools}
+\label{readout/section:rmqtools}
 The ASTHROS readout system relies on RabbitMQ to communicate between different devices and systems on the readout network.
 Past ballooning missions, such as BLAST-TNG, utilize sockets to communicate between systems \citep{gordon2019highly}.
 The resulting network of sockets across multiple devices becomes difficult to manage and debug as many of the definitions for the sockets are hard coded into the software.
@@ -259,7 +259,7 @@ When sending a command to the PMCC, the first word of the command is the address
 \end{equation}
 Because \texttt{spidev} uses 8-bit communication, we need to split the 16-bit word into two 8-bit bytes.
 \begin{equation}
-    \label{chap2/eq:split_word}
+    \label{readout/eq:split_word}
     \text{byte[8][2]} = [\text{word[16]} >> 8,\ \text{word[16]}\ \text{\&}\ \text{0xFF}]
 \end{equation}
 The helper method returns these two bytes as an array that can be used in other methods to convert an address and command into a format that can be sent over SPI.
@@ -272,7 +272,7 @@ For both read and write commands, we utilize the \texttt{spidev} library's \text
 On the other hand, \texttt{xfer3()} will automatically split the data into multiple SPI transactions if the data is longer than the maximum SPI buffer size.
 This is vital for burst reads on the PMCC as our data can be much longer than the maximum SPI buffer size.
 For writes, the \texttt{xfer()} method sends the TX bytes and the data to write to the PMCC.
-The data is split into two 8-bit bytes using Equation \ref{chap2/eq:split_word}.
+The data is split into two 8-bit bytes using Equation \ref{readout/eq:split_word}.
 During this transaction, the PMCC does not send any data back, so the \texttt{xfer3()} function returns an array of zeros.
 If our transaction is unsuccessful, instead of returning zeroes, we will receive an empty array that we can check for.
 For single register reads, the \texttt{xfer()} method sends the TX bytes followed by a dummy word to the PMCC.
@@ -313,9 +313,9 @@ We use this maximum value to determine if the provided value is too large, in or
 Finally, we create a mask using the maximum value and shifting it to the left by the LSB.
 We then take the original buffer and do a bitwise AND with the inverse of the mask to clear the bits between the LSB and the MSB. 
 Finally, we shift our data to the left by the LSB and do a bitwise OR with the original buffer to set the bits between the LSB and MSB to the new value.
-This process is shown in Equation \ref{chap2/eq:mask_data}.
+This process is shown in Equation \ref{readout/eq:mask_data}.
 \begin{align}
-    \label{chap2/eq:mask_data}
+    \label{readout/eq:mask_data}
     \text{maxValue} &= (1 << (\text{MSB} - \text{LSB} + 1)) - 1 & 0 \leq \text{LSB} \leq \text{MSB} \leq 15\\
     \text{mask} &= \text{maxValue} << \text{LSB} \\
     \text{buffer} &= (\text{buffer}\ \&\ \sim\text{mask})\ |\ (\text{data} << \text{LSB}) & 0 \leq \text{data} \leq \text{maxValue}
@@ -351,13 +351,13 @@ Finally, we provide a \texttt{close()} method that simply calls the \texttt{clos
 There are a number of device specific configurations that need to be set for each PMCC in order to operate correctly.
 To simplify the process of writing code to configure the PMCCs, we utilize the YAML configuration file format to store the configuration for each PMCC \citep{yaml}.
 This YAML file has information about the RMQ configuration as well as spectrometer configuration. 
-For now, we will focus on the spectrometer configuration and discuss the RMQ configuration in Section \ref{chap2/section:rmqtools}.
+For now, we will focus on the spectrometer configuration and discuss the RMQ configuration in Section \ref{readout/section:rmqtools}.
 The spectrometer config section, \texttt{spec}, is split into two main sections for the PMCCs, global variables used for every spectrometer, and spectrometer specific variables.
 For each experiment, we would like to have a single configuration file that can be used on every CM4 to configure multiple PMCCs. 
 To accomplish this, each CM4 is given a unique name that we use to differentiate between each device. 
 Each PMCC connected to a CM4 is then indexed, so we can individually address each one by specifying the CM4 name and the PMCC index.
 
-The format for the global configurations is shown in Table \ref{chap2/table:pmcc_config}.
+The format for the global configurations is shown in Table \ref{readout/table:pmcc_config}.
 These configurations are used to set values we don't expect to individually change for each PMCC.
 While we may create different configurations for different experiments, such as integration time and magnitude or power mode, we will likely make these changes to all PMCCs at once and not individually.
 
@@ -374,10 +374,10 @@ While we may create different configurations for different experiments, such as 
         \texttt{window\_bypass} & bool & True to enable rectangular window bypass \\
         \texttt{window\_bit\_growth} & bool & True to enable window div 2 bypass \\
         \texttt{butterfly\_shift} & bool & True to enable butterfly shift for improved noise measurements \\
-        \texttt{wiring} & array & See Table \ref{chap2/table:wiring} for wiring configuration \\
+        \texttt{wiring} & array & See Table \ref{readout/table:wiring} for wiring configuration \\
         \texttt{groups} & dict & Dictionary of CM4 names and an array of PMCC chip IDs  \\
     \end{tabularx}
-    \label{chap2/table:pmcc_config}
+    \label{readout/table:pmcc_config}
     \caption{Global Variables in the PMCC Configuration File}
 \end{table}
 
@@ -386,7 +386,7 @@ In full operation, we will have four PMCCs connected to each CM4, so we need a w
 Because the harness is identical for each CM4, we can specify the wiring for each PMCC along the harness, and it will be the same for every CM4. 
 The only exception to this is the lone 100GHz PMCC connected to its own CM4. 
 The wiring for this PMCC is simply the first index in the wiring array will still work with the rest of the system.
-Each item in the wiring configuration is as follows in Table \ref{chap2/table:wiring}.
+Each item in the wiring configuration is as follows in Table \ref{readout/table:wiring}.
 
 \begin{table}[ht!]
     \centering
@@ -396,7 +396,7 @@ Each item in the wiring configuration is as follows in Table \ref{chap2/table:wi
         \texttt{gpio} & int & GPIO pin number for the reset signal\\
         \texttt{speed} & int & SPI device speed in Hz, typically 5000000 unless changes for stability reasons and debugging\\
     \end{tabularx}
-    \label{chap2/table:wiring}
+    \label{readout/table:wiring}
     \caption{Wiring Configuration in the PMCC Configuration File}
 \end{table}
 
@@ -409,7 +409,7 @@ For the 100GHz PMCC and CM4, the array will only contain a single chip ID.
 When loading in the configuration file, we create a \texttt{PMCC\_Config} object that all configuration information necessary for the CM4. 
 We initialize this object with the \texttt{spec} part of the YAML file, the group name of the CM4, and an array of PMCC indexes to configure (e.g. \texttt{[1, 2, 3, 4]} for all spectrometers).
 The \texttt{PMCC\_Config} object then creates properties for each of the global configurations that can be accessed by the \texttt{PMCC\_SPI} object.
-We set the resolution mode of the PMCCs using the \texttt{resolution} and \texttt{shift} properties and a lookup table for the proper register values as shown in Table \ref{chap2/table:resolution}.
+We set the resolution mode of the PMCCs using the \texttt{resolution} and \texttt{shift} properties and a lookup table for the proper register values as shown in Table \ref{readout/table:resolution}.
 We could, theoretically, set higher values for LSB shift but for the purposes of ASTHROS, we only need 0 and 4 bit shifts.
 
 \begin{table}
@@ -422,7 +422,7 @@ We could, theoretically, set higher values for LSB shift but for the purposes of
       & $4$ & \texttt{0x180} & \texttt{0x1C0} \\\cline{3-4}
     \end{tabular}
     \caption{Resolution Mode Configuration for PMCC}
-    \label{chap2/table:resolution}
+    \label{readout/table:resolution}
 \end{table}
 
 After the global variables are loaded, we create a dictionary of device configurations for individual PMCCs. 
@@ -598,7 +598,7 @@ The configuration process is as follows:
         Write to the \texttt{dsp\_skip\_fft\_stage} register to 0 to use all four stages of the FFT. 
         This results in 512 frequency bins per sub-band. 
     \item 
-        Write to the \texttt{DSP\_READOUT\_CONF} with the mode from the configuration file as shown in Table \ref{chap2/table:resolution}. 
+        Write to the \texttt{DSP\_READOUT\_CONF} with the mode from the configuration file as shown in Table \ref{readout/table:resolution}. 
         This sets the resolution and shift for the readout.
     \item 
         Write to the \texttt{CHIP\_CONF} register to set the \texttt{dsp\_enable} bit to 1 to enable the DSP and \texttt{dsp\_acc\_mode} to 1 to enable continuous FFT operation. 
@@ -776,7 +776,7 @@ This is done to reduce the size of the file and speed up the writing process.
 The shape of these datasets is determined by the \texttt{max\_writes} parameter and the length of the spectra.
 The \texttt{stamps} dataset is a 1D array of 64-bit doubles with a length of \texttt{max\_writes}.
 The \texttt{data} dataset is a 2D array with a shape of \texttt{max\_writes} by the length of the spectra and a data type matching the specified data type during initialization.
-A header is added to the \texttt{data} dataset and contains the attributes shown in Table \ref{chap2/table:h5_header}.
+A header is added to the \texttt{data} dataset and contains the attributes shown in Table \ref{readout/table:h5_header}.
 After creating the file, we start a counter at 0 to keep track of the number of spectra in the file. 
 
 \begin{table}[ht!]
@@ -794,7 +794,7 @@ After creating the file, we start a counter at 0 to keep track of the number of 
         \texttt{butterfly\_shift}  & True if butterfly shift is enabled\\
     \end{tabularx}
     \caption{Attributes of the \texttt{data} dataset in the HDF5 file}
-    \label{chap2/table:h5_header}
+    \label{readout/table:h5_header}
 \end{table}
 
 When writing data to the file, we use the \texttt{write\_spectra()} method.
@@ -896,13 +896,13 @@ These three systems are split into different modules in the \texttt{cryocool} pa
         \texttt{TEMP\_RAMP} & path & Path to the temperature ramp file \\
         \texttt{REGS} & path & Path to the register configuration file
     \end{tabularx}
-    \label{chap2/table:cryocool_config}
+    \label{readout/table:cryocool_config}
     \caption{Cryocooler Configuration Parameters}
 \end{table}
 
 Within the \texttt{cryocool} package, we have the \texttt{cryocool} module that is used to control the cryocooler.
 The \texttt{Cryocool} class is instantiated with a configuration YAML that contains the parameters for the cryocooler. 
-The necessary fields for configuration are shown in Table \ref{chap2/table:cryocool_config}.
+The necessary fields for configuration are shown in Table \ref{readout/table:cryocool_config}.
 We first set up the serial communication with the cryocooler using the \texttt{CONN} parameters and the Python serial library.
 We then make note of the status registers that are read out when we issue a status command to the cryocooler.
 After this, we read in the temperature ramp as a pandas dataframe from the \texttt{TEMP\_RAMP} file \citep{reback2020pandas}.
@@ -925,21 +925,21 @@ This file contains points for a calibration curve to convert voltage from the in
         \texttt{Housekeeping} & bool & True if the register is a housekeeping value \\
         \texttt{Temperature} & bool & True if the register is a temperature value \\
     \end{tabularx}
-    \label{chap2/table:cryocool_regs}
+    \label{readout/table:cryocool_regs}
     \caption{Cryocooler Register Configuration Parameters}
 \end{table}
 
 
 Finally, we read in the register configuration file from the \texttt{REGS} path.
 This file is a CSV table that contains information for each register on the cryocooler and how to convert read values to their intended units. 
-Table \ref{chap2/table:cryocool_regs} shows the fields in the register configuration file.
+Table \ref{readout/table:cryocool_regs} shows the fields in the register configuration file.
 Each row of the table is read in as a \texttt{Reg} object that allows us to more easily convert between the raw register values and the intended units.
 The \texttt{Reg} object takes in the configuration row and saves the values as attributes.
 If a register specifies an inversion or min/max values, we label the register as convertible. 
 If convertible, the \texttt{Reg} object has \texttt{convert\_to\_count()} and \texttt{convert\_to\_val()} methods that convert between the raw register value and the intended units.
-This is accomplished by a simple linear conversion as shown in Equation \ref{chap2/eq:reg_convert}.
+This is accomplished by a simple linear conversion as shown in Equation \ref{readout/eq:reg_convert}.
 \begin{equation}
-    \label{chap2/eq:reg_convert}
+    \label{readout/eq:reg_convert}
     y = \max\left(\min\left(\frac{Y_{max} - Y_{min}}{X_{max} - X_{min}}\left(x - X_{min}\right) + Y_{min}, Y_{max}\right), Y_{min}\right)
 \end{equation}
 Additionally, if the value is converting to a count, we round the result to the nearest integer.
@@ -1069,7 +1069,7 @@ This method accepts keyword arguments for \texttt{convert} and \texttt{in\_kelvi
 The \texttt{cryotemp} module wraps the lakeshore package with a \texttt{Lakeshore} class that can be used to read values from a Lakeshore 240. 
 The configuration for the Lakeshore devices is stored in the YAML file that contains the connection parameters for the device.
 On ASTHROS, we have two Lakeshore 240s that are connected to the central command computer via USB.
-The configuration file for the Lakeshore devices is shown in Table \ref{chap2/table:lakeshore_config}.
+The configuration file for the Lakeshore devices is shown in Table \ref{readout/table:lakeshore_config}.
 
 \begin{table}[ht!]
     \centering
@@ -1081,7 +1081,7 @@ The configuration file for the Lakeshore devices is shown in Table \ref{chap2/ta
         \texttt{TYPE} & str & Type of readout for the device (Sensor, Kelvin, Celsius, or Fahrenheit) \\
         \texttt{CHANNELS} & list & List of channels on the device with the \texttt{NAME} and \texttt{CHANNEL} number of the channel
     \end{tabularx}
-    \label{chap2/table:lakeshore_config}
+    \label{readout/table:lakeshore_config}
     \caption{Lakeshore Configuration Parameters}
 \end{table}
 
@@ -1122,7 +1122,7 @@ Each status buffer is set with a different queue name as follows: \texttt{housek
 
 Finally, we create a \texttt{cryocool\_command()} function to handle any command sent to the cryocooler.
 This function is decorated with \texttt{rmq.handle\_command()} and a priority lock of 1 to ensure that it is handled before any routine status commands.
-As described in \ref{chap2/section:rmqtools}, this decorated function will receive a string for the command name as well as any positional arguments or keyword arguments.
+As described in \ref{readout/section:rmqtools}, this decorated function will receive a string for the command name as well as any positional arguments or keyword arguments.
 The following commands are supported:
 
 \begin{itemize}
@@ -1146,7 +1146,7 @@ The MDrive system is a command language used to program and configure the motor.
 While we could use the MDrive software to control the motor, we have implemented a Python interface to control the motor to better integrate with the rest of our architecture. 
 
 The \texttt{motor} package consists of a single \texttt{motor} module that contains the \texttt{Motor} class.
-The \texttt{Motor} class is initialized with a configuration as outlined in Table \ref{chap2/table:motor_config}.
+The \texttt{Motor} class is initialized with a configuration as outlined in Table \ref{readout/table:motor_config}.
 
 \begin{table}
     \centering
@@ -1156,7 +1156,7 @@ The \texttt{Motor} class is initialized with a configuration as outlined in Tabl
         \texttt{HWVARS} & dict & Dictionary of hardware variables for the motor, described in \texttt{set\_hwvars()}\\
         \texttt{FUNCTIONS} & dict & Dictionary of functions for the motor, described in \texttt{set\_functions()}\\
     \end{tabularx}
-    \label{chap2/table:motor_config}
+    \label{readout/table:motor_config}
     \caption{Motor Configuration Parameters}
 \end{table}
 
@@ -1183,7 +1183,7 @@ During initialization, we take the \texttt{HWVARS} dictionary from the configura
 \texttt{set\_hwvars()} iterates over the dictionary provided and calls \texttt{set\_hwvar()} for each key-value pair.
 \texttt{set\_hwvar()} takes in a key and value and writes the command to set the hardware variable to the motor as simply \texttt{<key> <value>}.
 The response for this command is then read and returned.
-The values we define in the \texttt{HWVARS} configuration are shown in Table \ref{chap2/table:motor_hwvars}.
+The values we define in the \texttt{HWVARS} configuration are shown in Table \ref{readout/table:motor_hwvars}.
 
 \begin{table}
     \centering
@@ -1195,7 +1195,7 @@ The values we define in the \texttt{HWVARS} configuration are shown in Table \re
         \texttt{A} & Acceleration & Acceleration of the motor in steps per second squared.\\
         \texttt{D} & Deceleration & Deceleration of the motor in steps per second squared.
     \end{tabularx}
-    \label{chap2/table:motor_hwvars}
+    \label{readout/table:motor_hwvars}
     \caption{Motor Hardware Variables}
 \end{table}
 
@@ -1220,7 +1220,7 @@ We then iterate over the steps written in the configuration file and write each 
 After all steps are written, we write an \texttt{E} command to indicate to the runtime to End Program Execution.
 Finally, we write a \texttt{PG} to exit the programming mode. 
 For ASTHROS, we have a few predefined functions we use to interact with the motor. 
-These are shown in Table \ref{chap2/table:motor_functions}.
+These are shown in Table \ref{readout/table:motor_functions}.
 
 \begin{table}
     \centering
@@ -1232,7 +1232,7 @@ These are shown in Table \ref{chap2/table:motor_functions}.
         \texttt{SKY} & Opens the motor so that our detectors are pointed at the sky \\
         \texttt{TOGGLE} & Uses conditional branches to toggle between the \texttt{CAL} and \texttt{SKY} functions using our position. If the position is outside of the expected range, the motor will run the \texttt{INIT} function to reset the position.\\
     \end{tabularx}
-    \label{chap2/table:motor_functions}
+    \label{readout/table:motor_functions}
     \caption{User Programmed Motor Functions}
 \end{table}
 
@@ -1280,7 +1280,7 @@ This computer is connected directly to the central command computer via RS-485 a
 
 The \texttt{antenna} package includes the \texttt{antenna} module that contains the \texttt{Antenna} class which is used for all communication with the computer controlling the antenna.
 The \texttt{Antenna} class is initialized with a configuration file that contains the connection parameters for the RS-485 connection as well as a path to a YAML file that contains the register configuration for the antenna.
-This YAML file outlines the registers on the antenna as shown in Table \ref{chap2/table:antenna_regs}.
+This YAML file outlines the registers on the antenna as shown in Table \ref{readout/table:antenna_regs}.
 
 \begin{table}
     \centering
@@ -1292,7 +1292,7 @@ This YAML file outlines the registers on the antenna as shown in Table \ref{chap
         \texttt{R} & int & Register read address (optional for write only addresses)\\
         \texttt{W} & int & Register write address (optional for read only addresses)\\
     \end{tabularx}
-    \label{chap2/table:antenna_regs}
+    \label{readout/table:antenna_regs}
     \caption{Antenna Register Configuration Parameters for a Single Register}
 \end{table}
 
@@ -1430,13 +1430,13 @@ We also check if the read voltage and enable status is within a certain toleranc
         \texttt{SUBTYPE} & str & The specific subtype of the channel within the system (e.g. \texttt{REF}, \texttt{CM4}, \texttt{PMCC}, \dots). \\
         \texttt{DESCRIPTION} & str & The full name of the channel.\\
     \end{tabularx}
-    \label{chap2/table:psu_config}
+    \label{readout/table:psu_config}
     \caption{Power Supply Unit Configuration Parameters}
 \end{table}
 
 \texttt{SmartPsu} is initialized using an \texttt{Environment} object and a configuration file that contains the channel configurations.
 The configuration file can be either a CSV or INI file, CSV being the preferred format but INI files are supported for backwards compatibility with the original implementation.
-Regardless of the format, the configuration file specifies the following information for each channel as shown in Table \ref{chap2/table:psu_config}.
+Regardless of the format, the configuration file specifies the following information for each channel as shown in Table \ref{readout/table:psu_config}.
 Each line of the file is read and a \texttt{Channel} object is created with these attributes for usage within \texttt{SmartPsu}.
 When calling \texttt{safe\_write()} within the \texttt{Channel} class, we use these parameters to verify the voltage and current are within the allowed ranges.
 These objects are stored in a dictionary with the key being a combination of the \texttt{ADDRESS}, \texttt{BANK} and \texttt{CHANNEL} values.
@@ -1486,7 +1486,7 @@ This is especially true when we don't have the complete network setup or are tes
 In previous a previous iteration of the Smart PSU control system, we had a command line interface that allowed us to issue commands to the Smart PSU and get responses back.
 To ensure that the scientists and engineers on the team can continue their work uninterrupted, we have implemented a one to one command line interface that allows us to run the Smart PSU using an identical control scheme as the previous iteration.
 This command line interface can be executed as one off commands or as an open control loop to allow for interactive testing.
-Table \ref{chap2/table:psu_cli} shows the menu of commands a user may select when running the interactive testing loop.
+Table \ref{readout/table:psu_cli} shows the menu of commands a user may select when running the interactive testing loop.
 
 \begin{table}
     \centering
@@ -1506,7 +1506,7 @@ Table \ref{chap2/table:psu_cli} shows the menu of commands a user may select whe
         \texttt{forcestop} & Turn off PSU without specifying config file (best effort guess of priorities based on current output settings). \\
         \texttt{checkmixers} & Check HEB mixers I-V reading the current from the isense ADC inputs.
     \end{tabularx}
-    \label{chap2/table:psu_cli}
+    \label{readout/table:psu_cli}
     \caption{Power Supply Unit Command Line Interface}
 \end{table}
 
@@ -1596,14 +1596,14 @@ In both cases, the function takes in the index of the IF slice and either the at
 The address and, if necessary, the attenuation value are checked and converted to the correct format.
 Both functions then call the \texttt{rw\_pca()} function to write or read the value from the expander, specifying the read/write bit as necessary.
 Finally, both functions return the status of the function call, which is nonzero for any error that may occur from invalid input or a failed transmission.
-A listing of all the possible errors can be found in Appendix \ref{chap2/app:if_amp_errors}.
+A listing of all the possible errors can be found in Appendix \ref{readout/app:if_amp_errors}.
 
 \subsection{Arduino Control Loop}
 \begin{figure}
     \centering
-    \includegraphics[width=.8\textwidth]{figs/2/FSM_IF.png}
+    \includegraphics[width=.8\textwidth]{figs/readout/FSM_IF.png}
     \caption[Finite State Machine for the IF Amplifier Control Loop]{Finite State Machine for the IF Amplifier Control Loop. Each state shows the current step in the process followed by the system that requested the action.}
-    \label{chap2/fig:if_amp_fsm}
+    \label{readout/fig:if_amp_fsm}
 \end{figure}
 
 For the Arduino control loop, we have implemented multiple ways to interact with the device using the \texttt{if\_amp} library.
@@ -1613,7 +1613,7 @@ A web interface was also developed to control the attenuators using a web browse
 Including the web interface adds additional static memory usage to the Arduino Nano Every in the form of large HTML strings.
 
 The structure for the Arduino control loop is a finite state machine that keeps track of the current request and which system requested it.
-Figure \ref{chap2/fig:if_amp_fsm} shows the state diagram for the finite state machine.
+Figure \ref{readout/fig:if_amp_fsm} shows the state diagram for the finite state machine.
 
 The system starts with \texttt{setup()} which initializes all of the hardware interfaces and sets our initial state to \texttt{IDLE}.
 Within \texttt{setup()}, we start our serial interface and initialize the I$^2$C bus.
@@ -1758,7 +1758,7 @@ In practice, this looks like the following sequence, where the clock has a 12 se
         11 & \texttt{11} & Cryocooler Block \\
         12 & \texttt{12} & Intermediate Frequency Block \\
     \end{tabularx}
-    \label{chap2/table:housekeeping_sequence}
+    \label{readout/table:housekeeping_sequence}
     \caption{Housekeeping Sequence}
 \end{table}
 
@@ -1834,14 +1834,14 @@ The motor block is another relatively simple system.
 The motor only has one route, \texttt{housekeeping.motor}, which receives the mirror position from the motor controller.
 The following values are packed into the byte array for the motor block.
 \begin{itemize}
-    \item \texttt{HC} - Hold Current as a percentage of the maximum current\footnote{\label{chap2/footnote:motor}This value is a user set value and should not change during operations. We downlink this value in case it does change due to an error in the system.}
-    \item \texttt{RC}- current as a percentage of the maximum current$^{\ref{chap2/footnote:motor}}$
-    \item \texttt{A} - The acceleration of the motor in steps per second squared$^{\ref{chap2/footnote:motor}}$.
-    \item \texttt{D} - The deceleration in steps per second squared$^{\ref{chap2/footnote:motor}}$.
-    \item \texttt{VM} - The maximum velocity of the motor in steps per second$^{\ref{chap2/footnote:motor}}$.
-    \item \texttt{VI} - The initial velocity in steps per second$^{\ref{chap2/footnote:motor}}$.
+    \item \texttt{HC} - Hold Current as a percentage of the maximum current\footnote{\label{readout/footnote:motor}This value is a user set value and should not change during operations. We downlink this value in case it does change due to an error in the system.}
+    \item \texttt{RC}- current as a percentage of the maximum current$^{\ref{readout/footnote:motor}}$
+    \item \texttt{A} - The acceleration of the motor in steps per second squared$^{\ref{readout/footnote:motor}}$.
+    \item \texttt{D} - The deceleration in steps per second squared$^{\ref{readout/footnote:motor}}$.
+    \item \texttt{VM} - The maximum velocity of the motor in steps per second$^{\ref{readout/footnote:motor}}$.
+    \item \texttt{VI} - The initial velocity in steps per second$^{\ref{readout/footnote:motor}}$.
     \item \texttt{P} - The current position of the motor in steps.
-    \item \texttt{CB} - The current control bounds, a mode selection for torque performance$^{\ref{chap2/footnote:motor}}$.
+    \item \texttt{CB} - The current control bounds, a mode selection for torque performance$^{\ref{readout/footnote:motor}}$.
     \item \texttt{ER} - The error code from the motor controller.
 \end{itemize}
 
@@ -1923,11 +1923,11 @@ This is done by exclusively using the \texttt{click.echo()} method to print to t
         \texttt{spec} & Controls the Spectrometer Systems. \\
         \texttt{synth} & Controls the Synthesizer Systems. \\
     \end{tabularx}
-    \label{chap2/table:click_plugins}
+    \label{readout/table:click_plugins}
     \caption{Plugins for the Central Command System}
 \end{table}
 
-Table \ref{chap2/table:click_plugins} shows a list of the plugins that are currently implemented or planned for the system.
+Table \ref{readout/table:click_plugins} shows a list of the plugins that are currently implemented or planned for the system.
 Two plugins do not control a specific subsystem but are instead used to provide broad functionality to ASTHROS.
 \texttt{seq} is a special scripting plugin that allows us to write a sequence of commands to be executed in order as a text file. 
 When the file is executed, it is parsed and each command is executed in order.

@@ -24,9 +24,9 @@ This makes novelty detection ideal for scenarios where \textit{novel} examples a
 Identifying anomalous examples is useful in many application domains such as structural fault detection for aerospace systems by analyzing ambient vibrations \citep{worden1997structural} or identifying brain tumors using MRI images \citep{wang2020brain}.
 \begin{figure*}
 \centering
-\includegraphics[width=\linewidth]{figs/1/DSN.png}
+\includegraphics[width=\linewidth]{figs/msl/DSN.png}
 \caption[Mastcam Image Processing Pipeline]{Illustration of the Mastcam image processing pipeline \protect\citep{kerner2020comparison}}
-\label{chap1/fig:timeline}
+\label{msl/fig:timeline}
 \end{figure*}
 
 Planetary science is another domain where novelty detection proves useful. 
@@ -68,7 +68,7 @@ This allows novelty detection systems to highlight abnormal data by evaluating h
 These methods can be applied to various domains such as fraud detection based on card activity \citep{oosterlinck2020one}, human verification for websites from mouse and keyboard usage \citep{kim2018keystroke}, fault detection for aerospace systems by analyzing ambient vibrations \citep{worden1997structural} and brain tumor identification using MRI images \citep{wang2020brain}.
 
 This work is based on previous work that developed novelty detection for multispectral images on Mars \citep{kerner2020comparison}.
-Figure \ref{chap1/fig:timeline} shows the current pipeline for multispectral image processing for operational analysis and where we propose to augment the pipeline with novelty detection systems. 
+Figure \ref{msl/fig:timeline} shows the current pipeline for multispectral image processing for operational analysis and where we propose to augment the pipeline with novelty detection systems. 
 Calibrated data are often not available during the tight tactical analysis schedule, so uncalibrated data will be used for novelty analysis. 
 Current methods for quick analysis involve generating quick look products, such as decorrelation stretches and filter ratios, which help to identify spectral changes in the sequence \citep{gillespie1986color}.
 For example, comparing the relative reflectance spectra of two different drill tailings can inform analysts of the similarities and differences in mineral composition \citep{wellington2017visible}.
@@ -86,9 +86,9 @@ Our goal is to create novelty detection products that could be integrated into a
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure*}
 \centering
-\includegraphics[width=\linewidth]{figs/1/categories.png}
+\includegraphics[width=\linewidth]{figs/msl/categories.png}
 \caption[Novel Geology Categories for Mastcam Multispectral Images]{Examples from the eight categories of novel geology in the Mastcam multispectral image data set \protect\citep{kerner_data}} 
-\label{chap1/fig:NovelCategories}
+\label{msl/fig:NovelCategories}
 \end{figure*}
 
 In this work, we created a data set of all multispectral Mastcam sequences based on the pre-processing methods outlined in the labeled Mars multispectral novelty detection data set \citep{kerner_data}.
@@ -100,7 +100,7 @@ Additionally, uncalibrated images were used as these data are the most readily a
 To generate the data set, these thumbnails were loaded as single band images in OpenCV before combining them to produce a single, six band, tile \citep{opencv_library}.
 
 While we did not explicitly use the labeled Mars multispectral novelty detection data set in this work, we utilized the novelty classes to verify the system.
-The data set provided a set of novel tiles divided into 8 sub-classes: meteorite, float rock, bedrock, vein, broken rock, dump pile, drill hole, and DRT spot, as shown in Figure \ref{chap1/fig:NovelCategories}. 
+The data set provided a set of novel tiles divided into 8 sub-classes: meteorite, float rock, bedrock, vein, broken rock, dump pile, drill hole, and DRT spot, as shown in Figure \ref{msl/fig:NovelCategories}. 
 Multispectral analysts from the Mastcam operations team identified novel geology in images using bounding boxes based on operations experience and past publications of high interest targets (e.g., \citep{wellington2017visible}).
 Sub-sampled tiles that intersected with these bounding boxes were included in the novel data set.
 %Multispectral analysts were tasked with drawing bounding boxes around novel features in thumbnail sequences based on their knowledge of high interest targets supported by literature.
@@ -147,16 +147,16 @@ Instead, RX computes a background distribution from typical examples and compare
 For novelty detection in Mastcam sequences, the background is computed using the spectrum from each pixel in all sequences in order to generalize the entirety of the data set. 
 For a multispectral image with $n$ filters, the background distribution is defined by the $n \times 1$ mean spectrum vector, $\boldsymbol{\mu}$, and an $n \times n$ covariance matrix, $\boldsymbol{\Sigma}$, of all pixels in the training set \citep{guo2016anomaly}.
 This provides a mean for each multispectral band and a covariance matrix for the band pairings. 
-To infer the novelty in a new image, $\boldsymbol{X}$, an RX score is calculated for each $n \times 1$ pixel vector, $\boldsymbol{x}_i \in \boldsymbol{X}$, using the Mahalanobis distance between the background and the filter response values as shown in Equation \ref{chap1/eq:RX_eq}.
+To infer the novelty in a new image, $\boldsymbol{X}$, an RX score is calculated for each $n \times 1$ pixel vector, $\boldsymbol{x}_i \in \boldsymbol{X}$, using the Mahalanobis distance between the background and the filter response values as shown in Equation \ref{msl/eq:RX_eq}.
 \begin{equation}
-    \label{chap1/eq:RX_eq}
+    \label{msl/eq:RX_eq}
     \text{RX}(\boldsymbol{x}_i) = (\boldsymbol{x}_i - \boldsymbol{\mu})^T \boldsymbol{\Sigma}^{-1} (\boldsymbol{x}_i - \boldsymbol{\mu})
 \end{equation}
 This score will be referred to as the pixel novelty score as it is a measure of how novel a pixel is relative to the background distribution. 
 As this method is pixel based, the dimension size of the sequence does not matter so inferences can be run on sequences of any resolution.
 This is particularly useful for Mastcam as the height of each sequence of images varies. 
 
-After computing the RX background distribution using typical sequences, Equation \ref{chap1/eq:RX_eq} can be applied to new sequences to identify novel features.
+After computing the RX background distribution using typical sequences, Equation \ref{msl/eq:RX_eq} can be applied to new sequences to identify novel features.
 Each sequence can be analyzed individually or relative to other sequences based on their pixel novelty scores. 
 To reduce the effect of brightness in the novelty scoring, separate models were created using a data set where the RGB image of the sequence is loaded as a gray scale image and used to divide the other six images in the input. 
 Individual sequence analysis is accomplished by visualizing the pixel novelty scores as a heat map. 
@@ -170,7 +170,7 @@ This can help prioritize which multispectral sequence to review first.
 %This background distribution was used to generate pixel novelty scores for each sequence in this same data set.
 To assess the system's performance for the novel features in the \cite{kerner_data} data set, we located the full-size thumbnails of a selection of the novel tiles from each category and verified that the novelties highlighted in the new images were self consistent with previous results in the tiles. 
 The novelty detection system using pixelwise RX performs well for highlighting easy-to-spot novelties in the data set. 
-Figure \ref{chap1/fig:easyNovel} shows examples of some of the easy to catch novelties that the system is able to detect. 
+Figure \ref{msl/fig:easyNovel} shows examples of some of the easy to catch novelties that the system is able to detect. 
 We claim that these examples are relatively easy for analysts to identify because the novelties they highlight can be found through careful analysis of a single RGB image.
 In the first example, a broken rock is shown near the center of the image.
 The novelty heat map highlights the broken rock well as well other broken rocks in the area as shown by the yellow regions.
@@ -183,13 +183,13 @@ While these examples are novel and interesting, they are not the type of novelty
 %Highlighting these examples may help to pick them out of a large set of downlinked images but the analysis is unnecessary for individual analysis.
 \begin{figure}
 \centering
-\includegraphics[width=3.25in]{figs/1/easy.png}\\
+\includegraphics[width=3.25in]{figs/msl/easy.png}\\
 \caption[]{Examples of pixel novelty scores using RX for easy to spot novelties. The left column shows the RGB image from the sequence and the right column shows the output from RX with a color bar ranging from typical to novel. From top to bottom: \mbox{Broken Rock (mcam05168)}, \mbox{Veins (mcam04817)}, \mbox{Dump Pile (mcam04892)}}
-\label{chap1/fig:easyNovel}
+\label{msl/fig:easyNovel}
 \end{figure}
 
 To assist tactical operations planning, the novelty detection system is most useful when it is able to highlight features of interest that are not otherwise easily identifiable. 
-Figure \ref{chap1/fig:mcam12276} shows an example of such a sequence.
+Figure \ref{msl/fig:mcam12276} shows an example of such a sequence.
 In this sequence, there is a ring of novel material around one of the rocks near the top of the thumbnail. 
 This ring is almost unidentifiable in the RGB image and faint in filters L5 and L6. 
 This ring is suspected by science team members to be due to a thin layer of brighter regolith deposited around the edge of the rock and not part of the rock composition.
@@ -197,9 +197,9 @@ By taking every filter into account, RX is able to identify the spectral anomaly
 
 \begin{figure*}
 \centering
-\includegraphics[width=\linewidth]{figs/1/mcam_novel.png}
+\includegraphics[width=\linewidth]{figs/msl/mcam_novel.png}
 \caption{An example of difficult to notice novel features from mcam12276. In this example, there is a subtle ring of brighter dust on the edge of one of the rocks (shown by the red arrow). This is not noticeable in L0 (RGB) and faint in L5 (867 nm) and L6 (1012nm).}
-\label{chap1/fig:mcam12276}
+\label{msl/fig:mcam12276}
 \end{figure*}
 
 In order to assess which sequences to analyze first, statistics about the pixel novelty scores can be calculated to rank multispectral sequences. 
@@ -211,7 +211,7 @@ In contrast, images with high mean scores that have uniformly high scores across
 %This type of sorting is not fitting for tactical operations analysis as the heat map provides little useful information. 
 To prioritize high novelty scores corresponding to localized features, we used the maximum pixel novelty score instead to sort novel sequences as it is better at prioritizing images with high novelty features. 
 %Maximum pixel novelty score highlights sequences with clear outliers making them clearer candidates for follow up analysis. 
-Examples of the top and bottom ten images sorted by maximum RX score are shown in Figure \ref{chap1/fig:sorted}. 
+Examples of the top and bottom ten images sorted by maximum RX score are shown in Figure \ref{msl/fig:sorted}. 
 The top-scoring sequences show images of high variability when compared with the low-scoring images. 
 The highest scoring pixel in these sequences are typically rover parts which, while being spectrally novel, are not necessarily useful for operations.
 Additionally, sequences containing shadows that move over time tend to have higher scores, as the shadow fans across the different channels and creates a rainbow.
@@ -221,10 +221,10 @@ The scores are visualized without normalization when an analyst selects an indiv
 
 \begin{figure*}
 \centering
-\includegraphics[width=\linewidth]{figs/1/top10.jpg}
-\includegraphics[width=\linewidth]{figs/1/bottom10.jpg}
+\includegraphics[width=\linewidth]{figs/msl/top10.jpg}
+\includegraphics[width=\linewidth]{figs/msl/bottom10.jpg}
 \caption{The most and least novel sequences in the Mastcam left eye data set. Sequences are sorted by maximum novelty value obtained from a brightness corrected background distribution. The pixel novelty scores  are normalized across the entire data set.}
-\label{chap1/fig:sorted}
+\label{msl/fig:sorted}
 \end{figure*}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
