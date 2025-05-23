@@ -7,6 +7,7 @@ Each package is designed to be self-contained, focusing on a single device in th
 The primary function of this chapter is to describe the readout system in excruciating detail so future users can understand how every part of ASTHROS works as well as the design decisions made during the development of the system.
 While this is not a traditional chapter in the dissertation sense, it is an important part of the work done during my research and documenting the system is vital to the success of the project.
 This chapter starts with a section on the overall network architecture of 
+TODO:
 \section{Network Architecture}
 TODO:
 \subsection{Command}
@@ -823,7 +824,7 @@ This is because controlling the PMCC is an asynchronous driven process, where we
 Additionally, one RMQ Control Loop can control multiple PMCCs at once, routing commands to the correct PMCC based on the routing keys. 
 This complexity has led us to develop a threaded approach to controlling the PMCCs that interacts with the threads from the RabbitMQ control loop.
 
-When calling the \texttt{rmq\_main.py} script, we pass three arguments: \textttt{config}, the configuration file, \texttt{group}: the group name, and an optional list of indexed \texttt{ids} to control.
+When calling the \texttt{rmq\_main.py} script, we pass three arguments: \texttt{config}, the configuration file, \texttt{group}: the group name, and an optional list of indexed \texttt{ids} to control.
 If no \texttt{ids} are passed, we will control all of the PMCCs in the group.
 The \texttt{config} has all of the information necessary for \texttt{PMCC\_Config} as well as the RabbitMQ connection parameters.
 Additionally, it contains a mapping of group names to the PMCC IDs that are in that group.
@@ -832,7 +833,7 @@ The 100 GHz channel, named \texttt{100G}, only contains one PMCC as there is onl
 After creating the RabbitMQ connection, we create a dictionary of \texttt{PMCC\_Thread} objects for each spectrometer in the group.
 These objects are created by wrapping the \texttt{PMCC\_Driver} object, pairing it with \texttt{PMCC\_Spectra\_Writers} and \texttt{PMCC\_ADC\_Writer} objects, and adding threading capabilities for collecting spectra via a collecting thread and event flag. 
 
-After creating this dictionary, we manually create \texttt{threading} threads for the \texttt{rmq.\_publish_status()} decoration, passing \texttt{PMCC\_Thread.send_status()} as the target function at a 1 second interval. 
+After creating this dictionary, we manually create \texttt{threading} threads for the \texttt{rmq.\_publish\_status()} decoration, passing \texttt{PMCC\_Thread.send\_status()} as the target function at a 1 second interval. 
 When the thread is started, it will call the \texttt{send\_status()} method on each of the PMCC threads in the group and return the number of spectra collected, if we are currently collecting spectra, any errors that have occurred, and a timestamp of when the status was sent.
 These threads are manually added to the threads \texttt{rmqtools} handles by appending them to \texttt{rmq.threads}.
 
