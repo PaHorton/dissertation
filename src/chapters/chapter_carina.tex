@@ -1,76 +1,308 @@
 \chapter[Electron Density Mapping in Carina Nebula]{Electron Density Mapping in Carina Nebula}
 \label{ch:carina}
+\section{Introduction}
+\section{Data}
+Our data comes from two main sources, the Stratospheric Observatory for Infrared Astronomy (SOFIA) and the Deep Space Network (DSN).
+% In addition to these data sources, we also use ancillary data from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) to compare our results \citep{oberst2011205}.
+Additionally, for our calculations, we need a radio continuum brightness temperature, which we take from the Atacama Large Millimeter/submillimeter Array (ALMA) observations of the Carina Nebula \citep{Rebolledo_2021}.
 
-To map electron density in Carina we begin with the following equation from \cite{pineda2018}.
+\subsection{SOFIA --- Stratospheric Observatory for Infrared Astronomy}
+SOFIA was a joint project of NASA and the German Aerospace Center (DLR), operating from a Boeing 747 aircraft equipped with a 2.5-meter telescope designed for infrared observations.
+On SOFIA was the German REceiver for Astronomy at Terahertz frequencies (GREAT) which observed a wide range of spectral lines between 1.25 and 2.5 THz using a heterodyne reciever \citep{heyminck2012great}.
+Using the L1 channel of GREAT, we observed the [NII] 205 $\mu$m line in the Carina Nebula, providing a high-resolution spectral cube of the region.
+This spectral cube was generated using the SOFIA Data Processing System (DPS) which processes raw data from the instruments, calibrates it, and combines multiple exposures to create a final spectral cube \citep{shuping2014overview}.
+The cube itself is a 36 by 36 pixel map spanning 11" by 11" with a 202 spectral channels covering a velocity range of -110 to 90 km/s with a velocity resolution of 1 km/s.
+The data has a beam size of 20.77" and is tuned to a frequency of 1.45 MHz for measuring the [NII] 205 $\mu$m line.
+Due to the calibration, the values are already in Main Beam Brightness Temperature (K$_{mb}$) units.
+
+\subsection{DSN --- Deep Space Network}
+The DSN is a global network of antennas that supports interplanetary spacecraft missions and radio astronomy observations.
+For radio astronomy, the DSN Deep Space Station 43 (DSS-43) in Canberra, Australia, is equipped with a 70-meter dish that can observe radio recombination lines (RRLs) at frequencies within the K-band (17 to 27 GHz) \citep{virkler2020broadband}.
+Our RRL data for Carina Nebula was collected using the DSS-43 antenna as an average of the RRL observations from H70$\alpha$ (18.768 GHz) to H62$\alpha$ (26.939 GHz).
+This average was taken by scaling all the components to the central value of H67$\alpha$ (21.385 GHz) and gridding the data to match the lowest frequency, H70$\alpha$.
+The resultant map is much larger than the original SOFIA map, spanning 150" by 76" (343 x 335 pixels) with a beam size of 56" and a spectral resolution of 2.4 km/s across 165 channels (-300 to 98 km/s).
+Unlike the SOFIA data, the RRL data is in units of antenna temperature (K$_{Ta*}$), which is the raw output of the radio telescope before calibration.
+Using the efficiency of the antenna (0.5 for DSS-43), the data will need to be converted to the Main Beam Brightness Temperature (K$_{mb}$) units for comparison with the SOFIA data.
+
+\subsection{ALMA --- Atacama Large Millimeter/submillimeter Array}
+Our radio continuum brightness temperature data comes from the ALMA observations of the Carina Nebula.
+ALMA is an array of radio telescopes located in the Atacama Desert in Chile, designed to observe the universe at millimeter and submillimeter wavelengths.
+We utilize data from \cite{Rebolledo_2021}, which provides a continuum brightness temperature map of the Carina Nebula between 1-3 GHz with a beam of 24" spanning 613" by 297" (3574 x 3415 pixels).
+This data is in units of Jy/beam, which is a common unit for radio continuum observations but needs to be converted to brightness temperature (K) for our calculations.
+
+% \subsection{Other Ancillary Data}
+% \cite{oberst2011205} provides line intensities for ISO's [NII] 122 $\mu$m line and SPIFI's [NII] 205 $\mu$m line in the form of tables with coordinates and integrated intensities.
+% These values need to be processed into data cubes to be useful in our analysis.
+% When using FITS data, a World Coordinate System (WCS) is used to map the pixel coordinates to celestial coordinates, allowing for easy comparison of data from different instruments.
+% Without this WCS information, we cannot directly compare the data cubes.
+% Using the provided coordiantes in the tables, we can estimate a WCS for both of these datasets as explained in Section \ref{carina/fig:fits_fit}.
+% Additionally, the data is in units of line intensity (W m$^{-2}$ sr$^{-1}$) which needs to be converted to Main Beam Brightness Temperature (K$_{mb}$) for comparison with the SOFIA data.
+
+\begin{figure}[t!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/carina/raw_NII.png}
+    \includegraphics[width=0.6\textwidth]{figs/carina/raw_RRL.png}
+    \caption[Raw Data Cubes for \[NII\] and RRLs in Carina Nebula]{
+        The raw data cubes for the [NII] 205 $\mu$m line (top) and the RRL data (bottom). 
+        Both lines are integrated intensities across the entire spectral range of the dataset.
+        The [NII] 205 $\mu$m line is shown using Main Beam Temperatures, while the RRL data is shown in Antenna Temperature.
+        }
+    \label{carina/fig:raw_data}
+\end{figure}
+
+\section{Methodology}
+Our analysis follows the methodology outlined in \cite{pineda2018}, which describes how to calculate electron density from the ratio of [NII] 205 $\mu$m line intensity to the intensity of Hydrogen Radio Recombination Lines (RRLs).
+This analysis was done using the \texttt{spectral-cube} package in Python, which allows for efficient manipulation of spectral data cubes \citep{robitaille2016spectral}.
+\texttt{spectral-cube} wraps many of the functionalities of the \texttt{astropy} package, which is a core package for astronomy in Python \citep{astropy:2013, astropy:2018, astropy:2022}.
+Our methodology for analysis consists of preprocessing the data cubes to ensure they are on the same grid with the same spatial and spectral resolutions, convolving the [NII] 205 $\mu$m data with the beam of the RRL data, and then performing calculations to derive the electron density from the ratio of the two lines.
+In addition to the electron density, we are also able to estimate the [NII] 122 $\mu$m line intensity, which whose ratio with the [NII] 205 $\mu$m line can be used to estimate electron density as well \citep{goldsmith2015herschel}.
+Figure \ref{carina/fig:raw_data} shows the raw data cubes for both the [NII] 205 $\mu$m line and the RRL data.
+
+\subsection{Preprocessing the Data Cubes}
+In order to properly compare the two data cubes, we first need to pre-process everything to ensure our data points match both spatially and spectrally.
+First, we need our data to be in the same units, so we will convert the RRL data from antenna temperature (K$_{Ta*}$) to Main Beam Brightness Temperature (K$_{mb}$) using the efficiency of the antenna as shown in Equation \ref{eq:mb_temp}, where $T_{Ta*}$ is the antenna temperature and $\eta_{mb}$ is the main beam efficiency of the antenna.
 \begin{equation}
-    R^{[NII]}_{RRL} = 2.68 \times 10 ^ {-9} \nu_{RRL} T_e^{3/2} \frac{f(^3\text{P}_1)}{n_e} G^{-1}_{NLTE}(n_e,T_c)X_N
-    \label{eq:ratio}
+    T_{mb} = \frac{T_{Ta*}}{\eta_{mb}}
+    \label{eq:mb_temp}
 \end{equation}
-In this equation we have the following variables:
-\begin{itemize}
-    \item $R^{[NII]}_{RRL}$: The ratio of the intensity of NII to the intensity of the Hydrogen Radio Recombination Line (RRL).
-    \item $\nu_{RRL}$: The frequency of the RRL in Hz.
-    \item $T_e$: The electron temperature in Kelvin.
-    \item $f(^3\text{P}_1)$: The fractional population of the $^3\text{P}_1$ level of ionized nitrogen. 
-    \item $n_e$: The electron density in cm$^{-3}$.
-    \item $G_{NLTE}(n_e,T_c)$: The deviation from local thermodynamical equilibrium (LTE) for the hydrogen RRL emission.
-    \item $X_N$: The abundance of nitrogen with respect to hydrogen.
-\end{itemize}
+Next we need to ensure both datasets have a common beam size.
+As the SOFIA data has a smaller beam than the RRL data, we will convolve the [NII] 205 $\mu$m data with a Gaussian kernel that matches the beam size of the RRL data.
+This is handled by the \texttt{spectral-cube} package, which uses the \texttt{astropy.convolution} module to convolve the data with a Gaussian kernel that matches the beam size of the RRL data.
+We perform this step first to ensure that the [NII] 205 $\mu$m data is properly smoothed to match the RRL data before interpolating the data to a common grid, where we may lose some spatial resolution. 
 
-Both $T_e$ and $X_N$ can be estimated using the distance to the Galactic center $R_{gal}$ in kiloparsecs (kpc). 
+Following this, we spectrally interpolate the [NII] 205 $\mu$m data to match the larger spectral resolution of the RRL data.
+We also crop both data cubes to the same spectral range. 
+This is accomplished by convolving the [NII] 205 $\mu$m data with a Gaussian kernel with a standard deviation with that matches the difference in spectral resolution between the two datasets as shown in Equation \ref{eq:gaussian_kernel}, where $\sigma$ is the standard deviation of the Gaussian kernel, $\Delta \nu_{[NII]}$ is the spectral resolution of the [NII] 205 $\mu$m data, and $\Delta \nu_{RRL}$ is the spectral resolution of the RRL data.
+\begin{equation}
+    \sigma_{FWHM} = \frac{\Delta \nu_{RRL}^2 - \Delta \nu_{[NII]}^2}{\sqrt{8\ln(2)}}
+    \label{eq:gaussian_kernel}
+\end{equation}
+After spectral interpolation, both spectral cubes are sent through a Savitzky-Golay filter to smooth the data and improve our signal-to-noise ratio (SNR). 
+We use a polynomial order of 3 and a window length of 10 spectral channels, which is sufficient to smooth the data without losing too much spectral resolution. 
+This process is outlined by \cite{pineda2019electron} and is implemented using the \texttt{savgol\_filter} function from \texttt{scipy} \citep{2020SciPy-NMeth}.
+Figure \ref{carina/fig:spectral_means} shows the mean spectra of both the [NII] 205 $\mu$m line and the RRL data at each step of spectral interpolation and smoothing.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figs/carina/spec_raw.png}
+    \includegraphics[width=0.95\textwidth]{figs/carina/spec_inter.png}
+    \includegraphics[width=0.95\textwidth]{figs/carina/spec_smooth.png}    
+    \includegraphics[width=0.95\textwidth]{figs/carina/spec_final.png}
+    \caption[Mean Spectra of \[NII\] 205 $\mu$m and RRL Data During Preprocessing]{
+        The mean spectra of the [NII] 205 $\mu$m line (blue) and the RRL line (orange) at each step of preprocessing.
+        Note that the first three panels show the mean spectra of the entire RRL region which includes more area than the SOFIA data.
+        The top panel shows the raw spectra prior to any spectral interpolation or smoothing.
+        The second panel shows the spectra after spectral interpolation to the RRL data's spectral resolution and cropping to the same common range.
+        The third panel shows the spectra after applying a Savitzky-Golay filter to smooth the data.
+        The final panel shows the final spectra after spatial cropping and interpolation.
+        }
+    \label{carina/fig:spectral_means}
+\end{figure}
+
+After the spectral interpolation and smoothing, we can crop both data cubes to the same spatial region and reproject them to a common grid.
+The RRL map covers a much larger area than the SOFIA map, so we will need to crop the RRL data.
+Using the world extrema of the SOFIA data, we can create a subcube of the RRL data whose bounds match the SOFIA data.
+The spatial resolution of the SOFIA data is smaller than the RRL data, so we use the \texttt{reproject} function from \texttt{spectral-cube} to interpolate the SOFIA data to the RRL data's grid.
+This matches the WCS of both data cubes, allowing us to compare the two datasets directly.
+After this step, we have two data cubes that are on the same grid, with the [NII] 205 $\mu$m data convolved to match the beam size of the RRL data and both datasets having the same spatial and spectral resolution as shown in Figure \ref{carina/fig:processed_data}.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/carina/final_NII.png}
+    \includegraphics[width=0.6\textwidth]{figs/carina/final_RRL.png}
+    \caption[Preprocessed Data Cubes for \[NII\] and RRLs in Carina Nebula]{
+        The processed data cubes for the [NII] 205 $\mu$m line (top) and the RRL data (bottom).
+        Both lines are the integrated main beam intensities across the entire spectral range of the dataset.
+        }
+    \label{carina/fig:processed_data}
+\end{figure}
+
+In addition to the above preprocessing steps, we also need to perform some additional steps to prepare the ALMA continuum brightness temperature data.
+First, we need to convert the ALMA data from Jy/beam to K to get our brightness temperature.
+This is done using Equation \ref{carina/eq:alma_temp}, where $T_b$ is the brightness temperature in K, $S$ is the flux density in Jy/beam, $\lambda$ is the wavelength in centimeters, and $\theta$ is the beam size in arcminutes \citep{rohlfs2013tools}.
+\begin{equation}
+    T_C = \frac{S\ \lambda^2}{2.65\ \theta^2}
+    \label{carina/eq:alma_temp}
+\end{equation}
+The also needs to be corrected to match the frequency of the RRL data.
+This is accomplished by using a power law to scale the brightness temperature to the frequency of the RRL data as shown in Equation \ref{carina/eq:alma_freq}, where $T_{Bf}$ is the final brightness temperature in K, $T_{Bi}$ is the initial brightness temperature in K, $\nu_{f}$ is the final frequency in GHz, $\nu_i$ is the initial frequency in GHz, and $\alpha$ is the spectral index.
+\begin{equation}
+    T_{Bf} = T_{Bi} \left( \frac{\nu_f}{\nu_i} \right)^\alpha
+    \label{carina/eq:alma_freq}
+\end{equation}
+For Carina Nebula, we use a spectral index of -0.1, which is used for optically thin thermal bremsstrahlung emission \citep{salatino2012spectral}.
+As our RRL data is scaled to the H67$\alpha$ line, we will use the frequency of this line (21.385 GHz) as our final frequency, extrapolating from the ALMA data which is centered around 2.1 GHz.
+Finally, while ALMA data is not a spectral cube, \texttt{spectral-cube} can handle spatial interpolation of 2D data as well.
+We use the WCS of the final [NII] 205 $\mu$m data cube to reproject the ALMA data to the same grid.
+
+\subsection{Calculating Electron Density}
+The first step to calculating electron density is to see how the [NII] 205 $\mu$m line intensity and the RRL intensity are related.
+We begin with the following equation for the integrated intensity of the [NII] line \citep{pineda2018}:
+\begin{equation}
+    \label{carina/eq:intensity_NII}
+    \int{T_{mb}^{[NII]}} d\nu &= \frac{A_{ul}hc^3N_u}{8\pi k_b \nu_{ul}^2}\\
+\end{equation}
+In this equation, $A_{ul}$ is the Einstein A coefficient for spontaneous decay rate, $h$ is Planck's constant, $c$ is the speed of light, $N_u$ is the column density of the upper level, $k_b$ is Boltzmann's constant, and $\nu_{ul}$ is the frequency of the transition.
+We can simply this further by noting that the upper level column density, $N_u$, is related to the fractional population of the upper level, $f(^uP_l)$, and the total column density of ionized nitrogen, $N(N^+)$, as follows:
+\begin{equation}
+    N_u = f(^3P_u) N(N^+)
+    \label{carina/eq:N_u}
+\end{equation}
+There are two fine structure transitions for [NII] at 122 $\mu$m ($^3P_2$ - $^3P_1$) and 205 $\mu$m ($^3P_1$ - $^3P_0$).
+Combining Equations \ref{carina/eq:N_u} with \ref{carina/eq:intensity_NII} results in the following equation for the integrated intensity of the [NII] 205 $\mu$m line:
+\begin{align}
+    \int{T_{mb}^{[NII]}} d\nu &= \frac{A_{ul}hc^3f(^3P_u)N(N^+)}{8\pi k_b \nu_{ul}^2} \\
+    &= \num{5.145e14}\ A_{ul}\nu_{ul}^{-2}f(^3P_u)N(N^+)\ [\text{K km/s}]
+    \label{carina/eq:intensity_NII_final}
+\end{align}
+In the simplified version, $A_{ul}$ is in s$^{-1}$, $f(^3P_u)$ is dimensionless, $N(N^+)$ is in cm$^{-2}$, and $\nu_{ul}$ is in Hz.
+We utilize PyNeb, a Python package for calculating emission line intensities, to obtain our Einstein A coefficient, $A_{ul}$ and the fractional population of the upper level, $f(^3P_u)$ \citep{luridiana2015pyneb, froese2004breit,7288EL, tayal2011electron}.
+
+
+Now we can look at the integrated intensity of the RRL line using the following equation \citep{pineda2018}:
+\begin{equation}
+    \int{T_{mb}^{RRL}} d\nu = \num{1.87e-7}\ \frac{n_e N(H^+)}{\nu_{RRL} T_e^{3/2}}\ [\text{K km/s}]
+    \label{carina/eq:intensity_RRL}
+\end{equation}
+For the RRL, $n_e$ is the electron density in cm$^{-3}$, $N(H^+)$ is the column density of ionized hydrogen in cm$^{-2}$, $\nu_{RRL}$ is the frequency of the RRL in Hz, and $T_e$ is the electron temperature in K.
+Because the hydrogen recombination lines can be affected by non-local thermal equilibrium (NLTE) effects, we also need to account for the deviation from LTE in the RRL emission \citep{gordon2002radio}.
+\begin{equation}
+    G_{NLTE}(n_e,T_C) = \frac{T^{RRL}}{T^{RRL}_{NLTE}} = b_n \left[1-\frac{1}{2}\tau_c \beta_n\right]
+    \label{carina/eq:G_NLTE}
+\end{equation}
+In this equation, $b_n$ and $\beta_n$ are the departure coefficient and amplification factor for a specific principal quantum number $n$, and $\tau_c$ is the continuum opacity. 
+$\tau_c$ can be calculated using the continuum brightness temperature, $T_C$, and the electron temperature , $T_e$, as follows \cite{goldsmith2024electron}:
+\begin{equation}
+    \tau_c = \frac{T_C}{T_e}
+    \label{carina/eq:tau_C}
+\end{equation}
+The GNLTE coefficients are obtained using a Fortran program in the appendix of \cite{gordon2002radio}, which was later wrapped in Python by \cite{2017ascl.soft07001W}.
+These values depend on electron density, $n_e$, and electron temperature, $T_e$, for a given principal quantum number $n$.
+A precomputed table of these values is used to interpolate the values for our specific electron density at $T_e$ = 8000 K.
+Adding on this factor, we can rewrite Equation \ref{carina/eq:intensity_RRL} line as follows:
+\begin{equation}
+    \int{T_{mb}^{RRL}} d\nu = \num{1.87e-7}\ \frac{N(H^+)}{\nu_{RRL} T_e^{3/2}}\ n_e\ G_{NLTE}(n_e, T_c)\ [\text{K km/s}]
+    \label{carina/eq:intensity_RRL_final}
+\end{equation}
+
+Finally, we can compute the ratio of Equation \ref{carina/eq:intensity_NII_final} and \ref{carina/eq:intensity_RRL_final} to get the following equation:
+\begin{equation}
+    R^{[NII]}_{RRL} = \frac{\int{T^{[NII]}_{mb} d\nu}}{\int{T^{RRL}_{mb} d\nu}} = \num{2.75e21}\ \frac{A_{ul}\nu_{RRL}T_e^{3/2}}{\nu_{ul}^2}\ \frac{N(N^+)}{N(H^+)}\ \frac{f(^3P_u)}{n_e G_{NLTE}(n_e,T_c)}
+    \label{carina/eq:ratio_final}
+\end{equation}
+Most of the terms in this equation are constants that do not depend on the electron density, $n_e$, except for the last term, RHS = $f(^3P_u)/n_e G_{NLTE}(n_e,T_c)$.
+The remaining unknown terms $T_e$ the electron temperature in K, and $N(N^+)/N(H^+)$, the abundance ratio of ionized nitrogen with respect to ionized hydrogen, can be estimated using the distance to the Galactic center, $R_{gal}$, in kpc \citep{pineda2018, balser2015azimuthal, esteban2018revisiting}:
 \begin{align}
     T_e &= (4446 \pm 301) + (467 \pm 34) R_{gal} \\
-    12 + log(X_N) &= (8.21 \pm 0.09) - (0.059 \pm 0.009) R_{gal}
+    12 + \log(N/H) &= (8.21 \pm 0.09) - (0.059 \pm 0.009) R_{gal}
 \end{align}
 
-To solve for $n_e$ we can isolate the terms that rely on $n_e$ in Equation (5.1).
+Rearranging Equation \ref{carina/eq:ratio_final} to isolate the term that depends on electron density allows us to look at the relationship between those terms and electron density in Figure \ref{carina/eq:gnlte_curves}.
+The curves are generated using fractional population data from \cite{luridiana2015pyneb} and GNLTE coefficients from \cite{gordon2002radio} to write a function that calculates RHS for a given electron density, $n_e$, and continuum brightness temperature, $T_c$.
+Because these curves are related to the ratio of the [NII] 205 $\mu$m line intensity to the RRL intensity, we can use them to calculate the electron density for a given ratio of intensities.
+This is accomplished by calculating the ratio of the integrated intensities and dividing by the constant terms. 
+Then we can use a root solving algorithm, such as \texttt{scipy.optimize.fsolve}, find the value of electron density that whose RHS matches the calculated ratio \cite{2020SciPy-NMeth}.
+This process is repeated for each pixel in the [NII] 205 $\mu$m data cube, resulting in a map of electron density across the Carina Nebula.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/carina/gnlte_curves.png}
+    \caption[Fractional Population of the \[NII\] 205 $\mu$m Line and G_{NLTE} Coefficients as a function of Electron Density]{
+        The fractional population of the $^3P_1$ level of ionized nitrogen, $f(^3P_1)$, and the GNLTE coefficients, $G_{NLTE}(n_e,T_c)$, as a function of electron density for various continuum brightness temperatures at an electron temperature of 8000 K.
+        }
+    \label{carina/eq:gnlte_curves}
+\end{figure}
+
+\subsection{Uncertainties}
+The primary sources of uncertainty in our electron density calculations come from the actual measurements of the [NII] 205 $\mu$m line and the RRL data, as well as the usage of $R_{gal}$ to estimate the electron temperature and nitrogen abundance.
+As we are taking the integrated intensities of the [NII] 205 $\mu$m line and the RRL data, we can calculate the uncertainties in these measurements using the RMS noise of the data cubes.
+We calculate this by taking the standard deviation of the data cube in a region where we expect no signal, such as the edges of the spectral range for each pixel, far away from the center of the spectral line where Carina is located. 
+This produces a per channel noise map for each pixel in the data cube which we can use to calculate the uncertainties in our integrated intensities as follows:
 \begin{equation}
-    \frac{f(^3\text{P}_1)}{n_e G_{NLTE}(n_e,T_c)} = \frac{R^{[NII]}_{RRL}}{2.68 \times 10 ^ {-9} \nu_{RRL} T_e^{3/2} X_N}
+    \sigma_{int} = \text{RMS} \times \sqrt{N_{chan}} \times \Delta \nu
+    \label{carina/eq:uncertainty_intensity}
 \end{equation}
+This uncertainty, along with the uncertainties in $T_e$ and $N(N^+)/N(H^+)$, can be propagated through the calculations to estimate the uncertainty of the value used to calculate the electron density in the root solving algorithm.
 
-The left side of Equation 5.3 has all the terms that depend on $n_e$ and the right side are calculated constants and the ratio of the intensities of the [NII] and RRL lines.
-In \cite{pineda2018}, the authors provide a relationship between $n_e$ and the terms on the left side of the equation for various continuum brightness temperatures ($T_c$ or $T_b$).
-In order to use this curve, I used the data provided in the paper to calculate the right side of the equation and fit the calculated values along with the reported $n_e$ values to a sigmoid.
+To calculate electron density, we use a Monte Carlo approach, where we randomly sample from a normal distribution centered around the measured value with a standard deviation equal to the uncertainty.
+We then solve for the electron density using the sampled values and repeat this process many times (e.g., 1000 iterations) to generate a distribution of electron density values.
+This distribution can then be used to calculate the mean and standard deviation of the electron density for each pixel in the map, providing us with an uncertainty estimate for our electron density calculations.
+This method was chosen over direct propagation of uncertainties because it allows us to account for the non-linear relationship between the electron density and the ratio of intensities. 
+\section{Results}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.4\textwidth]{figs/carina/curve.png}
-    \includegraphics[width=0.4\textwidth]{figs/carina/calculated_curve.png}
-    \caption{The dependence of the [NII] 205 $\mu$m ratio on delectron density for a set of continuum brightness temperatures \cite{pineda2018}.}
-    \label{fig:ne_vs_tc}
-\end{figure}
+\section{Conclusions}
 
-With this sigmoid, we can now calculate the electron density for the Carina Nebula assuming our continuum brightness is between 0.1 and 10 K.
-To prepare both spectral cubes we spectrally and spatially reproject the [NII] 205 $\mu$m and the Hydrogen RRL data to the same grid.
-We then convolve the [NII] 205 $\mu$m data with the beam of the RRL data. 
-Finally, we calculate the integrated intensities of both lines for the following locations.
 
-\begin{table}[h!]
-    \centering
-    \begin{tabular}{|c|c|c|}
-        \hline
-        Location & $v_{min}$ km/s & $v_{max}$ km/s \\
-        \hline
-        Keyhole Nebula & -40 & -20 \\
-        Carina Extended & -20 & 20 \\
-        \hline
-    \end{tabular}
-    \caption{The spectral slabs of Carina Nebula used to calculate the electron density.}
-    \label{tab:carina}
-\end{table}
+% To map electron density in Carina we begin with the following equation from \cite{pineda2018}.
+% \begin{equation}
+%     R^{[NII]}_{RRL} = 2.68 \times 10 ^ {-9} \nu_{RRL} T_e^{3/2} \frac{f(^3\text{P}_1)}{n_e} G^{-1}_{NLTE}(n_e,T_c)X_N
+%     \label{eq:ratio}
+% \end{equation}
+% In this equation we have the following variables:
+% \begin{itemize}
+%     \item $R^{[NII]}_{RRL}$: The ratio of the intensity of NII to the intensity of the Hydrogen Radio Recombination Line (RRL).
+%     \item $\nu_{RRL}$: The frequency of the RRL in Hz.
+%     \item $T_e$: The electron temperature in Kelvin.
+%     \item $f(^3\text{P}_1)$: The fractional population of the $^3\text{P}_1$ level of ionized nitrogen. 
+%     \item $n_e$: The electron density in cm$^{-3}$.
+%     \item $G_{NLTE}(n_e,T_c)$: The deviation from local thermodynamical equilibrium (LTE) for the hydrogen RRL emission.
+%     \item $X_N$: The abundance of nitrogen with respect to hydrogen.
+% \end{itemize}
 
-The resultant electron density map is shown in Figure \ref{fig:ne_map_keyhole} and \ref{fig:ne_map_carina}.
+% Both $T_e$ and $X_N$ can be estimated using the distance to the Galactic center $R_{gal}$ in kiloparsecs (kpc). 
+% \begin{align}
+%     T_e &= (4446 \pm 301) + (467 \pm 34) R_{gal} \\
+%     12 + log(X_N) &= (8.21 \pm 0.09) - (0.059 \pm 0.009) R_{gal}
+% \end{align}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=\textwidth]{figs/carina/ne_map_keyhole.png}
-    \caption{The electron density map of the Keyhole Nebula.}
-    \label{fig:ne_map_keyhole}
-\end{figure}
+% To solve for $n_e$ we can isolate the terms that rely on $n_e$ in Equation (5.1).
+% \begin{equation}
+%     \frac{f(^3\text{P}_1)}{n_e G_{NLTE}(n_e,T_c)} = \frac{R^{[NII]}_{RRL}}{2.68 \times 10 ^ {-9} \nu_{RRL} T_e^{3/2} X_N}
+% \end{equation}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=\textwidth]{figs/carina/ne_map_carina.png}
-    \caption{The electron density map of Carina Extended.}
-    \label{fig:ne_map_carina}
-\end{figure}
+% The left side of Equation 5.3 has all the terms that depend on $n_e$ and the right side are calculated constants and the ratio of the intensities of the [NII] and RRL lines.
+% In \cite{pineda2018}, the authors provide a relationship between $n_e$ and the terms on the left side of the equation for various continuum brightness temperatures ($T_c$ or $T_b$).
+% In order to use this curve, I used the data provided in the paper to calculate the right side of the equation and fit the calculated values along with the reported $n_e$ values to a sigmoid.
+
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=0.4\textwidth]{figs/carina/curve.png}
+%     \includegraphics[width=0.4\textwidth]{figs/carina/calculated_curve.png}
+%     \caption{The dependence of the [NII] 205 $\mu$m ratio on delectron density for a set of continuum brightness temperatures \cite{pineda2018}.}
+%     \label{fig:ne_vs_tc}
+% \end{figure}
+
+% With this sigmoid, we can now calculate the electron density for the Carina Nebula assuming our continuum brightness is between 0.1 and 10 K.
+% To prepare both spectral cubes we spectrally and spatially reproject the [NII] 205 $\mu$m and the Hydrogen RRL data to the same grid.
+% We then convolve the [NII] 205 $\mu$m data with the beam of the RRL data. 
+% Finally, we calculate the integrated intensities of both lines for the following locations.
+
+% \begin{table}[h!]
+%     \centering
+%     \begin{tabular}{|c|c|c|}
+%         \hline
+%         Location & $v_{min}$ km/s & $v_{max}$ km/s \\
+%         \hline
+%         Keyhole Nebula & -40 & -20 \\
+%         Carina Extended & -20 & 20 \\
+%         \hline
+%     \end{tabular}
+%     \caption{The spectral slabs of Carina Nebula used to calculate the electron density.}
+%     \label{tab:carina}
+% \end{table}
+
+% The resultant electron density map is shown in Figure \ref{fig:ne_map_keyhole} and \ref{fig:ne_map_carina}.
+
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=\textwidth]{figs/carina/ne_map_keyhole.png}
+%     \caption{The electron density map of the Keyhole Nebula.}
+%     \label{fig:ne_map_keyhole}
+% \end{figure}
+
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=\textwidth]{figs/carina/ne_map_carina.png}
+%     \caption{The electron density map of Carina Extended.}
+%     \label{fig:ne_map_carina}
+% \end{figure}
