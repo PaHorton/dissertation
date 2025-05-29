@@ -38,7 +38,7 @@ This data is in units of Jy/beam, which is a common unit for radio continuum obs
 % Using the provided coordiantes in the tables, we can estimate a WCS for both of these datasets as explained in Section \ref{carina/fig:fits_fit}.
 % Additionally, the data is in units of line intensity (W m$^{-2}$ sr$^{-1}$) which needs to be converted to Main Beam Brightness Temperature (K$_{mb}$) for comparison with the SOFIA data.
 
-\begin{figure}[t!]
+\begin{figure}
     \centering
     \includegraphics[width=0.6\textwidth]{figs/carina/raw_NII.png}
     \includegraphics[width=0.6\textwidth]{figs/carina/raw_RRL.png}
@@ -82,7 +82,7 @@ We use a polynomial order of 3 and a window length of 10 spectral channels, whic
 This process is outlined by \cite{pineda2019electron} and is implemented using the \texttt{savgol\_filter} function from \texttt{scipy} \citep{2020SciPy-NMeth}.
 Figure \ref{carina/fig:spectral_means} shows the mean spectra of both the [NII] 205 $\mu$m line and the RRL data at each step of spectral interpolation and smoothing.
 
-\begin{figure}[t]
+\begin{figure}
     \centering
     \includegraphics[width=0.95\textwidth]{figs/carina/spec_raw.png}
     \includegraphics[width=0.95\textwidth]{figs/carina/spec_inter.png}
@@ -106,7 +106,7 @@ The spatial resolution of the SOFIA data is smaller than the RRL data, so we use
 This matches the WCS of both data cubes, allowing us to compare the two datasets directly.
 After this step, we have two data cubes that are on the same grid, with the [NII] 205 $\mu$m data convolved to match the beam size of the RRL data and both datasets having the same spatial and spectral resolution as shown in Figure \ref{carina/fig:processed_data}.
 
-\begin{figure}[t]
+\begin{figure}
     \centering
     \includegraphics[width=0.6\textwidth]{figs/carina/final_NII.png}
     \includegraphics[width=0.6\textwidth]{figs/carina/final_RRL.png}
@@ -204,14 +204,35 @@ This is accomplished by calculating the ratio of the integrated intensities and 
 Then we can use a root solving algorithm, such as \texttt{scipy.optimize.fsolve}, find the value of electron density that whose RHS matches the calculated ratio \cite{2020SciPy-NMeth}.
 This process is repeated for each pixel in the [NII] 205 $\mu$m data cube, resulting in a map of electron density across the Carina Nebula.
 
-\begin{figure}[t]
+\begin{figure}
     \centering
-    \includegraphics[width=0.6\textwidth]{figs/carina/gnlte_curves.png}
-    \caption[Fractional Population of the {[}NII{]} 205 $\mu$m Line and G$_{NLTE}$ Coefficients as a Function of Electron Density]{
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/carina/gnlte_curves.png}
+        \caption[Fractional Population of the {[}NII{]} 205 $\mu$m Line and G$_{NLTE}$ Coefficients as a Function of Electron Density]{
         The fractional population of the $^3P_1$ level of ionized nitrogen, $f(^3P_1)$, and the GNLTE coefficients, $G_{NLTE}(n_e,T_c)$, as a function of electron density for various continuum brightness temperatures at an electron temperature of 8000 K.
         }
-    \label{carina/eq:gnlte_curves}
+        \label{carina/fig:gnlte_curves}
+    \end{subfigure}%
+    ~
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/carina/nii_curves.png}
+        \caption{Fractional Population of the $^3P_1$ Level of Ionized Nitrogen as a Function of Electron Density}
+        \label{carina/fig:nii_curves}
+    \end{subfigure}
 \end{figure}
+
+In addition to electron density, we can also estimate the [NII] 122 $\mu$m line intensity using the relationship between the two [NII] lines \citep{goldsmith2015herschel}.
+The [NII] 205 $\mu$m and 122 $\mu$m lines correspond with the $^3P_2$ - $^3P_1$ and $^3P_1$ - $^3P_0$ transitions, respectively. 
+We can take the ratio of these two lines to see their dependency on electron density by using Equation \ref{carina/eq:intensity_NII_final}:
+\begin{equation}
+    \frac{\int{T_{mb}^{[NII]\ 122}} d\nu}{\int{T_{mb}^{[NII]\ 205}} d\nu} = \frac{A_{21}f(^3P_2)\nu^2_{205}}{A_{10}f(^3P_1)\nu_{122}^2}
+    \label{carina/eq:intensity_NII_ratio}
+\end{equation}
+This ratio relies on electron temperature and density in the form of the fractional populations $f(^3P_1)$ and $f(^3P_2)$.
+Figure \ref{carina/fig:ratios} shows the ratio of the two lines at the calculated electron temperature for Carina Nebula, which is approximately 5660 $\pm$ 313.7 K.
+
 
 \subsection{Uncertainties}
 The primary sources of uncertainty in our electron density calculations come from the actual measurements of the [NII] 205 $\mu$m line and the RRL data, as well as the usage of $R_{gal}$ to estimate the electron temperature and nitrogen abundance.
@@ -227,8 +248,45 @@ This uncertainty, along with the uncertainties in $T_e$ and $N(N^+)/N(H^+)$, can
 To calculate electron density, we use a Monte Carlo approach, where we randomly sample from a normal distribution centered around the measured value with a standard deviation equal to the uncertainty.
 We then solve for the electron density using the sampled values and repeat this process many times (e.g., 1000 iterations) to generate a distribution of electron density values.
 This distribution can then be used to calculate the mean and standard deviation of the electron density for each pixel in the map, providing us with an uncertainty estimate for our electron density calculations.
-This method was chosen over direct propagation of uncertainties because it allows us to account for the non-linear relationship between the electron density and the ratio of intensities. 
+This method was chosen over direct propagation of uncertainties because it allows us to account for the non-linear relationship between the electron density and the ratio of intensities.
+
 \section{Results}
+In observing the spectra of the [NII] 205 $\mu$m line and the RRL data, we can see two distinct regions of interest in the Carina Nebula.
+The first region is the Keyhole Nebula which is a prominent feature in the Carina Nebula and is known for its high electron density \cite{brooks2000unlocking}.
+Behind the Keyhole Nebula is the Carina Extended region, which is a more diffuse region with lower electron density.
+Table \ref{carina/tab:slabs} shows the spectral slabs used to calculate the electron density for both regions.
+
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Location & $v_{min}$ km/s & $v_{max}$ km/s \\
+        \hline
+        Keyhole Nebula & -40 & -20 \\
+        Carina Extended & -20 & 20 \\
+        \hline
+    \end{tabular}
+    \caption{Distinct Spectral Regions within the Carina Nebula Data from SOFIA}
+    \label{carina/tab:slabs}
+\end{table}
+
+Another way to visualize this separation is to look at the separation between the two regions when plotting the integrated intensities of the [NII] 205 $\mu$m line and the RRL data.
+Figure \ref{carina/eq:intensity_scatter} shows a scatter plot of the two lines, showing an overall trend of less [NII] in the Keyhole Nebula compared to the Carina Extended region.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/carina/intensity_scatter.png}
+    \caption[Integrated Intensities of {[}NII{]} 205 $\mu$m Line and RRL Data]{
+        The integrated intensities of the [NII] 205 $\mu$m line and the RRL data for each pixel in the Carina Nebula.
+        The Keyhole Nebula is shown in blue, while the Carina Extended region is shown in orange.
+        }
+    \label{carina/fig:intensity_scatter}
+\end{figure}
+
+We use a non beam corrected version of the [NII] 205 $\mu$m line to calculate the integrated intensity of the [NII] 122 $\mu$m line as we are interested in what our measurements would be on SOFIA if we had observed the [NII] 122 $\mu$m line as well.
+
+Figure \ref{carina/fig:result_carina} and \ref{carina/fig:result_keyhole} show maps for the [NII] 205 $\mu$m and RRL inputs as well as the calculated electron density for the Carina Nebula and the Keyhole Nebula, respectively.
+Additionally, 
 
 \section{Conclusions}
 
