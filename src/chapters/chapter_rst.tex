@@ -64,10 +64,18 @@ The following are potential candidate methods for accomplishing these two tasks.
 
 \begin{table}
     \centering
-    \begin{tabular}{l|l}
+    \begin{tabular}{|l|l|}
+            \hline
         \textbf{Step 1: Locating Anomalies} & \textbf{Step 2: Classifying Anomalies} \\
-        Statistical Thresholding & Heuristic Rules \parencite{cillis2018snowballs} \\
-        Principal Component Analysis (PCA) \parencite{wold1987principal} & Convolutional Neural Network (CNN)\parencite{gu2018recent}
+                \hline
+
+        & Heuristic Rules \\
+        Statistical Thresholding& \parencite{cillis2018snowballs} \\
+        \hline
+        Principal Component Analysis (PCA) & Convolutional Neural Network (CNN)\\
+        \parencite{cillis2018snowballs} & \parencite{gu2018recent} \\
+                \hline
+
     \end{tabular}
     \caption{Methods for Locating and Classifying Anomalies}
     \label{rst/tab:methods}
