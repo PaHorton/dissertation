@@ -112,7 +112,7 @@ To accomplish this, we needed to decouple the devices in a way that data product
 Services that produce housekeeping data are not concerned with who needs the data, and services that consume housekeeping data are not concerned with where the data comes from, simply how the data is formatted. 
 This is where a message broker like RabbitMQ comes in.
 RabbitMQ is an open-source Advances Messaging Queue Protocol (AMQP) implementation that serves as a broker for incoming and outgoing messages by routing messages to bound destination queues located on an exchange \parencite{dunne2018comparison}.
-We chose RabbitMQ because of the centralized message broker architecture that allows for easy integration of new devices and services \parencite{toshev2015learning}.
+We chose RabbitMQ because of the centralized message broker architecture that allows for easy integration of new devices and services.
 All of our devices are networked together, making a centralized message broker the ideal solution for our readout system.
 
 The core of RabbitMQ is explained on the documentation as well as \cite{toshev2015learning}.
@@ -362,7 +362,7 @@ The format for the global configurations is shown in Table \ref{readout/table:pm
 These configurations are used to set values we don't expect to individually change for each PMCC.
 While we may create different configurations for different experiments, such as integration time and magnitude or power mode, we will likely make these changes to all PMCCs at once and not individually.
 
-\begin{table}[ht!]
+\begin{table}
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -378,8 +378,8 @@ While we may create different configurations for different experiments, such as 
         \texttt{wiring} & array & See Table \ref{readout/table:wiring} for wiring configuration \\
         \texttt{groups} & dict & Dictionary of CM4 names and an array of PMCC chip IDs  \\
     \end{tabularx}
-    \label{readout/table:pmcc_config}
     \caption{Global Variables in the PMCC Configuration File}
+    \label{readout/table:pmcc_config}
 \end{table}
 
 After the global configurations, an array of four spectrometer wiring configurations is provided. 
@@ -389,7 +389,7 @@ The only exception to this is the lone 100GHz PMCC connected to its own CM4.
 The wiring for this PMCC is simply the first index in the wiring array will still work with the rest of the system.
 Each item in the wiring configuration is as follows in Table \ref{readout/table:wiring}.
 
-\begin{table}[ht!]
+\begin{table}
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -397,8 +397,8 @@ Each item in the wiring configuration is as follows in Table \ref{readout/table:
         \texttt{gpio} & int & GPIO pin number for the reset signal\\
         \texttt{speed} & int & SPI device speed in Hz, typically 5000000 unless changes for stability reasons and debugging\\
     \end{tabularx}
-    \label{readout/table:wiring}
     \caption{Wiring Configuration in the PMCC Configuration File}
+    \label{readout/table:wiring}
 \end{table}
 
 Finally, we have the group configuration dictionary. 
@@ -542,7 +542,7 @@ The process for loading the ADC is as follows:
         Write the four \texttt{adc\_time\_skew\_adjust1} to \texttt{adc\_time\_skew\_adjust4} registers to set the time skew for the ADC.
         These values are pre-calibrated for each chip and are set in the \texttt{PMCC\_Device\_Config} object.
     \item 
-        Write to the \texttt{ADC\_TIME\_SKEW\_CONF} to set the \texttt{time\_skew\_mode}, \texttt{time\_skew\_select} and \texttt{time\_skew\_polarity}.
+        Write to the \texttt{ADC\_TIME\_SKEW\_CONF} to set the \texttt{time\_skew\_mode}, \linebreak \texttt{time\_skew\_select} and \texttt{time\_skew\_polarity}.
         The \texttt{time\_skew\_mode} is set to 1 to enable calibration for a configured time instead of continuous calibration.
         The \texttt{time\_skew\_select} is set to 0b1111 to enable each of the four time skew adjustments.
         The \texttt{time\_skew\_polarity} is set to 1 to enable inverse polarity of the time skew code adjustment direction.
@@ -654,7 +654,7 @@ The \texttt{retrieve\_data()} method follows the following process to read a spe
     \item  
         Take a timestamp to record the time the readout started.
     \item 
-        Start the readout process by performing a burst read of the \texttt{DSP\_READOUT\_ADDRESS} at \texttt{0x4000}. 
+        Start the readout process by performing a burst read of the\linebreak \texttt{DSP\_READOUT\_ADDRESS} at \texttt{0x4000}. 
         If we are performing a 32-bit readout, we read the address 8193 times to get the first half of our data. 
         Otherwise, for a 16-bit readout, we read the address 8192 times.
     \item 
@@ -780,7 +780,7 @@ The \texttt{data} dataset is a 2D array with a shape of \texttt{max\_writes} by 
 A header is added to the \texttt{data} dataset and contains the attributes shown in Table \ref{readout/table:h5_header}.
 After creating the file, we start a counter at 0 to keep track of the number of spectra in the file. 
 
-\begin{table}[ht!]
+\begin{table}
     \centering
     \begin{tabularx}{\textwidth}{l|X}
         \textbf{Attribute} & \textbf{Description} \\ \hline    
@@ -888,7 +888,7 @@ The pressure sensor is connected to the central command computer via an RS-485 i
 These three systems are split into different modules in the \texttt{cryocool} package.
 
 \subsection{\texttt{cryocool}}
-\begin{table}[ht]
+\begin{table}
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -897,8 +897,8 @@ These three systems are split into different modules in the \texttt{cryocool} pa
         \texttt{TEMP\_RAMP} & path & Path to the temperature ramp file \\
         \texttt{REGS} & path & Path to the register configuration file
     \end{tabularx}
-    \label{readout/table:cryocool_config}
     \caption{Cryocooler Configuration Parameters}
+    \label{readout/table:cryocool_config}
 \end{table}
 
 Within the \texttt{cryocool} package, we have the \texttt{cryocool} module that is used to control the cryocooler.
@@ -909,7 +909,7 @@ We then make note of the status registers that are read out when we issue a stat
 After this, we read in the temperature ramp as a pandas dataframe from the \texttt{TEMP\_RAMP} file \parencite{reback2020pandas}.
 This file contains points for a calibration curve to convert voltage from the internal temperature sensors to temperature.
 
-\begin{table}[ht!]
+\begin{table}
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -926,8 +926,8 @@ This file contains points for a calibration curve to convert voltage from the in
         \texttt{Housekeeping} & bool & True if the register is a housekeeping value \\
         \texttt{Temperature} & bool & True if the register is a temperature value \\
     \end{tabularx}
-    \label{readout/table:cryocool_regs}
     \caption{Cryocooler Register Configuration Parameters}
+    \label{readout/table:cryocool_regs}
 \end{table}
 
 
@@ -1072,7 +1072,7 @@ The configuration for the Lakeshore devices is stored in the YAML file that cont
 On ASTHROS, we have two Lakeshore 240s that are connected to the central command computer via USB.
 The configuration file for the Lakeshore devices is shown in Table \ref{readout/table:lakeshore_config}.
 
-\begin{table}[ht!]
+\begin{table}
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -1082,8 +1082,8 @@ The configuration file for the Lakeshore devices is shown in Table \ref{readout/
         \texttt{TYPE} & str & Type of readout for the device (Sensor, Kelvin, Celsius, or Fahrenheit) \\
         \texttt{CHANNELS} & list & List of channels on the device with the \texttt{NAME} and \texttt{CHANNEL} number of the channel
     \end{tabularx}
-    \label{readout/table:lakeshore_config}
     \caption{Lakeshore Configuration Parameters}
+    \label{readout/table:lakeshore_config}
 \end{table}
 
 The \texttt{Lakeshore} class is initialized with one of the Lakeshore configurations from the array of configurations in the YAML file.
@@ -1157,8 +1157,8 @@ The \texttt{Motor} class is initialized with a configuration as outlined in Tabl
         \texttt{HWVARS} & dict & Dictionary of hardware variables for the motor, described in \texttt{set\_hwvars()}\\
         \texttt{FUNCTIONS} & dict & Dictionary of functions for the motor, described in \texttt{set\_functions()}\\
     \end{tabularx}
-    \label{readout/table:motor_config}
     \caption{Motor Configuration Parameters}
+    \label{readout/table:motor_config}
 \end{table}
 
 After initializing the serial connection with the motor, an optional parameter \texttt{reset} can be passed to the \texttt{Motor} class to reset the motor and initialize the hardware variables and program functions.
@@ -1196,8 +1196,8 @@ The values we define in the \texttt{HWVARS} configuration are shown in Table \re
         \texttt{A} & Acceleration & Acceleration of the motor in steps per second squared.\\
         \texttt{D} & Deceleration & Deceleration of the motor in steps per second squared.
     \end{tabularx}
-    \label{readout/table:motor_hwvars}
     \caption{Motor Hardware Variables}
+    \label{readout/table:motor_hwvars}
 \end{table}
 
 The MDrive system supports programming functions that can be called to move the motor.
@@ -1233,8 +1233,8 @@ These are shown in Table \ref{readout/table:motor_functions}.
         \texttt{SKY} & Opens the motor so that our detectors are pointed at the sky \\
         \texttt{TOGGLE} & Uses conditional branches to toggle between the \texttt{CAL} and \texttt{SKY} functions using our position. If the position is outside of the expected range, the motor will run the \texttt{INIT} function to reset the position.\\
     \end{tabularx}
-    \label{readout/table:motor_functions}
     \caption{User Programmed Motor Functions}
+    \label{readout/table:motor_functions}
 \end{table}
 
 To run a function on the motor, we have implemented a \texttt{run\_function()} method that takes in the name of the function to run.
@@ -1293,8 +1293,8 @@ This YAML file outlines the registers on the antenna as shown in Table \ref{read
         \texttt{R} & int & Register read address (optional for write only addresses)\\
         \texttt{W} & int & Register write address (optional for read only addresses)\\
     \end{tabularx}
-    \label{readout/table:antenna_regs}
     \caption{Antenna Register Configuration Parameters for a Single Register}
+    \label{readout/table:antenna_regs}
 \end{table}
 
 At the bottom of the YAML file are arrays for \texttt{ALARMS} and \texttt{NACK} errors. 
@@ -1405,7 +1405,7 @@ After verifying the input, the method will write to the channel using \texttt{wr
 If the current is above the maximum current, the method will raise an exception.
 We also check if the read voltage and enable status is within a certain tolerance of the requested voltage as well as ensuring the channel was correctly enabled, raising exceptions if not. 
 
-\begin{table}[h]
+\begin{table}
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
         \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
@@ -1431,8 +1431,8 @@ We also check if the read voltage and enable status is within a certain toleranc
         \texttt{SUBTYPE} & str & The specific subtype of the channel within the system (e.g. \texttt{REF}, \texttt{CM4}, \texttt{PMCC}, \dots). \\
         \texttt{DESCRIPTION} & str & The full name of the channel.\\
     \end{tabularx}
-    \label{readout/table:psu_config}
     \caption{Power Supply Unit Configuration Parameters}
+    \label{readout/table:psu_config}
 \end{table}
 
 \texttt{SmartPsu} is initialized using an \texttt{Environment} object and a configuration file that contains the channel configurations.
@@ -1507,8 +1507,8 @@ Table \ref{readout/table:psu_cli} shows the menu of commands a user may select w
         \texttt{forcestop} & Turn off PSU without specifying config file (best effort guess of priorities based on current output settings). \\
         \texttt{checkmixers} & Check HEB mixers I-V reading the current from the isense ADC inputs.
     \end{tabularx}
-    \label{readout/table:psu_cli}
     \caption{Power Supply Unit Command Line Interface}
+    \label{readout/table:psu_cli}
 \end{table}
 
 \subsection{RabbitMQ Control Loop}
@@ -1759,12 +1759,12 @@ In practice, this looks like the following sequence, where the clock has a 12 se
         11 & \texttt{11} & Cryocooler Block \\
         12 & \texttt{12} & Intermediate Frequency Block \\
     \end{tabularx}
-    \label{readout/table:housekeeping_sequence}
     \caption{Housekeeping Sequence}
+    \label{readout/table:housekeeping_sequence}
 \end{table}
 
 \subsection{Antenna Block}
-The antenna system is fairly straightforward. 
+The antenna system is fairly straightforward for implementation.
 There is a single \texttt{housekeeping.antenna} routing key to subscribe to and the data is a simple dictionary packed with various readout values from the antenna.
 Below is a list of the values that are packed into the data dictionary. 
 \begin{itemize}
@@ -1924,8 +1924,8 @@ This is done by exclusively using the \texttt{click.echo()} method to print to t
         \texttt{spec} & Controls the Spectrometer Systems. \\
         \texttt{synth} & Controls the Synthesizer Systems. \\
     \end{tabularx}
-    \label{readout/table:click_plugins}
     \caption{Plugins for the Central Command System}
+    \label{readout/table:click_plugins}
 \end{table}
 
 Table \ref{readout/table:click_plugins} shows a list of the plugins that are currently implemented or planned for the system.
@@ -1939,7 +1939,7 @@ Likewise, the \texttt{fabric} plugin is a special plugin that allows us to execu
 While we would hope that our Central Command system is able to handle all required commands, there may be times when we need to execute a raw command on a remote computer.
 This is especially useful in flight, when SSHing into a computer may not be possible and we need a backup plan.
 
-For the spectrometer system, we had to handle mutliple instances of subsystems responding to the same command.
+For the spectrometer system, we had to handle multiple instances of subsystems responding to the same command.
 This occurs as we have multiple CM4s on the gondola, each with their own spectrometer system.
 To handle this, we place a \texttt{PriorityLock} on the response handler for the command so that only one command is executed at a time.
 Each command updates a response dictionary with the response from the command, which harmonizes the responses into a single dictionary.

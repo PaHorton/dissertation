@@ -116,7 +116,7 @@
                                         %     http://www.ams.org/publications/authors/tex/amslatex
                                         % ('mathtools' loads and extends 'amsmath')
 \usepackage{ifxetex,ifluatex}           % Can check if XeTeX or LuaTeX was used to typeset
-\usepackage{fixltx2e}                   % Provides \textsubscript
+% \usepackage{fixltx2e}                   % Provides \textsubscript
 \IfFileExists{upquote.sty}%             % Use upquote if available, for
   {\usepackage{upquote}}{}              %   straight quotes in verbatim environments
 
@@ -760,6 +760,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \usepackage{chngcntr}                   % Modify counters (e.g., for figures, footnotes)
 \counterwithout*{footnote}{chapter}     % Make footnote numbering continuous throughout
+\footmarkstyle{#1.\,}
 
 \providetoggle{useendnotes}
 \settoggle{useendnotes}{true}           %<Set to 'true' if you want to use endnotes
@@ -799,7 +800,7 @@
 %                                       % Settings for 'biblatex' or a version of
 %                                       %   'biblatex'
   \usepackage[authordate,%
-              backend=bibtex,%           % Recommend to use 'biber' instead of 'bibtex'
+              backend=biber,%           % Recommend to use 'biber' instead of 'bibtex'
               doi=only,%                % Avoid printing URLs
               isbn=false]%              % Don't print ISBN numbers
               {biblatex-chicago}        %~Other possibilities include: 'biblatex',

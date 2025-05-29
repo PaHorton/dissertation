@@ -197,7 +197,7 @@ The remaining unknown terms $T_e$ the electron temperature in K, and $N(N^+)/N(H
     12 + \log(N/H) &= (8.21 \pm 0.09) - (0.059 \pm 0.009) R_{gal}
 \end{align}
 
-Rearranging Equation \ref{carina/eq:ratio_final} to isolate the term that depends on electron density allows us to look at the relationship between those terms and electron density in Figure \ref{carina/eq:gnlte_curves}.
+Rearranging Equation \ref{carina/eq:ratio_final} to isolate the term that depends on electron density allows us to look at the relationship between those terms and electron density in Figure \ref{carina/fig:gnlte_curves}.
 The curves are generated using fractional population data from \cite{luridiana2015pyneb} and GNLTE coefficients from \cite{gordon2002radio} to write a function that calculates RHS for a given electron density, $n_e$, and continuum brightness temperature, $T_c$.
 Because these curves are related to the ratio of the [NII] 205 $\mu$m line intensity to the RRL intensity, we can use them to calculate the electron density for a given ratio of intensities.
 This is accomplished by calculating the ratio of the integrated intensities and dividing by the constant terms. 
@@ -206,7 +206,7 @@ This process is repeated for each pixel in the [NII] 205 $\mu$m data cube, resul
 
 \begin{figure}
     \centering
-    \begin{subfigure}[t]{0.5\textwidth}
+    \begin{subfigure}[t]{0.45\textwidth}
         \centering
         \includegraphics[width=\textwidth]{figs/carina/gnlte_curves.png}
         \caption{
@@ -215,7 +215,7 @@ This process is repeated for each pixel in the [NII] 205 $\mu$m data cube, resul
         \label{carina/fig:gnlte_curves}
     \end{subfigure}%
     ~
-    \begin{subfigure}[t]{0.5\textwidth}
+    \begin{subfigure}[t]{0.45\textwidth}
         \centering
         \includegraphics[width=\textwidth]{figs/carina/nii_curves.png}
         \caption{Ratio of the integrated intensities of the two lines of [NII] as a function of electron density at an electron temperature of 5662 K.}
@@ -272,7 +272,7 @@ Table \ref{carina/tab:slabs} shows the spectral slabs used to calculate the elec
 \end{table}
 
 Another way to visualize this separation is to look at the separation between the two regions when plotting the integrated intensities of the [NII] 205 $\mu$m line and the RRL data.
-Figure \ref{carina/eq:intensity_scatter} shows a scatter plot of the two lines, showing an overall trend of less [NII] in the Keyhole Nebula compared to the Carina Extended region.
+Figure \ref{carina/fig:intensity_scatter} shows a scatter plot of the two lines, showing an overall trend of less [NII] in the Keyhole Nebula compared to the Carina Extended region.
 
 \begin{figure}
     \centering

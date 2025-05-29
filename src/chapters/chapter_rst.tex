@@ -27,7 +27,7 @@ These events are also rare.
 Therefore, we can use anomaly detection to identity these outliers.
 Figure \ref{rst/fig:anomalies} shows examples of these two events.
 
-\begin{figure}[h]
+\begin{figure}
     \centering
     \includegraphics[width=.75\linewidth]{figs/rst/Examples_fixed.png}
     \caption{An example of a cosmic ray (left) and snowball (right) in RST's detector data. The top frames show the frame prior to the event and the bottom frames show the area after the event occurred. The bottom graphs show the overall DN value across the entirety of the exposure, showing large jumps at the time of the event for the cosmic ray (top) and snowball (bottom).}
@@ -62,7 +62,7 @@ By splitting our anomaly detection into two tasks, we can use the first step to 
 This can drastically reduce the amount of pixels we have to classify as we also identify the frame that the anomaly occurred in, reducing our focus to a smaller window around the event. 
 The following are potential candidate methods for accomplishing these two tasks.
 
-\begin{table}[h]
+\begin{table}
     \centering
     \begin{tabular}{l|l}
         \textbf{Step 1: Locating Anomalies} & \textbf{Step 2: Classifying Anomalies} \\
@@ -244,7 +244,7 @@ This is likely due to the less rigid criteria for identifying cosmic rays compar
 Figure \ref{rst/fig:heuristic_confusion} shows the confusion matrix for the Heuristic Rules method with the located data from the Statistical Thresholding method.
 This method is currently being used in the SDP pipeline to identify anomalies in the WFI detector data.
 
-\begin{figure}[h]
+\begin{figure}
     \centering
     \includegraphics[width=.7\textwidth]{figs/rst/heuristic_confusion.png}
     \caption{Confusion Matrix for the Heuristic Rules Method with Located Data from Statistical Thresholding.}
