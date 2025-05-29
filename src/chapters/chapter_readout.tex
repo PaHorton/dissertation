@@ -1541,7 +1541,7 @@ Additionally, there is little benefit to using the two locks as the cadence in w
 \section{Variable Attenuator}
 ASTHROS utilizes a custom built five-stage Intermediate Frequency (IF) Low Noise Amplifier (LNA) in the readout chain to amplify the signal after the mixer in the cryocooler \parencite{mathewson2024customizable}.
 Each one of these amplifier stages is housed with a variable attenuator to control the gain of the amplifier \parencite{Ricardo}.
-Specifically, we utilize the F1956NBGI8 Attenuator from Renesas Electronics for adjusting our attenuation levels \parencite{Renesas}.
+Specifically, we utilize the F1956NBGI8 Attenuator from Renesas Electronics for adjusting our attenuation levels \parencite{renesas}.
 As this is a standalone device on the system, it is controlled by it's own Arduino Nano Every microcontroller and interacts with the rest of system as a networked device using MQTT (Message Queuing Telemetry Transport) \parencite{mqtt}.
 Each Arduino Nano Every is configured to control up to 8 variable attenuators.
 Each IF slice has a separate variable attenuator to control the gain of the amplifier.
