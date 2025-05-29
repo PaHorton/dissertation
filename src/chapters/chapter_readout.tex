@@ -1866,7 +1866,7 @@ The data is packed into a byte array with the following values:
     \item \texttt{E\_Current} - The current from bank E, channels 0 to 7, from -99.99 to 99.99 A.
     \item \texttt{S\_Current} - The current from bank S (the synthesizer), channels 0 and 1, from -99.99 to 99.99 A.
     \item \texttt{Enabled} - The status of each channel as a big endian bit array with each bit representing the status of a channel for banks A, B, C, D, E, and S.
-    \item \texttt{Synth\_ID} - The ID of the synthesizer, should be "MLVS-1520AS" and is downlinked for verification we have an SPI connection.
+    \item \texttt{Synth\_ID} - The ID of the synthesizer, should be \"MLVS-1520AS\" and is downlinked for verification we have an SPI connection.
     \item \texttt{Synth\_Freq} - The frequency of the synthesizer in MHz, from 0 to 99999.99 MHz.
     \item \texttt{Synth\_Temp} - The internal temperature of the synthesizer in C, from -327.68 to 327.67 C.
     \item \texttt{Synth\_Max\_Temp} - The maximum temperature of the synthesizer in C, from -327.68 to 327.67 C.
