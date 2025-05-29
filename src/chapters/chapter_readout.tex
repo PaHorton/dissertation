@@ -98,21 +98,21 @@ This is done by updating the \texttt{/etc/hosts} file with the IP addresses and 
 \section{RabbitMQ}
 \label{readout/section:rmqtools}
 The ASTHROS readout system relies on RabbitMQ to communicate between different devices and systems on the readout network.
-Past ballooning missions, such as BLAST-TNG, utilize sockets to communicate between systems \citep{gordon2019highly}.
+Past ballooning missions, such as BLAST-TNG, utilize sockets to communicate between systems \parencite{gordon2019highly}.
 The resulting network of sockets across multiple devices becomes difficult to manage and debug as many of the definitions for the sockets are hard coded into the software.
 Devices in such a system often use User Datagram Protocol (UDP) to broadcast messages across the network.
 This approach requires each device to listen for messages on a specific port and parse the messages to determine if they are intended for that device.
 For systems that require multiple devices to communicate with each other, this can become cumbersome as each device must be aware of the other devices on the network and the ports they are listening on.
 Additionally, UDP is a connectionless protocol, meaning that there is no guarantee that a message will be received by the intended recipient.
-To work around this, some ballooning readout systems would be built as a single monolithic program that orchestrates all the devices on the network \citep{gordon2019highly}.
+To work around this, some ballooning readout systems would be built as a single monolithic program that orchestrates all the devices on the network \parencite{gordon2019highly}.
 This approach is not scalable and makes it difficult to debug and maintain the system.
 
 For ASTHROS, we wanted to build a system that was modular, consisting of microservices that can easily be integrated into the rest of the system using a shared protocol.
 To accomplish this, we needed to decouple the devices in a way that data production and consumption are separated.
 Services that produce housekeeping data are not concerned with who needs the data, and services that consume housekeeping data are not concerned with where the data comes from, simply how the data is formatted. 
 This is where a message broker like RabbitMQ comes in.
-RabbitMQ is an open-source Advances Messaging Queue Protocol (AMQP) implementation that serves as a broker for incoming and outgoing messages by routing messages to bound destination queues located on an exchange \citep{dunne2018comparison}.
-We chose RabbitMQ because of the centralized message broker architecture that allows for easy integration of new devices and services \citep{toshev2015learning}.
+RabbitMQ is an open-source Advances Messaging Queue Protocol (AMQP) implementation that serves as a broker for incoming and outgoing messages by routing messages to bound destination queues located on an exchange \parencite{dunne2018comparison}.
+We chose RabbitMQ because of the centralized message broker architecture that allows for easy integration of new devices and services \parencite{toshev2015learning}.
 All of our devices are networked together, making a centralized message broker the ideal solution for our readout system.
 
 The core of RabbitMQ is explained on the documentation as well as \cite{toshev2015learning}.
@@ -147,7 +147,7 @@ For systems that have multiple devices, this allows us to easily ingest all data
 \subsection{RMQTools}
 While RabbitMQ serves as a powerful backbone for our networking infrastructure, we needed to develop a way to wrap our devices in ways that will communicate with the RabbitMQ server.
 To accomplish this, we developed a Python package called \texttt{RMQTools} that provides a simple interface for creating both publisher to subscriber systems as well as Remote Procedure Call (RPC) frameworks.
-At its core is the \texttt{RmqConnection} class that wraps the \texttt{pika} library to add additional functionality and simplify the process of creating a RabbitMQ connection \citep{pika}.
+At its core is the \texttt{RmqConnection} class that wraps the \texttt{pika} library to add additional functionality and simplify the process of creating a RabbitMQ connection \parencite{pika}.
 Pika is a single threaded RabbitMQ client library in python that provides an implementation of the AMQP protocol.
 Many of our modules will require threading as we will often have a main thread running processes on the hardware while a second thread is running the RabbitMQ connection making it difficult to use the \texttt{pika} library directly.
 \texttt{RmqConnection} handles this threading by allowing us to create a connection to the RabbitMQ server and run the connection in a separate thread from the main thread.
@@ -225,10 +225,10 @@ Because we run \texttt{release\_lock()} at the end of each decorated function, w
 
 \section{PMCC}
 For ASTHROS, we utilize an array of 4GHz spectrometers called the PMCC ASIC P19800B ASIC RF Spectrometer, henceforth referred to as the PMCC.
-These PMCCs are interfaced with via SPI for control, diagnostics, and readout \citep{PMCCP19800B}.
+These PMCCs are interfaced with via SPI for control, diagnostics, and readout \parencite{PMCCP19800B}.
 To communicate with the PMCCs, we utilize Raspberry Pi Compute Module 4s (CM4s) with custom harnesses.
-The CM4 was chosen because it can be configured to operate at the 1.8V logic level necessary for PMCC by moving a diode on the CM4 IO board \citep{cm4io}.
-Additionally, the CM4 has 4 SPI buses, allowing us to control up to 4 PMCCs per device \citep{cm4}.
+The CM4 was chosen because it can be configured to operate at the 1.8V logic level necessary for PMCC by moving a diode on the CM4 IO board \parencite{cm4io}.
+Additionally, the CM4 has 4 SPI buses, allowing us to control up to 4 PMCCs per device \parencite{cm4}.
 The PMCCs are also connected to a GPIO pin on the CM4 to allow us to send a reset signal to the PMCCs.
 The custom harness used to connect the PMCCs to the CM4 mounts onto the CM4 IO board's GPIO pins and converts the 40 ribbon cable to four sets of connections for the PMCC's SPI and reset pins.
 Additionally, the CM4 has an SSD mounted to the side of it's IO board enclosure for raw spectra storage and easier local debugging when the device is not connected to the rest of the readout network.
@@ -243,7 +243,7 @@ Built on top of the driver are Python programs that allow for manual control of 
 \subsection{\texttt{spi\_utils}}
 At the lowest level of the \texttt{PyMCC} driver is the \texttt{spi\_utils} module.
 This module provides an interface for communicating with the PMCCs over SPI using the \texttt{spidev} Python library.
-The \texttt{spidev} library provides an interface to the Linux kernel's SPI device driver \citep{spidev}.
+The \texttt{spidev} library provides an interface to the Linux kernel's SPI device driver \parencite{spidev}.
 Additionally, the PMCC has 16-bit registers that require us to send and receive 16-bit words instead of the typical 8-bit bytes that \texttt{spidev} expect. 
 This was the primary reason for the development of the \texttt{spi\_utils} module as it handles the conversion between 16-bit words and 8-bit bytes and provides an easier interface for configuring the PMCCs registers without having to worry about the low-level details of the SPI communication.
 
@@ -268,7 +268,7 @@ The helper method returns these two bytes as an array that can be used in other 
 For reading and writing to the PMCC, the \texttt{PMCC\_SPI} object has an \texttt{xfer()} method that takes the address of the register, a read or write flag, and optional data to write and length of data to read.
 By default, the length of data to read is 1, and the data to write is None.
 The \texttt{xfer()} method first obtains the TX bytes from the \texttt{make\_addr()} method.
-For both read and write commands, we utilize the \texttt{spidev} library's \texttt{xfer3()} function as it allows us to send and receive data of arbitrary length in a single SPI transaction \citep{spidev}.
+For both read and write commands, we utilize the \texttt{spidev} library's \texttt{xfer3()} function as it allows us to send and receive data of arbitrary length in a single SPI transaction \parencite{spidev}.
 \texttt{spidev}'s \texttt{xfer2()} and \texttt{xfer()} will fail at list values longer than the maximum SPI buffer size.
 On the other hand, \texttt{xfer3()} will automatically split the data into multiple SPI transactions if the data is longer than the maximum SPI buffer size.
 This is vital for burst reads on the PMCC as our data can be much longer than the maximum SPI buffer size.
@@ -279,7 +279,7 @@ If our transaction is unsuccessful, instead of returning zeroes, we will receive
 For single register reads, the \texttt{xfer()} method sends the TX bytes followed by a dummy word to the PMCC.
 While we are sending the dummy word over the MOSI line, the PMCC is sending the data we requested over the MISO line that is returned by the \texttt{xfer3()} function along with the original TX bytes.
 After checking that we have received data from the PMCC, we return the data as an array of 16-bit words.
-This is done by utilizing NumPy to cast the output as a \texttt{np.uint8} array and then returning a view of that array with big-endian 16-bit unsigned integer data type \citep{numpy}.
+This is done by utilizing NumPy to cast the output as a \texttt{np.uint8} array and then returning a view of that array with big-endian 16-bit unsigned integer data type \parencite{numpy}.
 For reads that are longer than a single register, we send the TX bytes followed by a dummy word for each word we want to read and follow the same process as a single register read.
 
 For simple reads, \texttt{PMCC\_SPI} has a \texttt{read()} method that takes the address of the register we want to read from and optionally the number of words we want to read.
@@ -350,7 +350,7 @@ Finally, we provide a \texttt{close()} method that simply calls the \texttt{clos
 
 \subsection{\texttt{config}}
 There are a number of device specific configurations that need to be set for each PMCC in order to operate correctly.
-To simplify the process of writing code to configure the PMCCs, we utilize the YAML configuration file format to store the configuration for each PMCC \citep{yaml}.
+To simplify the process of writing code to configure the PMCCs, we utilize the YAML configuration file format to store the configuration for each PMCC \parencite{yaml}.
 This YAML file has information about the RMQ configuration as well as spectrometer configuration. 
 For now, we will focus on the spectrometer configuration and discuss the RMQ configuration in Section \ref{readout/section:rmqtools}.
 The spectrometer config section, \texttt{spec}, is split into two main sections for the PMCCs, global variables used for every spectrometer, and spectrometer specific variables.
@@ -876,8 +876,8 @@ Combining the group name with the index allows us to harmonize the data down the
 
 \section{Cryocool}
 ASTHROS uses a closed loop cryocooler to cool the receiver system to 4K during flight.
-The cooler is a low-power, 4-stage, pulse tube refrigerator built by Lockheed Martin Corp. through the NASA Advanced Cryocooler Technology Development Program (ACTDP) for the James Webb Space Telescope (JWST) \citep{olson2005lockheed} \citep{coulter2003nasa}.
-The specific cooler we are using was, fortuitously, a leftover prototype from the ACTDP that was not selected for the JWST mission and can be repurposed for ASTHROS \citep{kawamuraterahertz}.
+The cooler is a low-power, 4-stage, pulse tube refrigerator built by Lockheed Martin Corp. through the NASA Advanced Cryocooler Technology Development Program (ACTDP) for the James Webb Space Telescope (JWST) \parencite{olson2005lockheed} \parencite{coulter2003nasa}.
+The specific cooler we are using was, fortuitously, a leftover prototype from the ACTDP that was not selected for the JWST mission and can be repurposed for ASTHROS \parencite{kawamuraterahertz}.
 
 To interface with the cryocooler we have three main components: the cryocooler controller, the temperature sensors, and the pressure sensors.
 All three of these devices are connected to our central command computer. 
@@ -906,7 +906,7 @@ The \texttt{Cryocool} class is instantiated with a configuration YAML that conta
 The necessary fields for configuration are shown in Table \ref{readout/table:cryocool_config}.
 We first set up the serial communication with the cryocooler using the \texttt{CONN} parameters and the Python serial library.
 We then make note of the status registers that are read out when we issue a status command to the cryocooler.
-After this, we read in the temperature ramp as a pandas dataframe from the \texttt{TEMP\_RAMP} file \citep{reback2020pandas}.
+After this, we read in the temperature ramp as a pandas dataframe from the \texttt{TEMP\_RAMP} file \parencite{reback2020pandas}.
 This file contains points for a calibration curve to convert voltage from the internal temperature sensors to temperature.
 
 \begin{table}[ht!]
@@ -1141,7 +1141,7 @@ After defining all of these functions, we simply run \texttt{rmq.start()} to sta
 
 \section{Motor}
 Behind the antenna is a small stepper motor used to chop between the sky and the internal calibration source.
-This motor is controlled using the intelligent motion systems MDrive Motion Control System \citep{mdrive}.
+This motor is controlled using the intelligent motion systems MDrive Motion Control System \parencite{mdrive}.
 The motor is connected to the command computer via a serial RS-485 connection. 
 The MDrive system is a command language used to program and configure the motor.
 While we could use the MDrive software to control the motor, we have implemented a Python interface to control the motor to better integrate with the rest of our architecture. 
@@ -1308,7 +1308,7 @@ This method takes a \texttt{message\_id}, \texttt{payload} and \texttt{encoding}
 The payload is a dictionary matching the \texttt{FIELDS} in the register configuration file for writes. 
 The method then uses \texttt{encode\_frame()} to encode the message and add the checksum.
 If any of the data in the payload is in the wrong format, we cast it to the correct format based on the encoding using \texttt{fix\_payload()}.
-For the checksum, the antenna utilizes a CRC-16 CCITT checksum with a precomputed lookup table computed table \cite{koopman2004cyclic}.
+For the checksum, the antenna utilizes a CRC-16 CCITT checksum with a precomputed lookup table computed table \parencite{koopman2004cyclic}.
 The process for calculating the checksum is as follows:
 \begin{enumerate}
     \item Initialize the checksum to 0xFFFF.
@@ -1453,7 +1453,7 @@ In order to closely match the original drivers, we have also implemented a \text
 There is also a \texttt{check\_amps()} method that validates the performances of the power amplifiers by gradually increasing or decreasing the drain voltage by a pinch voltage and measuring the current.
 
 Apart from being a power supply, the Smart PSU also controls the synthesizer and some of the temperature sensors on the readout system. 
-We utilize the Micro Lambda (MLVS) Voltage Controlled Oscillator (VCO) based synthesizer in our readout pipeline \cite{mlvs}. 
+We utilize the Micro Lambda (MLVS) Voltage Controlled Oscillator (VCO) based synthesizer in our readout pipeline \parencite{mlvs}. 
 This synthesizer is built into the Smart PSU and is controlled over SPI using the \texttt{spi\_readwrite\_tool} provided by the manufacturer.
 We have wrapped the \texttt{spi\_readwrite\_tool} in a \texttt{SPIReadWrite} class to handle most of these additional interactions.
 A general purpose \texttt{read()} method is provided to utilize the tool with the necessary parameters, such as the port and address of the Smart PSU.
@@ -1539,16 +1539,16 @@ In theory, we could use two separate locks for each of the ports but this would 
 Additionally, there is little benefit to using the two locks as the cadence in which we expect to send status messages allows us to easily handle housekeeping one at a time without needing two parallel processes. 
 
 \section{Variable Attenuator}
-ASTHROS utilizes a custom built five-stage Intermediate Frequency (IF) Low Noise Amplifier (LNA) in the readout chain to amplify the signal after the mixer in the cryocooler \citep{mathewson2024customizable}.
-Each one of these amplifier stages is housed with a variable attenuator to control the gain of the amplifier \citep{Ricardo}.
-Specifically, we utilize the F1956NBGI8 Attenuator from Renesas Electronics for adjusting our attenuation levels \citep{Renesas}.
-As this is a standalone device on the system, it is controlled by it's own Arduino Nano Every microcontroller and interacts with the rest of system as a networked device using MQTT (Message Queuing Telemetry Transport) \citep{mqtt}.
+ASTHROS utilizes a custom built five-stage Intermediate Frequency (IF) Low Noise Amplifier (LNA) in the readout chain to amplify the signal after the mixer in the cryocooler \parencite{mathewson2024customizable}.
+Each one of these amplifier stages is housed with a variable attenuator to control the gain of the amplifier \parencite{Ricardo}.
+Specifically, we utilize the F1956NBGI8 Attenuator from Renesas Electronics for adjusting our attenuation levels \parencite{Renesas}.
+As this is a standalone device on the system, it is controlled by it's own Arduino Nano Every microcontroller and interacts with the rest of system as a networked device using MQTT (Message Queuing Telemetry Transport) \parencite{mqtt}.
 Each Arduino Nano Every is configured to control up to 8 variable attenuators.
 Each IF slice has a separate variable attenuator to control the gain of the amplifier.
 The attenuator is set using eight digital channels that can be used to set the attenuation level.
-A PCA9571 is used as an I$^2$C I/O expander to control the digital channels on the attenuator \cite{pca9571}.
+A PCA9571 is used as an I$^2$C I/O expander to control the digital channels on the attenuator \parencite{pca9571}.
 These expanders all have the same address of \texttt{0b0100101X} where \texttt{X} is the read/write bit. 
-Because of this, we utilize an LTC4305 to multiplex the I$^2$C bus to provide each expander with a unique address \cite{ltc4305}.
+Because of this, we utilize an LTC4305 to multiplex the I$^2$C bus to provide each expander with a unique address \parencite{ltc4305}.
 Each multiplexer is set with a unique address utilizing hardware dip switches on the board.
 For the sake of simplicity, these multiplexers are given indexed addresses starting at 0 based on their position in the stack of slices. 
 
@@ -1624,7 +1624,7 @@ In this scenario, there is a floating voltage on the I$^2$C bus that causes the 
 The patched \texttt{Wire} library has a new \texttt{setTimoout()} method that sets a timeout for the I$^2$C bus to prevent this from happening.
 
 After setting up serial and I$^2$C, the system sets up our Ethernet and MQTT connections.
-For Ethernet, we are using the W5500 Ethernet shield from Wiznet \cite{w5500}.
+For Ethernet, we are using the W5500 Ethernet shield from Wiznet \parencite{w5500}.
 This shield is connected to the Arduino using SPI and enables us to connect the Arduino to the rest of the readout network. 
 To setup the networking, we give the Arduino a unique MAC address and a static IP address.
 On ASTHROS, we have two of these systems so we provide them with addresses based on their hard coded ID. 
@@ -1690,7 +1690,7 @@ This occurs because power will leak through the SPI bus and partially power the 
 When the system is fully on, the shield has an incorrect reference voltage and will not initialize properly during \texttt{setup()}.
 
 \section{Housekeeping}
-In our initial implementation of housekeeping, we intended to conform to the structure necessary for downstream processing using GSEOS (Ground Support Equipment Operating System) \citep{hauck2003use}.
+In our initial implementation of housekeeping, we intended to conform to the structure necessary for downstream processing using GSEOS (Ground Support Equipment Operating System) \parencite{hauck2003use}.
 GSEOS is the ground station software previously used by the ASTHROS team to digest and visualize telemetry data from the gondola.
 Due to changes on the gondola's software side, the housekeeping system will need to be modified to conform a different framework.
 For now, this section will outline the current implementation of the housekeeping system as the connections to the rest of our readout system are still valid. 
@@ -1885,7 +1885,7 @@ Other than that, we simply iterate over the sensors in the configuration file an
 \section{Central Command}
 The core of the entire readout network is the central command system.
 In developing the central command system, we had two goals in mind: develop something that was easily adaptable to whatever subsystems we needed to control and develop something that whose interface would be identical in both testing and in flight.
-This led us to looking towards \texttt{click}, a Python library for building command line applications \citep{click}.
+This led us to looking towards \texttt{click}, a Python library for building command line applications \parencite{click}.
 Click enabled us to create a custom command line interface (CLI) that consolidated all of our systems into a single interface.
 Additionally, with \texttt{click\_repl}, we were able to create a read-eval-print loop (REPL) that would act as a terminal interface to the system, allowing us to chain commands together and interact with the system in a more natural way.
 

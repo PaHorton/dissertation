@@ -3,21 +3,21 @@
 \section{Introduction}
 \section{Data}
 Our data comes from two main sources, the Stratospheric Observatory for Infrared Astronomy (SOFIA) and the Deep Space Network (DSN).
-% In addition to these data sources, we also use ancillary data from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) to compare our results \citep{oberst2011205}.
-Additionally, for our calculations, we need a radio continuum brightness temperature, which we take from the Atacama Large Millimeter/submillimeter Array (ALMA) observations of the Carina Nebula \citep{Rebolledo_2021}.
+% In addition to these data sources, we also use ancillary data from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) to compare our results \parencite{oberst2011205}.
+Additionally, for our calculations, we need a radio continuum brightness temperature, which we take from the Atacama Large Millimeter/submillimeter Array (ALMA) observations of the Carina Nebula \parencite{Rebolledo_2021}.
 
 \subsection{SOFIA --- Stratospheric Observatory for Infrared Astronomy}
 SOFIA was a joint project of NASA and the German Aerospace Center (DLR), operating from a Boeing 747 aircraft equipped with a 2.5-meter telescope designed for infrared observations.
-On SOFIA was the German REceiver for Astronomy at Terahertz frequencies (GREAT) which observed a wide range of spectral lines between 1.25 and 2.5 THz using a heterodyne receiver \citep{heyminck2012great}.
+On SOFIA was the German REceiver for Astronomy at Terahertz frequencies (GREAT) which observed a wide range of spectral lines between 1.25 and 2.5 THz using a heterodyne receiver \parencite{heyminck2012great}.
 Using the L1 channel of GREAT, we observed the [NII] 205 $\mu$m line in the Carina Nebula, providing a high-resolution spectral cube of the region.
-This spectral cube was generated using the SOFIA Data Processing System (DPS) which processes raw data from the instruments, calibrates it, and combines multiple exposures to create a final spectral cube \citep{shuping2014overview}.
+This spectral cube was generated using the SOFIA Data Processing System (DPS) which processes raw data from the instruments, calibrates it, and combines multiple exposures to create a final spectral cube \parencite{shuping2014overview}.
 The cube itself is a 36 by 36 pixel map spanning 11" by 11" with a 202 spectral channels covering a velocity range of -110 to 90 km/s with a velocity resolution of 1 km/s.
 The data has a beam size of 20.77" and is tuned to a frequency of 1.45 MHz for measuring the [NII] 205 $\mu$m line.
 Due to the calibration, the values are already in Main Beam Brightness Temperature (K$_{mb}$) units.
 
 \subsection{DSN --- Deep Space Network}
 The DSN is a global network of antennas that supports interplanetary spacecraft missions and radio astronomy observations.
-For radio astronomy, the DSN Deep Space Station 43 (DSS-43) in Canberra, Australia, is equipped with a 70-meter dish that can observe radio recombination lines (RRLs) at frequencies within the K-band (17 to 27 GHz) \citep{virkler2020broadband}.
+For radio astronomy, the DSN Deep Space Station 43 (DSS-43) in Canberra, Australia, is equipped with a 70-meter dish that can observe radio recombination lines (RRLs) at frequencies within the K-band (17 to 27 GHz) \parencite{virkler2020broadband}.
 Our RRL data for Carina Nebula was collected using the DSS-43 antenna as an average of the RRL observations from H70$\alpha$ (18.768 GHz) to H62$\alpha$ (26.939 GHz).
 This average was taken by scaling all the components to the central value of H67$\alpha$ (21.385 GHz) and gridding the data to match the lowest frequency, H70$\alpha$.
 The resultant map is much larger than the original SOFIA map, spanning 150" by 76" (343 x 335 pixels) with a beam size of 56" and a spectral resolution of 2.4 km/s across 165 channels (-300 to 98 km/s).
@@ -52,10 +52,10 @@ This data is in units of Jy/beam, which is a common unit for radio continuum obs
 
 \section{Methodology}
 Our analysis follows the methodology outlined in \cite{pineda2018}, which describes how to calculate electron density from the ratio of [NII] 205 $\mu$m line intensity to the intensity of Hydrogen Radio Recombination Lines (RRLs).
-This analysis was done using the \texttt{spectral-cube} package in Python, which allows for efficient manipulation of spectral data cubes \citep{robitaille2016spectral}.
-\texttt{spectral-cube} wraps many of the functionalities of the \texttt{astropy} package, which is a core package for astronomy in Python \citep{astropy:2013, astropy:2018, astropy:2022}.
+This analysis was done using the \texttt{spectral-cube} package in Python, which allows for efficient manipulation of spectral data cubes \parencite{robitaille2016spectral}.
+\texttt{spectral-cube} wraps many of the functionalities of the \texttt{astropy} package, which is a core package for astronomy in Python \parencite{astropy:2013, astropy:2018, astropy:2022}.
 Our methodology for analysis consists of preprocessing the data cubes to ensure they are on the same grid with the same spatial and spectral resolutions, convolving the [NII] 205 $\mu$m data with the beam of the RRL data, and then performing calculations to derive the electron density from the ratio of the two lines.
-In addition to the electron density, we are also able to estimate the [NII] 122 $\mu$m line intensity, which whose ratio with the [NII] 205 $\mu$m line can be used to estimate electron density as well \citep{goldsmith2015herschel}.
+In addition to the electron density, we are also able to estimate the [NII] 122 $\mu$m line intensity, which whose ratio with the [NII] 205 $\mu$m line can be used to estimate electron density as well \parencite{goldsmith2015herschel}.
 Figure \ref{carina/fig:raw_data} shows the raw data cubes for both the [NII] 205 $\mu$m line and the RRL data.
 
 \subsection{Preprocessing the Data Cubes}
@@ -79,7 +79,7 @@ This is accomplished by convolving the [NII] 205 $\mu$m data with a Gaussian ker
 \end{equation}
 After spectral interpolation, both spectral cubes are sent through a Savitzky-Golay filter to smooth the data and improve our signal-to-noise ratio (SNR). 
 We use a polynomial order of 3 and a window length of 10 spectral channels, which is sufficient to smooth the data without losing too much spectral resolution. 
-This process is outlined by \cite{pineda2019electron} and is implemented using the \texttt{savgol\_filter} function from \texttt{scipy} \citep{2020SciPy-NMeth}.
+This process is outlined by \cite{pineda2019electron} and is implemented using the \texttt{savgol\_filter} function from \texttt{scipy} \parencite{2020SciPy-NMeth}.
 Figure \ref{carina/fig:spectral_means} shows the mean spectra of both the [NII] 205 $\mu$m line and the RRL data at each step of spectral interpolation and smoothing.
 
 \begin{figure}
@@ -119,7 +119,7 @@ After this step, we have two data cubes that are on the same grid, with the [NII
 
 In addition to the above preprocessing steps, we also need to perform some additional steps to prepare the ALMA continuum brightness temperature data.
 First, we need to convert the ALMA data from Jy/beam to K to get our brightness temperature.
-This is done using Equation \ref{carina/eq:alma_temp}, where $T_b$ is the brightness temperature in K, $S$ is the flux density in Jy/beam, $\lambda$ is the wavelength in centimeters, and $\theta$ is the beam size in arcminutes \citep{rohlfs2013tools}.
+This is done using Equation \ref{carina/eq:alma_temp}, where $T_b$ is the brightness temperature in K, $S$ is the flux density in Jy/beam, $\lambda$ is the wavelength in centimeters, and $\theta$ is the beam size in arcminutes \parencite{rohlfs2013tools}.
 \begin{equation}
     T_C = \frac{S\ \lambda^2}{2.65\ \theta^2}
     \label{carina/eq:alma_temp}
@@ -130,14 +130,14 @@ This is accomplished by using a power law to scale the brightness temperature to
     T_{Bf} = T_{Bi} \left( \frac{\nu_f}{\nu_i} \right)^\alpha
     \label{carina/eq:alma_freq}
 \end{equation}
-For Carina Nebula, we use a spectral index of -0.1, which is used for optically thin thermal bremsstrahlung emission \citep{salatino2012spectral}.
+For Carina Nebula, we use a spectral index of -0.1, which is used for optically thin thermal bremsstrahlung emission \parencite{salatino2012spectral}.
 As our RRL data is scaled to the H67$\alpha$ line, we will use the frequency of this line (21.385 GHz) as our final frequency, extrapolating from the ALMA data which is centered around 2.1 GHz.
 Finally, while ALMA data is not a spectral cube, \texttt{spectral-cube} can handle spatial interpolation of 2D data as well.
 We use the WCS of the final [NII] 205 $\mu$m data cube to reproject the ALMA data to the same grid.
 
 \subsection{Calculating Electron Density}
 The first step to calculating electron density is to see how the [NII] 205 $\mu$m line intensity and the RRL intensity are related.
-We begin with the following equation for the integrated intensity of the [NII] line \citep{pineda2018}:
+We begin with the following equation for the integrated intensity of the [NII] line \parencite{pineda2018}:
 \begin{equation}
     \label{carina/eq:intensity_NII}
     \int{T_{mb}^{[NII]}} d\nu &= \frac{A_{ul}hc^3N_u}{8\pi k_b \nu_{ul}^2}\\
@@ -156,16 +156,16 @@ Combining Equations \ref{carina/eq:N_u} with \ref{carina/eq:intensity_NII} resul
     \label{carina/eq:intensity_NII_final}
 \end{align}
 In the simplified version, $A_{ul}$ is in s$^{-1}$, $f(^3P_u)$ is dimensionless, $N(N^+)$ is in cm$^{-2}$, and $\nu_{ul}$ is in Hz.
-We utilize PyNeb, a Python package for calculating emission line intensities, to obtain our Einstein A coefficient, $A_{ul}$ and the fractional population of the upper level, $f(^3P_u)$ \citep{luridiana2015pyneb, froese2004breit,7288EL, tayal2011electron}.
+We utilize PyNeb, a Python package for calculating emission line intensities, to obtain our Einstein A coefficient, $A_{ul}$ and the fractional population of the upper level, $f(^3P_u)$ \parencite{luridiana2015pyneb, froese2004breit,7288EL, tayal2011electron}.
 
 
-Now we can look at the integrated intensity of the RRL line using the following equation \citep{pineda2018}:
+Now we can look at the integrated intensity of the RRL line using the following equation \parencite{pineda2018}:
 \begin{equation}
     \int{T_{mb}^{RRL}} d\nu = \num{1.87e-7}\ \frac{n_e N(H^+)}{\nu_{RRL} T_e^{3/2}}\ [\text{K km/s}]
     \label{carina/eq:intensity_RRL}
 \end{equation}
 For the RRL, $n_e$ is the electron density in cm$^{-3}$, $N(H^+)$ is the column density of ionized hydrogen in cm$^{-2}$, $\nu_{RRL}$ is the frequency of the RRL in Hz, and $T_e$ is the electron temperature in K.
-Because the hydrogen recombination lines can be affected by non-local thermal equilibrium (NLTE) effects, we also need to account for the deviation from LTE in the RRL emission \citep{gordon2002radio}.
+Because the hydrogen recombination lines can be affected by non-local thermal equilibrium (NLTE) effects, we also need to account for the deviation from LTE in the RRL emission \parencite{gordon2002radio}.
 \begin{equation}
     G_{NLTE}(n_e,T_C) = \frac{T^{RRL}}{T^{RRL}_{NLTE}} = b_n \left[1-\frac{1}{2}\tau_c \beta_n\right]
     \label{carina/eq:G_NLTE}
@@ -191,7 +191,7 @@ Finally, we can compute the ratio of Equation \ref{carina/eq:intensity_NII_final
     \label{carina/eq:ratio_final}
 \end{equation}
 Most of the terms in this equation are constants that do not depend on the electron density, $n_e$, except for the last term, RHS = $f(^3P_u)/n_e G_{NLTE}(n_e,T_c)$.
-The remaining unknown terms $T_e$ the electron temperature in K, and $N(N^+)/N(H^+)$, the abundance ratio of ionized nitrogen with respect to ionized hydrogen, can be estimated using the distance to the Galactic center, $R_{gal}$, in kpc \citep{pineda2018, balser2015azimuthal, esteban2018revisiting}:
+The remaining unknown terms $T_e$ the electron temperature in K, and $N(N^+)/N(H^+)$, the abundance ratio of ionized nitrogen with respect to ionized hydrogen, can be estimated using the distance to the Galactic center, $R_{gal}$, in kpc \parencite{pineda2018, balser2015azimuthal, esteban2018revisiting}:
 \begin{align}
     T_e &= (4446 \pm 301) + (467 \pm 34) R_{gal} \\
     12 + \log(N/H) &= (8.21 \pm 0.09) - (0.059 \pm 0.009) R_{gal}
@@ -232,7 +232,7 @@ We can take the ratio of these two lines to see their dependency on electron den
     \label{carina/eq:intensity_NII_ratio}
 \end{equation}
 This ratio relies on electron temperature and density in the form of the fractional populations $f(^3P_1)$ and $f(^3P_2)$.
-Figure \ref{carina/fig:ratios} shows the ratio of the two lines at the calculated electron temperature for Carina Nebula, which is approximately 5660 $\pm$ 313.7 K.
+Figure \ref{carina/fig:nii_curves} shows the ratio of the two lines at the calculated electron temperature for Carina Nebula, which is approximately 5660 $\pm$ 313.7 K.
 
 
 \subsection{Uncertainties}

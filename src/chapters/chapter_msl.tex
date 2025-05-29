@@ -16,32 +16,32 @@ While discovering the unexpected is one of the most exciting parts of research, 
 Advances in novelty detection systems can help to alleviate this arduous task by enabling researchers to focus their attention on the most interesting parts of their data. 
 Novelty is defined as an unexpected occurrence in a sequence based on a data set of typical sequences.
 Given what is known to be “normal,” the novelty detection algorithm highlights the most unusual features in an image. 
-Novelty detection techniques work by analyzing the commonalities in a data set in order to generalize the structure of the data and pick out anomalies \citep{japkowicz1995novelty}.
-When a new observation is presented to a novelty detection system, the system identifies features that differ from the commonalities learned during training \citep{markou2003novelty}.
+Novelty detection techniques work by analyzing the commonalities in a data set in order to generalize the structure of the data and pick out anomalies \parencite{japkowicz1995novelty}.
+When a new observation is presented to a novelty detection system, the system identifies features that differ from the commonalities learned during training \parencite{markou2003novelty}.
 This is different from traditional classification systems as what constitutes as \textit{novel} is not predefined. 
 Instead of classifying samples as \textit{typical} and \textit{novel}, novelty detection systems build a model from \textit{typical} examples that can be used to discover anomalies. 
-This makes novelty detection ideal for scenarios where \textit{novel} examples are infrequent or difficult to obtain and \textit{typical} examples are abundant \citep{japkowicz1995novelty}.
-Identifying anomalous examples is useful in many application domains such as structural fault detection for aerospace systems by analyzing ambient vibrations \citep{worden1997structural} or identifying brain tumors using MRI images \citep{wang2020brain}.
+This makes novelty detection ideal for scenarios where \textit{novel} examples are infrequent or difficult to obtain and \textit{typical} examples are abundant \parencite{japkowicz1995novelty}.
+Identifying anomalous examples is useful in many application domains such as structural fault detection for aerospace systems by analyzing ambient vibrations \parencite{worden1997structural} or identifying brain tumors using MRI images \parencite{wang2020brain}.
 \begin{figure}
 \centering
 \includegraphics[width=\linewidth]{figs/msl/DSN.png}
-\caption[Mastcam Image Processing Pipeline]{Illustration of the Mastcam image processing pipeline \protect\citep{kerner2020comparison}}
+\caption[Mastcam Image Processing Pipeline]{Illustration of the Mastcam image processing pipeline \protect\parencite{kerner2020comparison}}
 \label{msl/fig:timeline}
 \end{figure}
 
 Planetary science is another domain where novelty detection proves useful. 
-Due to the rapid turn-around required for tactical planning for landed Mars missions, efficient data analysis methods need to be employed to analyze data from scientific instruments \citep{bell2019tactical}.
-With high volumes of downlinked data, tactical operations planning teams have to quickly perform ground analysis to meet the ten hour turn-around time for MSL operations to uplink commands \citep{samuels2013preparation}. 
-The timeline is even shorter for the upcoming Mars 2020 mission which has a desired five hour turn-around time \citep{wilson2017nasa}.
-During tactical planning, the MSL Curiosity rover sends compressed observations through one of three Mars orbiters to the Deep Space Network (DSN) on Earth so that operations team members can use these observations to make plans for the next sol \citep{kerner_multispec}.
-Rapid analysis is required for tactical planning as discoveries made outside of the time frame are subject to increased mission resource cost as the rover may need to reverse course to re-visit the target \citep{kerner2020comparison}.
+Due to the rapid turn-around required for tactical planning for landed Mars missions, efficient data analysis methods need to be employed to analyze data from scientific instruments \parencite{bell2019tactical}.
+With high volumes of downlinked data, tactical operations planning teams have to quickly perform ground analysis to meet the ten hour turn-around time for MSL operations to uplink commands \parencite{samuels2013preparation}. 
+The timeline is even shorter for the upcoming Mars 2020 mission which has a desired five hour turn-around time \parencite{wilson2017nasa}.
+During tactical planning, the MSL Curiosity rover sends compressed observations through one of three Mars orbiters to the Deep Space Network (DSN) on Earth so that operations team members can use these observations to make plans for the next sol \parencite{kerner_multispec}.
+Rapid analysis is required for tactical planning as discoveries made outside of the time frame are subject to increased mission resource cost as the rover may need to reverse course to re-visit the target \parencite{kerner2020comparison}.
 This need for rapid analysis makes systems that can quickly extract information and identify regions of interest in scientific data vital to efficient tactical planning. 
 
 This work primarily focuses on the Mastcam imaging system on the MSL Curiosity rover.
-Mastcam consists of a pair of multispectral Charge Coupled Device (CCD) imagers on MSL that are each capable of using an eight-position filter wheel to take red, green, and blue (RGB) images as well as multispectral images in nine bands from 400 to 1100 nm (visible to near-infrared) \citep{bell_mastcam}.
+Mastcam consists of a pair of multispectral Charge Coupled Device (CCD) imagers on MSL that are each capable of using an eight-position filter wheel to take red, green, and blue (RGB) images as well as multispectral images in nine bands from 400 to 1100 nm (visible to near-infrared) \parencite{bell_mastcam}.
 A set of image products from Mastcam is called a sequence.
-Seven of the eight landed missions on Mars have employed camera systems capable of multispectral imaging \citep{bell2019tactical}.
-Future missions, such as Mars 2020 and Psyche, will also be carrying similar multispectral cameras \citep{bell2016mastcam} \citep{bell_psyche}.
+Seven of the eight landed missions on Mars have employed camera systems capable of multispectral imaging \parencite{bell2019tactical}.
+Future missions, such as Mars 2020 and Psyche, will also be carrying similar multispectral cameras \parencite{bell2016mastcam} \parencite{bell_psyche}.
 Given that multispectral cameras are so prevalent in planetary exploration, the ability to rapidly detect novel features in multispectral images is beneficial across many missions.
 
 The goal of this work is to operationalize previous work developed for novelty detection for Mastcam.
@@ -52,29 +52,29 @@ These methods\footnote{https://github.com/JPLMLIA/mastcam-noveltydet} and the da
 Multiple models were evaluated to show that certain models perform better for certain novelties than others -- e.g., PCA was better suited for detecting spectral (compositional) novelties than for morphological (shape) novelties. 
 Their work provides an in-depth qualitative evaluation between these methods which was used to guide decisions about which methods to use. 
 While their work demonstrated the capabilities of the algorithms, it did not evaluate the methods based on their effectiveness in the tactical planning pipeline.
-In order to be most useful to operations, these methods need to be automatically run on new data and integrated into tactical analysis workflows to accelerate tactical planning \citep{donahoe2020new}.
+In order to be most useful to operations, these methods need to be automatically run on new data and integrated into tactical analysis workflows to accelerate tactical planning \parencite{donahoe2020new}.
 New advances in this work include further development of the algorithms and the creation of an implementation strategy for operations. 
 Additionally, we analyzed the outputs from the system to determine the usefulness of these methods in comparison to existing tactical planning procedures. 
 
 \section{Related Work}
-Novelty detection is a form of anomaly detection that focuses on detecting novel examples in a data set \citep{domingues2019comparative}. 
+Novelty detection is a form of anomaly detection that focuses on detecting novel examples in a data set \parencite{domingues2019comparative}. 
 Given what is known to be typical in a data set, these algorithms find novel examples that may be unknown to the user.
-Unlike a classifier, novelty detection systems detect whether an input is similar to examples in the typical training set or if the input is novel \citep{markou2003novelty}.
-Novelty detection can be seen as a one-class classification task where a model is trained to describe a data set of typical examples \citep{pimentel2014review}. 
+Unlike a classifier, novelty detection systems detect whether an input is similar to examples in the typical training set or if the input is novel \parencite{markou2003novelty}.
+Novelty detection can be seen as a one-class classification task where a model is trained to describe a data set of typical examples \parencite{pimentel2014review}. 
 For novelty detection, the training data represent a set of examples that an end user would identify as typical examples. 
 When the model is used to infer the novelty of new data, the system calculates how different the new examples are compared to the training set. 
 As abnormal examples are not well represented in the training set, novelty detection systems are not able to model abnormalities and thus highlight them as novel. 
 This allows novelty detection systems to highlight abnormal data by evaluating how well (or how poorly) it can model the examples. 
-These methods can be applied to various domains such as fraud detection based on card activity \citep{oosterlinck2020one}, human verification for websites from mouse and keyboard usage \citep{kim2018keystroke}, fault detection for aerospace systems by analyzing ambient vibrations \citep{worden1997structural} and brain tumor identification using MRI images \citep{wang2020brain}.
+These methods can be applied to various domains such as fraud detection based on card activity \parencite{oosterlinck2020one}, human verification for websites from mouse and keyboard usage \parencite{kim2018keystroke}, fault detection for aerospace systems by analyzing ambient vibrations \parencite{worden1997structural} and brain tumor identification using MRI images \parencite{wang2020brain}.
 
-This work is based on previous work that developed novelty detection for multispectral images on Mars \citep{kerner2020comparison}.
+This work is based on previous work that developed novelty detection for multispectral images on Mars \parencite{kerner2020comparison}.
 Figure \ref{msl/fig:timeline} shows the current pipeline for multispectral image processing for operational analysis and where we propose to augment the pipeline with novelty detection systems. 
 Calibrated data are often not available during the tight tactical analysis schedule, so uncalibrated data will be used for novelty analysis. 
-Current methods for quick analysis involve generating quick look products, such as decorrelation stretches and filter ratios, which help to identify spectral changes in the sequence \citep{gillespie1986color}.
-For example, comparing the relative reflectance spectra of two different drill tailings can inform analysts of the similarities and differences in mineral composition \citep{wellington2017visible}.
+Current methods for quick analysis involve generating quick look products, such as decorrelation stretches and filter ratios, which help to identify spectral changes in the sequence \parencite{gillespie1986color}.
+For example, comparing the relative reflectance spectra of two different drill tailings can inform analysts of the similarities and differences in mineral composition \parencite{wellington2017visible}.
 These quick look products are generated using calibrated data making them unavailable during the tactical analysis time frame.  
 
-Kerner et al.~demonstrated four types of novelty detection systems for multispectral novelty detection: CAEs, GANs, PCA, and RX detectors \citep{kerner2020comparison}. 
+Kerner et al.~demonstrated four types of novelty detection systems for multispectral novelty detection: CAEs, GANs, PCA, and RX detectors \parencite{kerner2020comparison}. 
 All of these methods, except RX, are reconstruction based methods that attempt to ``compress'' and ``reconstruct'' an input to recreate the original image. 
 When trained on typical examples, these methods are able to reconstruct normal examples well but are unable to represent novel examples.
 The novelty detection system is able to identify novel regions based on the reconstruction error, which is the difference between the input and recreated image.
@@ -87,21 +87,21 @@ Our goal is to create novelty detection products that could be integrated into a
 \begin{figure*}
 \centering
 \includegraphics[width=\linewidth]{figs/msl/categories.png}
-\caption[Novel Geology Categories for Mastcam Multispectral Images]{Examples from the eight categories of novel geology in the Mastcam multispectral image data set \protect\citep{kerner_data}} 
+\caption[Novel Geology Categories for Mastcam Multispectral Images]{Examples from the eight categories of novel geology in the Mastcam multispectral image data set \protect\parencite{kerner_data}} 
 \label{msl/fig:NovelCategories}
 \end{figure*}
 
-In this work, we created a data set of all multispectral Mastcam sequences based on the pre-processing methods outlined in the labeled Mars multispectral novelty detection data set \citep{kerner_data}.
+In this work, we created a data set of all multispectral Mastcam sequences based on the pre-processing methods outlined in the labeled Mars multispectral novelty detection data set \parencite{kerner_data}.
 This previous data set provided images with both \textit{typical} and \textit{novel} labels cropped from the M-100 right eye of Mastcam on MSL between sols 1 to 1666.
 Each example in the data set is a 64 by 64 tile with 6 bands corresponding to 6 different filters.
 The tiles were sub-sampled from larger thumbnail images of around 140 by 100 pixels in size. 
 Thumbnails were used rather than full resolution sequences as they are among the first available products during tactical planning. 
 Additionally, uncalibrated images were used as these data are the most readily available in the tactical analysis timeline. 
-To generate the data set, these thumbnails were loaded as single band images in OpenCV before combining them to produce a single, six band, tile \citep{opencv_library}.
+To generate the data set, these thumbnails were loaded as single band images in OpenCV before combining them to produce a single, six band, tile \parencite{opencv_library}.
 
 While we did not explicitly use the labeled Mars multispectral novelty detection data set in this work, we utilized the novelty classes to verify the system.
 The data set provided a set of novel tiles divided into 8 sub-classes: meteorite, float rock, bedrock, vein, broken rock, dump pile, drill hole, and DRT spot, as shown in Figure \ref{msl/fig:NovelCategories}. 
-Multispectral analysts from the Mastcam operations team identified novel geology in images using bounding boxes based on operations experience and past publications of high interest targets (e.g., \citep{wellington2017visible}).
+Multispectral analysts from the Mastcam operations team identified novel geology in images using bounding boxes based on operations experience and past publications of high interest targets (e.g., \parencite{wellington2017visible}).
 Sub-sampled tiles that intersected with these bounding boxes were included in the novel data set.
 %Multispectral analysts were tasked with drawing bounding boxes around novel features in thumbnail sequences based on their knowledge of high interest targets supported by literature.
 %After cropping the thumbnails into tiles, a set of novel tiles was created from tiles containing these bounding boxes.
@@ -139,13 +139,13 @@ This is an important characteristic in method selection for analysts using novel
 %While hard to spot structural novelties do exist, we have chosen to focus on spectral novelties as these tend to be more difficult to spot visually. 
 
 In this study, we chose to focus on spectral novelties that are difficult for analysts to spot because they require analysis across multiple filters to find correlations difficult to identify when looking at each image separately. 
-%The method chosen to detect spectral novelties is pixel-wise RX as previous work has shown it is best suited for identifying novelties with spectral differences when compared with CAEs, GANs, and PCA \citep{kerner2020comparison}.
+%The method chosen to detect spectral novelties is pixel-wise RX as previous work has shown it is best suited for identifying novelties with spectral differences when compared with CAEs, GANs, and PCA \parencite{kerner2020comparison}.
 While methods not based on novelty detection exist that help identify spectral novelties, they require calibrated data which are often unavailable during the tactical time frame. 
 
 Unlike the other algorithms considered, RX is not a reconstruction based method for detecting novelties.
-Instead, RX computes a background distribution from typical examples and compares this distribution to infer the novelty of pixels in new images \citep{reed1990adaptive}.
+Instead, RX computes a background distribution from typical examples and compares this distribution to infer the novelty of pixels in new images \parencite{reed1990adaptive}.
 For novelty detection in Mastcam sequences, the background is computed using the spectrum from each pixel in all sequences in order to generalize the entirety of the data set. 
-For a multispectral image with $n$ filters, the background distribution is defined by the $n \times 1$ mean spectrum vector, $\boldsymbol{\mu}$, and an $n \times n$ covariance matrix, $\boldsymbol{\Sigma}$, of all pixels in the training set \citep{guo2016anomaly}.
+For a multispectral image with $n$ filters, the background distribution is defined by the $n \times 1$ mean spectrum vector, $\boldsymbol{\mu}$, and an $n \times n$ covariance matrix, $\boldsymbol{\Sigma}$, of all pixels in the training set \parencite{guo2016anomaly}.
 This provides a mean for each multispectral band and a covariance matrix for the band pairings. 
 To infer the novelty in a new image, $\boldsymbol{X}$, an RX score is calculated for each $n \times 1$ pixel vector, $\boldsymbol{x}_i \in \boldsymbol{X}$, using the Mahalanobis distance between the background and the filter response values as shown in Equation \ref{msl/eq:RX_eq}.
 \begin{equation}

@@ -21,7 +21,7 @@ Each detector on the WFI utilizes a up-the-ramp readout scheme that produces $40
 For a given exposure, each frame gives us information on the amount of light collected over time and allows us to identify both the location and time of anomalies within a ramp.
 During an exposure, natural or detector-related events may occur that affect groups (or sets) of pixels across the detector. 
 Because we're collecting time-series information, we can see the exact frame that the event occurs and observe how the event affects subsequent frames. 
-There are many different sources that might cause errors in our detectors' data, such as read noise patterns, thermal noise, compression errors, and software errors, but in this paper, we are particularly interested in external and natural sources of errors \cite{cillis2018snowballs}. 
+There are many different sources that might cause errors in our detectors' data, such as read noise patterns, thermal noise, compression errors, and software errors, but in this paper, we are particularly interested in external and natural sources of errors \parencite{cillis2018snowballs}. 
 Both cosmic rays and snowballs are transient events that result in sudden increases in charges and pixels’ Data Number (DN) values, compared to their typical neighboring pixels.
 These events are also rare.
 Therefore, we can use anomaly detection to identity these outliers.
@@ -34,13 +34,13 @@ Figure \ref{rst/fig:anomalies} shows examples of these two events.
     \label{rst/fig:anomalies}
 \end{figure}
 
-An anomaly is defined as an unexpected occurrence in a sequence based on a data set of typical sequences \cite{horton2021integrating}. 
+An anomaly is defined as an unexpected occurrence in a sequence based on a data set of typical sequences \parencite{horton2021integrating}. 
 Given our image is mostly typical pixels, we can use this feature to identify out of distribution pixels that may be caused by snowballs or cosmic rays. 
-While snowballs are a relatively newly recognized detector phenomenon, detection and rejection of snowballs are common practices for astronomical images \cite{van2001cosmic}.
-These cosmic rays appear as streaks across multiple pixels within an exposure as the incident cosmic ray imparts energy as a point spread function across neighboring pixels \cite{pych2003fast}.
+While snowballs are a relatively newly recognized detector phenomenon, detection and rejection of snowballs are common practices for astronomical images \parencite{van2001cosmic}.
+These cosmic rays appear as streaks across multiple pixels within an exposure as the incident cosmic ray imparts energy as a point spread function across neighboring pixels \parencite{pych2003fast}.
 
 Both snowballs and cosmic rays will appear as jumps in DN value in a ramp but the shape of the affected neighboring pixels helps us differentiate between the two.
-Snowballs will be circular in shape and affect 8 or more pixels \cite{cillis2018snowballs}.
+Snowballs will be circular in shape and affect 8 or more pixels \parencite{cillis2018snowballs}.
 On the other hand, Cosmic Rays will be any grouping larger than 2 pixels that shows a linear streak. 
 
 The goal of our anomaly detection is to highlight these features as part of the RST WFI SDP's pipeline. 
@@ -66,16 +66,16 @@ The following are potential candidate methods for accomplishing these two tasks.
     \centering
     \begin{tabular}{l|l}
         \textbf{Step 1: Locating Anomalies} & \textbf{Step 2: Classifying Anomalies} \\
-        Statistical Thresholding & Heuristic Rules \citep{cillis2018snowballs} \\
-        Principal Component Analysis (PCA) \citep{wold1987principal} & Convolutional Neural Network (CNN)\citep{gu2018recent}
+        Statistical Thresholding & Heuristic Rules \parencite{cillis2018snowballs} \\
+        Principal Component Analysis (PCA) \parencite{wold1987principal} & Convolutional Neural Network (CNN)\parencite{gu2018recent}
     \end{tabular}
     \label{rst/tab:methods}
 \end{table}
 
 There are other viable methods for accomplishing these tasks, such as Reed-Xiaoli (RX), Localized Reed-Xiaoli (LRX), and James Webb Space Telescope's (JWST) Bayesian Generalized Least Squares (GLS) for locating anomalies, but the scope of this work will focus on the methods in Table \ref{rst/tab:methods}.
-RX is an unsupervised learning methods that uses a window around a test pixel to compare with the local background \cite{reed1990adaptive}.
-LRX is similar to RX but instead uses a double concentric window to compare the test pixel with a guarded local background \cite{molero2013analysis}.
-JWST's GLS estimator is also an unsupervised method that calculates the slope, or ramp, of each pixel along the time domain and determines the probability that discontinuities in the ramp occurred due to cosmic rays \cite{robberto2015cr}.
+RX is an unsupervised learning methods that uses a window around a test pixel to compare with the local background \parencite{reed1990adaptive}.
+LRX is similar to RX but instead uses a double concentric window to compare the test pixel with a guarded local background \parencite{molero2013analysis}.
+JWST's GLS estimator is also an unsupervised method that calculates the slope, or ramp, of each pixel along the time domain and determines the probability that discontinuities in the ramp occurred due to cosmic rays \parencite{robberto2015cr}.
 Please note that the JWST data was constructed similarly to the RST's, resulting in non-destructive accumulating frames. 
 
 Before any of the data is used for these methods, they must be loaded and pre-processed.
@@ -98,15 +98,15 @@ We use these values to calculate the threshold for jumps in the ramp with a mini
 \end{equation}
 These values were chosen for dark frames as they allow us to easily identify large jumps traditionally associated with snowballs or cosmic rays. 
 From here, we create a pixel mask for each frame of all readout values that exceed this threshold. 
-We then preform a series topological transformations to bridge and fill in incomplete holes through dilation, binary hole fill, and erosion procedures using SciPy's ndimage library \cite{2020SciPy-NMeth}.
-Finally, we remove any grouping of pixels of two pixels or less to ensure any jumps in the ramp we discover affect multiple pixels and then use scikit-image's measure library to locate the central pixel for each group \cite{scikit-image}.
+We then preform a series topological transformations to bridge and fill in incomplete holes through dilation, binary hole fill, and erosion procedures using SciPy's ndimage library \parencite{2020SciPy-NMeth}.
+Finally, we remove any grouping of pixels of two pixels or less to ensure any jumps in the ramp we discover affect multiple pixels and then use scikit-image's measure library to locate the central pixel for each group \parencite{scikit-image}.
 We are then left  with groupings of pixels that could potentially be either a cosmic ray or snowball.
 
 
 \subsubsection{Principal Component Analysis (PCA)}
 Given the majority of pixels within our image aren not affected by anomalies, we can use a random subset of pixels within an exposure and fit PCA to the ramps of these samples.
 If we limit our principal components to two, we can create a fit for the majority of simple ramps. 
-Using our PCA fit, we can reduce all of the pixels in our image to our latent space representation and then inverse transform them to compare the original and reconstructed result \cite{wold1987principal}
+Using our PCA fit, we can reduce all of the pixels in our image to our latent space representation and then inverse transform them to compare the original and reconstructed result \parencite{wold1987principal}
 Examples of this are shown in Figure \ref{rst/fig:PCA}. 
 \begin{figure}
     \centering
@@ -122,7 +122,7 @@ This results in identifying the frames for each pixel that have large jumps in t
 By limiting the number of PCA components to two, our reconstructed ramps will be relatively smooth, causing original ramps that have large jumps in them to have a large change in residual at the frame of the event.
 
 Finally, like the statistical method, we create the pixel mask by highlighting any pixel whose change in residual is above the threshold.
-We then identify regions using the same topological transformations and scikit-image's measure library for finding blobs \cite{scikit-image}.
+We then identify regions using the same topological transformations and scikit-image's measure library for finding blobs \parencite{scikit-image}.
 
 \subsection{Classifying Anomalies}
 From the locating anomalies methods, we obtain a frame and pixel mask matrix containing information about potential anomalies with a ramp for each pixel in an exposure. 
@@ -152,7 +152,7 @@ We preformed two tests with the CNN by training and testing on our all of the la
 Both tests were preformed with an 80/20 test/train split with balanced classes. 
 The output classes from the CNN are then used to label the pixels in the mask with their associated class and update the Event Table with anomaly labels. 
 \subsection{Output Products}
-To align with the rest of the products from the SDP pipeline, we package the outputs from the anomaly detection pipeline as Hierarchical Data Format 5 (HDF5) files \cite{The_HDF_Group_Hierarchical_Data_Format}.
+To align with the rest of the products from the SDP pipeline, we package the outputs from the anomaly detection pipeline as Hierarchical Data Format 5 (HDF5) files \parencite{The_HDF_Group_Hierarchical_Data_Format}.
 HDF5 is a file format that is designed to store large amounts of data and is perfect for the types of products we need to produce for the SDP.
 Because of HDF5's efficient read/write procedures, the SDP is able to keep up with the data generation rate while producing analysis products. 
 For each exposure, we produce three binary mask arrays for events labeled as Cosmic Rays, Snowballs, and Potential Anomalies for each pixel within a ramp. 
@@ -165,16 +165,16 @@ These products are produced during SDP pipeline and added as part of the automat
 \label{rst/sec:data}
 The H4RG detectors used in the WFI array are able to perform non-destructive reads while producing an exposure resulting in measurements through time, also referred to as up-the-ramp measurements. 
 This allows us to take the up-the-ramp measurements taken during an exposure and order them in a series to create frames within the exposure. 
-This results in a time series of frames for each integration from a detector's pixel values being reset at the beginning of an exposure to the final accumulated pixel values at the end of an exposure \cite{casertano2022determining}.
+This results in a time series of frames for each integration from a detector's pixel values being reset at the beginning of an exposure to the final accumulated pixel values at the end of an exposure \parencite{casertano2022determining}.
 For testing the effectiveness of the anomaly detection pipeline, we will be utilizing real exposures taken during the selection phase of the flight detectors for the WFI detector array. 
 During the selection phase of flight detectors, over 70 detectors went through numerous experiments with different types of light exposures, both bright and dark.
 The dark tests consisted of a two-hour long exposure where detectors accumulated across 100 frames.
 These tests are ideal to identify cosmic rays and snowballs due to their long exposure time, resulting in more opportunities for anomalies to appear in the frames. 
 For the purposes of testing these methods, this paper focuses on using just these dark exposures. 
 
-The data from these tests are provided in the form of Flexible Image Transport System (FITS) files that consist of 101 frames of $4096 \times 4096$ pixel images \cite{wells1979fits}.
+The data from these tests are provided in the form of Flexible Image Transport System (FITS) files that consist of 101 frames of $4096 \times 4096$ pixel images \parencite{wells1979fits}.
 The first frame in an exposure is the reset frame and can be disregarded. 
-The FITS data is loaded into a NumPy array of unsigned integers by iterating over the array \cite{harris2020array}.
+The FITS data is loaded into a NumPy array of unsigned integers by iterating over the array \parencite{harris2020array}.
 To correct the read direction of FITS data, the data is processed by subtracting every pixel values from the maximum possible DN value for each pixel, $2^{16} - 1$, across all frames.
 This leaves us with a data cube of $100$ frames, each with $4096 \times 4096$ pixels. 
 
