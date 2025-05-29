@@ -128,7 +128,7 @@ The six narrow-band sequences were used as inputs into the algorithm and the RGB
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 In this work, we employed a the pixelwise RX method for novelty scoring.
 Pixelwise RX is a distribution-based method that calculates the distance between each pixel in a test image and a background distribution, which can be visualized at the image level as a heatmap of novelty scores. 
-In comparison with other methods used in \cite{kerner2020comparison}, pixelwise RX is out-performed when identifying images with certain types of novelties such as float rocks, veins, bedrock, and broken rock, but performs better for other novel categories. 
+In comparison with other methods, pixelwise RX is out-performed when identifying images with certain types of novelties such as float rocks, veins, bedrock, and broken rock, but performs better for other novel categories. 
 While this may seem like RX is a poor choice for novelty detection, the novelty scores in \cite{kerner2020comparison} were aggregated to image-level scores and did not compare algorithms on the basis of their ability to highlight novel pixels in an image in a way that is useful for tactical planners. 
 Pixelwise RX may not have the highest performance for all types of novelty, but its scores and their associated visualizations are relatively simple and interpretable compared to other methods. 
 This is an important characteristic in method selection for analysts using novelty detection methods in a tactical operations setting. Thus, we chose to use pixelwise RX for developing novelty-based tactical planning products. 
