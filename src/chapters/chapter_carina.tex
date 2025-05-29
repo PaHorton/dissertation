@@ -51,7 +51,7 @@ This data is in units of Jy/beam, which is a common unit for radio continuum obs
 \end{figure}
 
 \section{Methodology}
-Our analysis follows the methodology outlined in \cite{pineda2018}, which describes how to calculate electron density from the ratio of [NII] 205 $\mu$m line intensity to the intensity of Hydrogen Radio Recombination Lines (RRLs).
+Our analysis follows the methodology outlined in \cite{pineda2019electron}, which describes how to calculate electron density from the ratio of [NII] 205 $\mu$m line intensity to the intensity of Hydrogen Radio Recombination Lines (RRLs).
 This analysis was done using the \texttt{spectral-cube} package in Python, which allows for efficient manipulation of spectral data cubes \parencite{robitaille2016spectral}.
 \texttt{spectral-cube} wraps many of the functionalities of the \texttt{astropy} package, which is a core package for astronomy in Python \parencite{astropy:2013, astropy:2018, astropy:2022}.
 Our methodology for analysis consists of preprocessing the data cubes to ensure they are on the same grid with the same spatial and spectral resolutions, convolving the [NII] 205 $\mu$m data with the beam of the RRL data, and then performing calculations to derive the electron density from the ratio of the two lines.
@@ -137,7 +137,7 @@ We use the WCS of the final [NII] 205 $\mu$m data cube to reproject the ALMA dat
 
 \subsection{Calculating Electron Density}
 The first step to calculating electron density is to see how the [NII] 205 $\mu$m line intensity and the RRL intensity are related.
-We begin with the following equation for the integrated intensity of the [NII] line \parencite{pineda2018}:
+We begin with the following equation for the integrated intensity of the [NII] line \parencite{pineda2019electron}:
 \begin{equation}
     \label{carina/eq:intensity_NII}
     \int{T_{mb}^{[NII]}} d\nu = \frac{A_{ul}hc^3N_u}{8\pi k_b \nu_{ul}^2}\\
@@ -159,7 +159,7 @@ In the simplified version, $A_{ul}$ is in s$^{-1}$, $f(^3P_u)$ is dimensionless,
 We utilize PyNeb, a Python package for calculating emission line intensities, to obtain our Einstein A coefficient, $A_{ul}$ and the fractional population of the upper level, $f(^3P_u)$ \parencite{luridiana2015pyneb, froese2004breit,7288EL, tayal2011electron}.
 
 
-Now we can look at the integrated intensity of the RRL line using the following equation \parencite{pineda2018}:
+Now we can look at the integrated intensity of the RRL line using the following equation \parencite{pineda2019electron}:
 \begin{equation}
     \int{T_{mb}^{RRL}} d\nu = \num{1.87e-7}\ \frac{n_e N(H^+)}{\nu_{RRL} T_e^{3/2}}\ [\text{K km/s}]
     \label{carina/eq:intensity_RRL}
@@ -191,7 +191,7 @@ Finally, we can compute the ratio of Equation \ref{carina/eq:intensity_NII_final
     \label{carina/eq:ratio_final}
 \end{equation}
 Most of the terms in this equation are constants that do not depend on the electron density, $n_e$, except for the last term, RHS = $f(^3P_u)/n_e G_{NLTE}(n_e,T_c)$.
-The remaining unknown terms $T_e$ the electron temperature in K, and $N(N^+)/N(H^+)$, the abundance ratio of ionized nitrogen with respect to ionized hydrogen, can be estimated using the distance to the Galactic center, $R_{gal}$, in kpc \parencite{pineda2018, balser2015azimuthal, esteban2018revisiting}:
+The remaining unknown terms $T_e$ the electron temperature in K, and $N(N^+)/N(H^+)$, the abundance ratio of ionized nitrogen with respect to ionized hydrogen, can be estimated using the distance to the Galactic center, $R_{gal}$, in kpc \parencite{pineda2019electron, balser2015azimuthal, esteban2018revisiting}:
 \begin{align}
     T_e &= (4446 \pm 301) + (467 \pm 34) R_{gal} \\
     12 + \log(N/H) &= (8.21 \pm 0.09) - (0.059 \pm 0.009) R_{gal}
@@ -292,7 +292,7 @@ Additionally,
 \section{Conclusions}
 
 
-% To map electron density in Carina we begin with the following equation from \cite{pineda2018}.
+% To map electron density in Carina we begin with the following equation from \cite{pineda2019electron}.
 % \begin{equation}
 %     R^{[NII]}_{RRL} = 2.68 \times 10 ^ {-9} \nu_{RRL} T_e^{3/2} \frac{f(^3\text{P}_1)}{n_e} G^{-1}_{NLTE}(n_e,T_c)X_N
 %     \label{eq:ratio}
@@ -320,14 +320,14 @@ Additionally,
 % \end{equation}
 
 % The left side of Equation 5.3 has all the terms that depend on $n_e$ and the right side are calculated constants and the ratio of the intensities of the [NII] and RRL lines.
-% In \cite{pineda2018}, the authors provide a relationship between $n_e$ and the terms on the left side of the equation for various continuum brightness temperatures ($T_c$ or $T_b$).
+% In \cite{pineda2019electron}, the authors provide a relationship between $n_e$ and the terms on the left side of the equation for various continuum brightness temperatures ($T_c$ or $T_b$).
 % In order to use this curve, I used the data provided in the paper to calculate the right side of the equation and fit the calculated values along with the reported $n_e$ values to a sigmoid.
 
 % \begin{figure}[h]
 %     \centering
 %     \includegraphics[width=0.4\textwidth]{figs/carina/curve.png}
 %     \includegraphics[width=0.4\textwidth]{figs/carina/calculated_curve.png}
-%     \caption{The dependence of the [NII] 205 $\mu$m ratio on delectron density for a set of continuum brightness temperatures \cite{pineda2018}.}
+%     \caption{The dependence of the [NII] 205 $\mu$m ratio on delectron density for a set of continuum brightness temperatures \cite{pineda2019electron}.}
 %     \label{fig:ne_vs_tc}
 % \end{figure}
 
