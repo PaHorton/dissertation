@@ -289,21 +289,23 @@ Using the Monte Carlo approach, we perform 500 iterations to generate a distribu
 Many of the pixels in our maps have a low signal-to-noise ratio (SNR), which results in a large uncertainty in the electron density.
 In some cases, the root finding algorithm fails to converge, resulting in an undefined value for the electron density.
 We omit these values as well as those with an SNR less than 3.
+We also omit values whose calculated $n_e$ exceed 1000 as our coverage of the $G_{NLTE}$ coefficients do not extend past that and we would be extrapolating. 
 Figure \ref{carina/fig:calculations_keyhole} and \ref{carina/fig:calculations_carina} show the relationship between the density dependent variables of Equation \ref{carina/eq:ratio_final} and the electron density for the Keyhole Nebula and Carina Extended region.
-Below that, in Figure \ref{carina/fig:monte_carlo}, we show the the uncertainty of our calculations as a function of 
+Below that, in Figure \ref{carina/fig:monte_carlo}, we show the the uncertainty of our calculations as a function of the number of samples in our Monte Carlo simulations.
+We tested up to 500 samples but, for optimal compute time, we would recommend limiting the value to around 150 as the uncertainty plateaus past that point. 
 
 \begin{figure}
     \centering
     \begin{subfigure}[t]{0.45\textwidth}
         \centering
         \includegraphics[width=\textwidth]{figs/carina/rhs_keyhole.png}
-        \caption{Density Dependent Variables for Keyhole Nebula vs Electron Density}
+        \caption{Keyhole Nebula Electron Densities}
         \label{carina/fig:calculations_keyhole}
     \end{subfigure}
     \begin{subfigure}[t]{0.45\textwidth}
         \centering
         \includegraphics[width=\textwidth]{figs/carina/rhs_carina.png}
-        \caption{Density Dependent Variables for Carina Extended vs Electron Density}
+        \caption{Carina Extended Electron Densities}
         \label{carina/fig:calculations_carina}
     \end{subfigure}
     \begin{subfigure}[t]{\textwidth}
