@@ -1,13 +1,13 @@
 \chapter[Data Discovery Systems for Planetary Science]{Data Discovery Systems for Planetary Science}
 \section{Abstract}
 While innovations in scientific instrumentation have pushed the boundaries of Mars rover mission capabilities, the increase in data complexity has pressured Mars Science Laboratory (MSL) and future Mars rover operations staff to quickly analyze complex data sets to meet progressively shorter tactical and strategic planning timelines. 
-MSLWEB is an internal data tracking tool used by operations staff to perform first pass analysis on MSL image sequences, a series of products taken by the Mast camera, Mastcam. Mastcam consists of a pair of 400-1000 nm wavelength cameras on MSL's Remote Sensing Mast that, among other functions, uses a filter wheel to produce multispectral images by creating a sequence of products at different wavelengths. 
+MSLWEB is an internal data tracking tool used by operations staff to perform first pass analysis on MSL image sequences: a series of products taken by the Mast camera, Mastcam. Mastcam consists of a pair of 400-1000 nm wavelength cameras on MSL's Remote Sensing Mast that, among other functions, uses a filter wheel to produce multispectral images by creating a sequence of products at different wavelengths. 
 Mastcam's multiband multispectral image sequences require more complex analysis compared to standard 3-band RGB images. 
 Typically, these are analyzed by the inspection of false color images created to aid visualization, such as band ratios between different spectral indices that can highlight specific potential mineralogic differences among iron-bearing phases, and decorrelation stretches to enhance the color differences between multiple filters. 
 
 Given the short time frame of tactical planning in which downlinked images might need to be analyzed (within 5-10 hours before the next uplink), there exists a need to triage analysis time to focus on the most important sequences and parts of a sequence. 
 We address this need by creating products for MSLWEB that use novelty detection to help operations staff identify unusual data that might be diagnostic of new or atypical compositions or mineralogies detected within an imaging scene. 
-This was achieved in two ways: 1) by creating products for each sequence to identify novel regions in the image, and 2) by assigning multispectral sequences a sortable novelty score. 
+This was achieved in two ways: by creating products for each sequence to identify novel regions in the image, and by assigning multispectral sequences a sortable novelty score. 
 These new products provide colorized heat maps of inferred novelty that operations staff can use to rapidly review downlinked data and focus their efforts on analyzing potentially new kinds of diagnostic multispectral signatures. 
 This approach has the potential to guide scientists to new discoveries by quickly drawing their attention to often subtle variations not detectable with simple color composites.
 The products developed in this work have shown promising benefits for integration into mission operations by potentially decreasing tactical operations planning time through guided triage.
@@ -47,9 +47,9 @@ Given that multispectral cameras are so prevalent in planetary exploration, the 
 The goal of this work is to operationalize previous work developed for novelty detection for Mastcam.
 \cite{kerner2020comparison} quantitatively compared different novelty detection methods for analysis of multispectral images on Mars.
 With a typical data set, machine learning models including Reed-Xiaoli (RX) detectors, Principal Component Analysis (PCA), Generative Adversarial Networks (GANs), and Convolutional Autoencoders (CAE) were used to produce a measure of how atypical each image or multispectral pixel is in a new sequence. 
-Using pixelwise analysis allows these methods to highlight difficult to identify novel regions within an image that may otherwise go undetected by operations staff.
+Using pixel-wise analysis allows these methods to highlight difficult to identify novel regions within an image that may otherwise go undetected by operations staff.
 These methods\footnote{https://github.com/JPLMLIA/mastcam-noveltydet} and the data set\footnote{https://zenodo.org/record/3732485} used to evaluate them were made publicly available at publication. 
-Multiple models were evaluated to show that certain models perform better for certain novelties than others -- e.g., PCA was better suited for detecting spectral (compositional) novelties than for morphological (shape) novelties. 
+Multiple models were evaluated to show that certain models perform better for certain novelties than others: e.g., PCA was better suited for detecting spectral (compositional) novelties than for morphological (shape) novelties. 
 Their work provides an in-depth qualitative evaluation between these methods which was used to guide decisions about which methods to use. 
 While their work demonstrated the capabilities of the algorithms, it did not evaluate the methods based on their effectiveness in the tactical planning pipeline.
 In order to be most useful to operations, these methods need to be automatically run on new data and integrated into tactical analysis workflows to accelerate tactical planning \parencite{donahoe2020new}.
@@ -87,21 +87,21 @@ Our goal is to create novelty detection products that could be integrated into a
 \begin{figure*}
 \centering
 \includegraphics[width=\linewidth]{figs/msl/categories.png}
-\caption[Novel Geology Categories for Mastcam Multispectral Images]{Examples from the eight categories of novel geology in the Mastcam multispectral image data set \protect\parencite{kerner_data}} 
+\caption[Novel Geology Categories for Mastcam Multispectral Images]{Examples from the eight categories of novel geology in the Mastcam multispectral image data set \protect\parencite{kerner_data}.}
 \label{msl/fig:NovelCategories}
 \end{figure*}
 
 In this work, we created a data set of all multispectral Mastcam sequences based on the pre-processing methods outlined in the labeled Mars multispectral novelty detection data set \parencite{kerner_data}.
 This previous data set provided images with both \textit{typical} and \textit{novel} labels cropped from the M-100 right eye of Mastcam on MSL between sols 1 to 1666.
-Each example in the data set is a 64 by 64 tile with 6 bands corresponding to 6 different filters.
-The tiles were sub-sampled from larger thumbnail images of around 140 by 100 pixels in size. 
+Each example in the data set is a 64-by-64 tile with 6 bands corresponding to 6 different filters.
+The tiles were sub-sampled from larger thumbnail images of around 140-by-100 pixels in size. 
 Thumbnails were used rather than full resolution sequences as they are among the first available products during tactical planning. 
 Additionally, uncalibrated images were used as these data are the most readily available in the tactical analysis timeline. 
-To generate the data set, these thumbnails were loaded as single band images in OpenCV before combining them to produce a single, six band, tile \parencite{opencv_library}.
+To generate the data set, these thumbnails were loaded as single-band images in OpenCV before combining them to produce a single six-band, tile \parencite{opencv_library}.
 
 While we did not explicitly use the labeled Mars multispectral novelty detection data set in this work, we utilized the novelty classes to verify the system.
 The data set provided a set of novel tiles divided into 8 sub-classes: meteorite, float rock, bedrock, vein, broken rock, dump pile, drill hole, and DRT spot, as shown in Figure \ref{msl/fig:NovelCategories}. 
-Multispectral analysts from the Mastcam operations team identified novel geology in images using bounding boxes based on operations experience and past publications of high interest targets (e.g., \parencite{wellington2017visible}).
+Multispectral analysts from the Mastcam operations team identified novel geology in images using bounding boxes based on operations experience and past publications of high interest targets (e.g., \cite{wellington2017visible}).
 Sub-sampled tiles that intersected with these bounding boxes were included in the novel data set.
 %Multispectral analysts were tasked with drawing bounding boxes around novel features in thumbnail sequences based on their knowledge of high interest targets supported by literature.
 %After cropping the thumbnails into tiles, a set of novel tiles was created from tiles containing these bounding boxes.
@@ -126,12 +126,12 @@ The six narrow-band sequences were used as inputs into the algorithm and the RGB
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methods}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-In this work, we employed a the pixelwise RX method for novelty scoring.
-Pixelwise RX is a distribution-based method that calculates the distance between each pixel in a test image and a background distribution, which can be visualized at the image level as a heatmap of novelty scores. 
-In comparison with other methods, pixelwise RX is out-performed when identifying images with certain types of novelties such as float rocks, veins, bedrock, and broken rock, but performs better for other novel categories. 
+In this work, we employed a the pixel-wise RX method for novelty scoring.
+Pixel-wise RX is a distribution-based method that calculates the distance between each pixel in a test image and a background distribution, which can be visualized at the image level as a heatmap of novelty scores. 
+In comparison with other methods, pixel-wise RX is out-performed when identifying images with certain types of novelties such as float rocks, veins, bedrock, and broken rock, but performs better for other novel categories. 
 While this may seem like RX is a poor choice for novelty detection, the novelty scores in \cite{kerner2020comparison} were aggregated to image-level scores and did not compare algorithms on the basis of their ability to highlight novel pixels in an image in a way that is useful for tactical planners. 
-Pixelwise RX may not have the highest performance for all types of novelty, but its scores and their associated visualizations are relatively simple and interpretable compared to other methods. 
-This is an important characteristic in method selection for analysts using novelty detection methods in a tactical operations setting. Thus, we chose to use pixelwise RX for developing novelty-based tactical planning products. 
+Pixel-wise RX may not have the highest performance for all types of novelty, but its scores and their associated visualizations are relatively simple and interpretable compared to other methods. 
+This is an important characteristic in method selection for analysts using novelty detection methods in a tactical operations setting. Thus, we chose to use pixel-wise RX for developing novelty-based tactical planning products. 
 %Of the novelty detection methods discussed in previous work, algorithms that are sensitive to spectral novelties are most desirable. 
 %Spectral novelties are novelties occurring due to unexpected differences in the spectrum of an object and not from the actual shape of the object.
 %Methods to detect structural novelties typically pick out features visible in standard RGB images. 
@@ -169,7 +169,7 @@ This can help prioritize which multispectral sequence to review first.
 %Using the training set created from all the sequences, a background distribution was created for the typical Mastcam multispectral pixel. 
 %This background distribution was used to generate pixel novelty scores for each sequence in this same data set.
 To assess the system's performance for the novel features in the \cite{kerner_data} data set, we located the full-size thumbnails of a selection of the novel tiles from each category and verified that the novelties highlighted in the new images were self consistent with previous results in the tiles. 
-The novelty detection system using pixelwise RX performs well for highlighting easy-to-spot novelties in the data set. 
+The novelty detection system using pixel-wise RX performs well for highlighting easy-to-spot novelties in the data set. 
 Figure \ref{msl/fig:easyNovel} shows examples of some of the easy to catch novelties that the system is able to detect. 
 We claim that these examples are relatively easy for analysts to identify because the novelties they highlight can be found through careful analysis of a single RGB image.
 In the first example, a broken rock is shown near the center of the image.
@@ -231,7 +231,7 @@ The scores are visualized without normalization when an analyst selects an indiv
 \section{Conclusions}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 While initial results from reviewing the novelty detection output seem promising, it is difficult to evaluate the effectiveness of the system at assisting in operations without a longer term study in which many sequences would be analyzed for previously undiscovered features.
-This is necessary as generating a test set of undiscovered novelties is not feasible.
+This is necessary as generating a test set of undiscovered novelties is not feasible due to the fact that they haven't been discovered yet.
 %tell the percentage of new novelties present. 
 %As this study is looking for hard to detect novelties, generating a labeled test set for the undiscovered is not feasible.
 The purpose of this study is to assist tactical planning so the key value is in the system's ability to highlight unique sequences and novel features within those sequences. 

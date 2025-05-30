@@ -21,7 +21,7 @@ Each detector on the WFI utilizes a up-the-ramp readout scheme that produces $40
 For a given exposure, each frame gives us information on the amount of light collected over time and allows us to identify both the location and time of anomalies within a ramp.
 During an exposure, natural or detector-related events may occur that affect groups (or sets) of pixels across the detector. 
 Because we're collecting time-series information, we can see the exact frame that the event occurs and observe how the event affects subsequent frames. 
-There are many different sources that might cause errors in our detectors' data, such as read noise patterns, thermal noise, compression errors, and software errors, but in this paper, we are particularly interested in external and natural sources of errors \parencite{cillis2018snowballs}. 
+There are many different sources that might cause errors in our detectors' data, such as read noise patterns, thermal noise, compression errors, and software errors, but we are particularly interested in external and natural sources of errors \parencite{cillis2018snowballs}. 
 Both cosmic rays and snowballs are transient events that result in sudden increases in charges and pixels’ Data Number (DN) values, compared to their typical neighboring pixels.
 These events are also rare.
 Therefore, we can use anomaly detection to identity these outliers.
@@ -117,6 +117,7 @@ Given the majority of pixels within our image aren not affected by anomalies, we
 If we limit our principal components to two, we can create a fit for the majority of simple ramps. 
 Using our PCA fit, we can reduce all of the pixels in our image to our latent space representation and then inverse transform them to compare the original and reconstructed result \parencite{wold1987principal}
 Examples of this are shown in Figure \ref{rst/fig:PCA}. 
+
 \begin{figure}
     \centering
     \includegraphics[width=0.49\linewidth]{figs/rst/PCA_Good.png}
@@ -198,7 +199,7 @@ These hand labels are used to measure the accuracy of each method and train meth
 
 As we are able to split our system into two different subsystems, the results here will discuss which of the methods are best for accomplishing each individual task. 
 Then we will go more in depth with the best pairing of methods integration into the RST WFI SDP. 
-For consistency all of the tests were preformed on a 2021 M1 Macbook Pro Max with 64GB of unified memory.
+For consistency, all of the tests were preformed on a 2021 M1 Macbook Pro Max with 64GB of unified memory.
 Much of the development of this work was done on NASA Center for Climate Simulation PRISM GPU cluster. 
 
 \subsection{Locating Anomalies}
@@ -255,7 +256,7 @@ This method is currently being used in the SDP pipeline to identify anomalies in
 \begin{figure}
     \centering
     \includegraphics[width=.7\textwidth]{figs/rst/heuristic_confusion.png}
-    \caption{Confusion Matrix for the Heuristic Rules Method with Located Data from Statistical Thresholding.}
+    \caption{Confusion matrix for the heuristic rules method with located data from statistical thresholding.}
     \label{rst/fig:heuristic_confusion}
 \end{figure}
 
@@ -270,7 +271,7 @@ This labeled data could come from other tests if we were to generalize beyond ju
 With a more well defined dataset of labeled data, we will be able to better assess the accuracy of these methods too. 
 
 Another area for improvement may be finding better ways to locate anomalies.
-We may revisit PCA to see if we can adjust the parameters (number of components and threshold for error) to see if we can have it not discard real anomalies. 
+We may revisit PCA to see if we can adjust the parameters (number of components and threshold for error) to reduce its false negative rate.
 Additionally, other methods like RX, LRX and GLS, as described at the beginning of Section \ref{rst/sec:methods}, could be better suited for filtering the initial exposure.
 
 The current implementation of the SDP pipeline uses a bad pixel mask to mask regions of the image that are problematic. 

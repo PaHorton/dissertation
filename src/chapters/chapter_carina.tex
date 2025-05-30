@@ -59,7 +59,7 @@ Our methodology for analysis consists of preprocessing the data cubes to ensure 
 In addition to the electron density, we are also able to estimate the [NII] 122 $\mu$m line intensity, which whose ratio with the [NII] 205 $\mu$m line can be used to estimate electron density as well \parencite{goldsmith2015herschel}.
 Figure \ref{carina/fig:raw_data} shows the raw data cubes for both the [NII] 205 $\mu$m line and the RRL data.
 
-\subsection{Preprocessing the Data Cubes}
+\subsection{Pre-processing the Data Cubes}
 In order to properly compare the two data cubes, we first need to pre-process everything to ensure our data points match both spatially and spectrally.
 First, we need our data to be in the same units, so we will convert the RRL data from antenna temperature (K$_{Ta*}$) to Main Beam Brightness Temperature (K$_{mb}$) using the efficiency of the antenna as shown in Equation \ref{eq:mb_temp}, where $T_{Ta*}$ is the antenna temperature and $\eta_{mb}$ is the main beam efficiency of the antenna.
 \begin{equation}
@@ -172,7 +172,7 @@ Because the hydrogen recombination lines can be affected by non-local thermal eq
     \label{carina/eq:G_NLTE}
 \end{equation}
 In this equation, $b_n$ and $\beta_n$ are the departure coefficient and amplification factor for a specific principal quantum number $n$, and $\tau_c$ is the continuum opacity. 
-$\tau_c$ can be calculated using the continuum brightness temperature, $T_C$, and the electron temperature , $T_e$, as follows \cite{goldsmith2024electron}:
+$\tau_c$ can be calculated using the continuum brightness temperature, $T_C$, and the electron temperature , $T_e$, as follows \parencite{goldsmith2024electron}:
 \begin{equation}
     \tau_c = \frac{T_C}{T_e}
     \label{carina/eq:tau_C}

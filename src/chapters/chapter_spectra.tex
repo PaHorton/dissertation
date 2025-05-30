@@ -32,7 +32,7 @@ By generating an anomaly score for these calibrations, we can determine if our s
 Currently, the methods for evaluating system performance are done on the ground by checking spectra manually as they come down.
 This is an error-prone process as it is difficult to manually check each calibration spectrum for anomalies.
 By implementing on-board anomaly detection, we can automate this process and prioritize analysis of anomalous spectra for review by the ground operations team.
-This will allow us to quickly identify and address any issues with the system during flight to catch errors while we're still able to correct them instead of waiting until the end of the mission to find out that our data is unusable.
+This will allow us to quickly identify and address any issues with the system during flight to catch errors while within the window of opportunity to correct them instead of waiting until the end of the mission to find out that our data is unusable.
 Even if the anomaly detection system is not perfect, any form of quantifiable measure of science data quality will be an improvement over the current manual process.
 
 
@@ -48,7 +48,7 @@ Finally, Section \ref{spectra/sec:future} will discuss future work for implement
 The ASTHROS readout system is composed of three main computers that respectively handle commanding the instrument, storing science data, and analyzing our telemetry and science data. 
 Our goal with this readout system is to be able to collect and analyze data in real time so that any changes in detector behavior can be quickly identified and addressed during flight. 
 To achieve this, we utilize RabbitMQ (RMQ) to create a modular system that can be easily expanded to include additional functionality by creating a standard protocol for Remote Procedure Calls (RPC) and Publish/Subscribe (Pub/Sub) messaging \parencite{dobbelaere2017kafkaversusrabbitmq}.
-RMQ is a lightweight messaging broker based communications to seamlessly create a network of computers that are able to share status and commands between multiple concurrent systems \parencite{thompson2024architecture}.
+RMQ is a lightweight messaging broker based communications system used to seamlessly create a network of computers that are able to share status and commands between multiple concurrent processes \parencite{thompson2024architecture}.
 
 \begin{figure}
     \centering
@@ -107,7 +107,7 @@ Typically, these anomalies present themselves as changes in RFI spikes, the shap
 \end{figure}
 
 For this implementation, we focus on two methods for determining if a calibration spectrum is anomalous: Variational AutoEncoders (VAE) and Principal Component Analysis (PCA).
-Both have their strengths and weaknesses and we will compare their performance on the ASTHROS calibration spectra to determine which is the best fit for our system.
+Both have their strengths and weaknesses and we compare their performance on the ASTHROS calibration spectra to determine which is the best fit for our system.
 
 \subsection{Variational AutoEncoders}
 VAEs are a class of AutoEncoders that learn the mean and variance of the latent space of the data \parencite{kingma2013auto}.
@@ -131,7 +131,7 @@ To generate an anomaly score from this method, we take a test spectrum, transfor
 This reconstruction is imperfect as the VAE model is fit to our typical spectra.
 We compare the reconstruction to our original spectrum to calculate error from the difference between the two specra.
 This score can be used as a time series of anomaly scores to determine if a new spectrum is significantly different from the rest of the data. 
-For flight, we will have to retrain the VAE on a subset of the data to account for changes in the system over time making more challenging for implementation.
+For flight, we will have to retrain the VAE on a subset of the data to account for changes in the system over time, making for more challenging flight integration.
 
 \subsection{Principal Component Analysis}
 PCA is a method that reduces the dimensionality of a dataset by finding the directions of maximum variance in the data \parencite{wold1987principal}.
@@ -194,7 +194,7 @@ This is outside the scope of this work but will be discussed in Section \ref{spe
 \end{figure}
 
 Both datasets are unlabeled, which makes measuring accuracy difficult so we have to use more qualitative methods to compare the two.
-The end use case of this is to provide a trackable metric that the operations team can use to monitor data quality.
+The end use case of this method is to provide a trackable metric that the operations team can use to monitor data quality.
 While accuracy is certainly important, any method that is able to enhance the manual monitoring process is sufficient. 
 As such, we compare the methods based on their ability to be implemented into the ASTHROS System Architecture and how well the anomaly score metric tracks with manual monitoring of the time series of spectra over time. 
 Additionally, we can compare the least and most anomalous spectra form the system to what sorts of anomalies produce high anomaly scores. 
