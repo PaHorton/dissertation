@@ -284,10 +284,43 @@ Figure \ref{carina/fig:intensity_scatter} shows a scatter plot of the two lines,
     \label{carina/fig:intensity_scatter}
 \end{figure}
 
-We use a non beam corrected version of the [NII] 205 $\mu$m line to calculate the integrated intensity of the [NII] 122 $\mu$m line as we are interested in what our measurements would be on SOFIA if we had observed the [NII] 122 $\mu$m line as well.
+Now that we have the integrated intensities of the [NII] 205 $\mu$m line and the RRL data, we can calculate the electron density for each pixel in the map.
+Using the Monte Carlo approach, we perform 500 iterations to generate a distribution of electron density values for each pixel.
+Many of the pixels in our maps have a low signal-to-noise ratio (SNR), which results in a large uncertainty in the electron density.
+In some cases, the root finding algorithm fails to converge, resulting in an undefined value for the electron density.
+We omit these values as well as those with an SNR less than 3.
+Figure \ref{carina/fig:calculations} shows the relationship between the density dependent variables of Equation \ref{carina/eq:ratio_final} and the electron density for the Keyhole Nebula and Carina Extended region as well as a measure of the average uncertainty of the calculation during the Monte Carlo sampling.
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/carina/rhs_keyhole.png}
+        \caption{Density Dependent Variables for Keyhole Nebula vs Electron Density}
+        \label{carina/fig:calculations_keyhole}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/carina/rhs_carina.png}
+        \caption{Density Dependent Variables for Carina Extended vs Electron Density}
+        \label{carina/fig:calculations_carina}
+    \end{subfigure}
+    \begin{subfigure}[t]{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/carina/monte_carlo.png}
+        \caption{Measure of Uncertainty in Electron Density Calculations for Both Regions}
+        \label{carina/fig:uncertainty_keyhole}
+    \end{subfigure}
+    \caption[Density Dependent Variables for Electron Density Calculations and Monte Carlo Simulation]{
+        The density dependent variables of Equation \ref{carina/eq:ratio_final} for the Keyhole Nebula (left) and Carina Extended region (right).
+        The blue line shows the calculated value of the ratio of integrated intensities, while the orange line shows the average uncertainty in the electron density calculations.
+        The red line shows the electron density calculated from the ratio of integrated intensities.
+        }
+\end{figure}
 
 Figure \ref{carina/fig:result_carina} and \ref{carina/fig:result_keyhole} show maps for the [NII] 205 $\mu$m and RRL inputs as well as the calculated electron density for the Carina Nebula and the Keyhole Nebula, respectively.
-Additionally, 
+
+
+We use a non beam corrected version of the [NII] 205 $\mu$m line to calculate the integrated intensity of the [NII] 122 $\mu$m line as we are interested in what our measurements would be on SOFIA if we had observed the [NII] 122 $\mu$m line as well.
 
 \section{Conclusions}
 
