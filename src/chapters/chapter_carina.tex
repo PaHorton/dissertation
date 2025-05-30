@@ -11,8 +11,8 @@ SOFIA was a joint project of NASA and the German Aerospace Center (DLR), operati
 On SOFIA was the German REceiver for Astronomy at Terahertz frequencies (GREAT) which observed a wide range of spectral lines between 1.25 and 2.5 THz using a heterodyne receiver \parencite{heyminck2012great}.
 Using the L1 channel of GREAT, we observed the [NII] 205 $\mu$m line in the Carina Nebula, providing a high-resolution spectral cube of the region.
 This spectral cube was generated using the SOFIA Data Processing System (DPS) which processes raw data from the instruments, calibrates it, and combines multiple exposures to create a final spectral cube \parencite{shuping2014overview}.
-The cube itself is a 36 by 36 pixel map spanning 11\" by 11\" with a 202 spectral channels covering a velocity range of -110 to 90 km/s with a velocity resolution of 1 km/s.
-The data has a beam size of 20.77\" and is tuned to a frequency of 1.45 MHz for measuring the [NII] 205 $\mu$m line.
+The cube itself is a 36 by 36 pixel map spanning \qty{11}{\arcminute} by \qty{11}{\arcminute} with a 202 spectral channels covering a velocity range of -110 to 90 km/s with a velocity resolution of 1 km/s.
+The data has a beam size of \qty{20.77}{\arcminute}  and is tuned to a frequency of 1.45 MHz for measuring the [NII] 205 $\mu$m line.
 Due to the calibration, the values are already in Main Beam Brightness Temperature (K$_{mb}$) units.
 
 \subsection{DSN --- Deep Space Network}
@@ -20,14 +20,14 @@ The DSN is a global network of antennas that supports interplanetary spacecraft 
 For radio astronomy, the DSN Deep Space Station 43 (DSS-43) in Canberra, Australia, is equipped with a 70-meter dish that can observe radio recombination lines (RRLs) at frequencies within the K-band (17 to 27 GHz) \parencite{virkler2020broadband}.
 Our RRL data for Carina Nebula was collected using the DSS-43 antenna as an average of the RRL observations from H70$\alpha$ (18.768 GHz) to H62$\alpha$ (26.939 GHz).
 This average was taken by scaling all the components to the central value of H67$\alpha$ (21.385 GHz) and gridding the data to match the lowest frequency, H70$\alpha$.
-The resultant map is much larger than the original SOFIA map, spanning 150\" by 76\" (343 x 335 pixels) with a beam size of 56\" and a spectral resolution of 2.4 km/s across 165 channels (-300 to 98 km/s).
+The resultant map is much larger than the original SOFIA map, spanning \qty{150}{\arcminute} by \qty{76}{\arcminute} (343 x 335 pixels) with a beam size of \qty{56}{\arcsecond} and a spectral resolution of 2.4 km/s across 165 channels (-300 to 98 km/s).
 Unlike the SOFIA data, the RRL data is in units of antenna temperature (K$_{Ta*}$), which is the raw output of the radio telescope before calibration.
 Using the efficiency of the antenna (0.5 for DSS-43), the data will need to be converted to the Main Beam Brightness Temperature (K$_{mb}$) units for comparison with the SOFIA data.
 
 \subsection{ALMA --- Atacama Large Millimeter/submillimeter Array}
 Our radio continuum brightness temperature data comes from the ALMA observations of the Carina Nebula.
 ALMA is an array of radio telescopes located in the Atacama Desert in Chile, designed to observe the universe at millimeter and submillimeter wavelengths.
-We utilize data from \cite{Rebolledo_2021}, which provides a continuum brightness temperature map of the Carina Nebula between 1-3 GHz with a beam of 24\" spanning 613\" by 297\" (3574 x 3415 pixels).
+We utilize data from \cite{Rebolledo_2021}, which provides a continuum brightness temperature map of the Carina Nebula between 1-3 GHz with a beam of \qty{24}{\arcsecond} spanning \qty{613}{\arcminute} by \qty{297}{\arcminute} (3574 x 3415 pixels).
 This data is in units of Jy/beam, which is a common unit for radio continuum observations but needs to be converted to brightness temperature (K) for our calculations.
 
 % \subsection{Other Ancillary Data}
@@ -201,7 +201,7 @@ Rearranging Equation \ref{carina/eq:ratio_final} to isolate the term that depend
 The curves are generated using fractional population data from \cite{luridiana2015pyneb} and GNLTE coefficients from \cite{gordon2002radio} to write a function that calculates RHS for a given electron density, $n_e$, and continuum brightness temperature, $T_c$.
 Because these curves are related to the ratio of the [NII] 205 $\mu$m line intensity to the RRL intensity, we can use them to calculate the electron density for a given ratio of intensities.
 This is accomplished by calculating the ratio of the integrated intensities and dividing by the constant terms. 
-Then we can use a root solving algorithm, such as \texttt{scipy.optimize.fsolve}, find the value of electron density that whose RHS matches the calculated ratio \cite{2020SciPy-NMeth}.
+Then we can use a root solving algorithm, such as \texttt{scipy.optimize.fsolve}, find the value of electron density that whose RHS matches the calculated ratio \parencite{2020SciPy-NMeth}.
 This process is repeated for each pixel in the [NII] 205 $\mu$m data cube, resulting in a map of electron density across the Carina Nebula.
 
 \begin{figure}
@@ -289,7 +289,9 @@ Using the Monte Carlo approach, we perform 500 iterations to generate a distribu
 Many of the pixels in our maps have a low signal-to-noise ratio (SNR), which results in a large uncertainty in the electron density.
 In some cases, the root finding algorithm fails to converge, resulting in an undefined value for the electron density.
 We omit these values as well as those with an SNR less than 3.
-Figure \ref{carina/fig:calculations} shows the relationship between the density dependent variables of Equation \ref{carina/eq:ratio_final} and the electron density for the Keyhole Nebula and Carina Extended region as well as a measure of the average uncertainty of the calculation during the Monte Carlo sampling.
+Figure \ref{carina/fig:calculations_keyhole} and \ref{carina/fig:calculations_carina} show the relationship between the density dependent variables of Equation \ref{carina/eq:ratio_final} and the electron density for the Keyhole Nebula and Carina Extended region.
+Below that, in Figure \ref{carina/fig:monte_carlo}, we show the the uncertainty of our calculations as a function of 
+
 \begin{figure}
     \centering
     \begin{subfigure}[t]{0.45\textwidth}
@@ -308,13 +310,12 @@ Figure \ref{carina/fig:calculations} shows the relationship between the density 
         \centering
         \includegraphics[width=\textwidth]{figs/carina/monte_carlo.png}
         \caption{Measure of Uncertainty in Electron Density Calculations for Both Regions}
-        \label{carina/fig:uncertainty_keyhole}
+        \label{carina/fig:monte_carlo}
     \end{subfigure}
     \caption[Density Dependent Variables for Electron Density Calculations and Monte Carlo Simulation]{
-        The density dependent variables of Equation \ref{carina/eq:ratio_final} for the Keyhole Nebula (left) and Carina Extended region (right).
-        The blue line shows the calculated value of the ratio of integrated intensities, while the orange line shows the average uncertainty in the electron density calculations.
-        The red line shows the electron density calculated from the ratio of integrated intensities.
+        The density dependent variables of Equation \ref{carina/eq:ratio_final} for the Keyhole Nebula (top left) and Carina Extended region (top right).
         }
+    \label{carina/fig:calculations}
 \end{figure}
 
 Figure \ref{carina/fig:result_carina} and \ref{carina/fig:result_keyhole} show maps for the [NII] 205 $\mu$m and RRL inputs as well as the calculated electron density for the Carina Nebula and the Keyhole Nebula, respectively.
