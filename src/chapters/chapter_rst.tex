@@ -31,7 +31,7 @@ Figure \ref{rst/fig:anomalies} shows examples of these two events.
 \begin{figure}
     \centering
     \includegraphics[width=.75\linewidth]{figs/rst/Examples_fixed.png}
-    \caption{An example of a cosmic ray (left) and snowball (right) in RST's detector data. The top frames show the frame prior to the event and the bottom frames show the area after the event occurred. The bottom graphs show the overall DN value across the entirety of the exposure, showing large jumps at the time of the event for the cosmic ray (top) and snowball (bottom).}
+    \caption[An Example of a Cosmic Ray and a Snowball in WFI Detector Data]{An example of a cosmic ray (left) and snowball (right) in RST's detector data. The top frames show the frame prior to the event and the bottom frames show the area after the event occurred. The bottom graphs show the overall DN value across the entirety of the exposure, showing large jumps at the time of the event for the cosmic ray (top) and snowball (bottom).}
     \label{rst/fig:anomalies}
 \end{figure}
 
@@ -95,7 +95,7 @@ For more information about this and the dataset selection, see Section \ref{rst/
 \begin{figure}[b]
     \centering
     \includegraphics[width=1\linewidth]{figs/rst/Threshold.png}
-    \caption{The readout values for a flagged pixel. The read out values are the amount of DN gained in a given frame. We compare this value to our calculated threshold and, if surpassed, that specific location and frame is flagged for classification.}
+    \caption[Readout Values Throughout a WFI Detector's Integration]{The readout values for a flagged pixel. The read out values are the amount of DN gained in a given frame. We compare this value to our calculated threshold and, if surpassed, that specific location and frame is flagged for classification.}
     \label{rst/fig:threshold}
 \end{figure}
 To locate the anomalies, we looked for methods that would be able to not only identify where a potential anomaly is located but when the event occurred that caused the anomaly. 
@@ -123,7 +123,7 @@ Examples of this are shown in Figure \ref{rst/fig:PCA}.
     \centering
     \includegraphics[width=0.49\linewidth]{figs/rst/PCA_Good.png}
     \includegraphics[width=0.49\linewidth]{figs/rst/PCA_Bad.png}
-    \caption{Examples of reconstruction of ramps using PCA. The DN values for the reconstructed image are calculated by transforming the original values and then inverse transforming our original ramp using only a subset of the principal components (i.e. two) to reproduce the shape. By limiting the number of principal components to two, we can have the reconstructed image fit the shape fairly well for normal ramps and not fit ramps with anomalies.}
+    \caption[Examples of using PCA to Ramp Jumps Through Reconstruction for WFI Detector Data]{Examples of reconstruction of ramps using PCA. The DN values for the reconstructed image are calculated by transforming the original values and then inverse transforming our original ramp using only a subset of the principal components (i.e. two) to reproduce the shape. By limiting the number of principal components to two, we can have the reconstructed image fit the shape fairly well for normal ramps and not fit ramps with anomalies.}
     \label{rst/fig:PCA}
 \end{figure}
 
@@ -216,7 +216,7 @@ This makes the Statistical Threshold method faster than PCA in every experiment 
 \begin{figure}
     \centering
     \includegraphics[width=.5\linewidth]{figs/rst/elbow.png}
-    \caption{Elbow plot for the PCA method on typical ramps. A limit of 2 components was selected to ensure we aren't over fitting to the curve and missing anomalies.}
+    \caption[Elbow Plot of PCA for Typical Ramps in WFI Detector Data]{Elbow plot for the PCA method on typical ramps. A limit of 2 components was selected to ensure we aren't over fitting to the curve and missing anomalies.}
     \label{rst/fig:elbow}
 \end{figure}
 
@@ -257,7 +257,7 @@ This method is currently being used in the SDP pipeline to identify anomalies in
 \begin{figure}
     \centering
     \includegraphics[width=.7\textwidth]{figs/rst/heuristic_confusion.png}
-    \caption{Confusion matrix for the heuristic rules method with located data from statistical thresholding.}
+    \caption[Confusion Matrix for Heuristic rules with Statistical Thresholding]{Confusion matrix for the heuristic rules method with located data from statistical thresholding.}
     \label{rst/fig:heuristic_confusion}
 \end{figure}
 

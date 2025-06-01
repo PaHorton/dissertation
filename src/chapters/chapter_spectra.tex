@@ -1,5 +1,5 @@
 \chapter[On-Board Science Data Quality Analysis using Anomaly Detection for ASTHROS]{On-Board Science Data Quality Analysis using Anomaly Detection for ASTHROS}
-\ref{ch:spectra}
+\label{ch:spectra}
 \section{Abstract}
 ASTHROS (Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths) is a high-altitude balloon mission utilizing an array of sixteen spectrometers to create high spatial resolution 3D maps of ionized nitrogen gas in galactic and extragalactic star-forming regions.
 During data collection, we utilize on-the-fly mapping, where the instrument continuously collects spectra while scanning over a target area.
@@ -21,7 +21,7 @@ On-the-fly (OTF) mapping will be employed during data collection where each spec
 \begin{figure}
     \centering
     \includegraphics[width=0.5\linewidth]{figs/spectra/scan.png}
-    \caption{An example scanning pattern for OTF mapping. ASTHROS will continuously produce ON spectra while scanning across the target and OFF spectra when observing a calibration source from \parencite{mangum2007fly}.}
+    \caption[On-the-Fly Mapping Scanning Pattern Demonstrating On and Off Observations]{An example scanning pattern for OTF mapping. ASTHROS will continuously produce ON spectra while scanning across the target and OFF spectra when observing a calibration source from \parencite{mangum2007fly}.}
     \label{spectra/fig:scan}
 \end{figure}
 
@@ -54,7 +54,7 @@ RMQ is a lightweight messaging broker based communications system used to seamle
 \begin{figure}
     \centering
     \includegraphics[width=0.5\linewidth]{figs/spectra/system.png}
-    \caption{A high level overview of the ASTHROS Readout Network System Architecture showing the Command, Storage, and Analysis computers. The Command computer is responsible for sending commands to other processes and receiving status updates from the various publishers on the RMQ network. The Storage computer is responsible for storing all science data and telemetry data collected during the flight. The Analysis computer is responsible for analyzing the science data collected during the flight. The overview also shows some of the various subsystems and how they're connected in the network.}
+    \caption[High Level System Diagram for ASTHROS]{A high level overview of the ASTHROS Readout Network System Architecture showing the Command, Storage, and Analysis computers. The Command computer is responsible for sending commands to other processes and receiving status updates from the various publishers on the RMQ network. The Storage computer is responsible for storing all science data and telemetry data collected during the flight. The Analysis computer is responsible for analyzing the science data collected during the flight. The overview also shows some of the various subsystems and how they're connected in the network.}
     \label{spectra/fig:system}
 \end{figure}
 
@@ -103,7 +103,7 @@ Typically, these anomalies present themselves as changes in RFI spikes, the shap
     \includegraphics[width=0.3\linewidth]{figs/spectra/Anom1.png}
     \includegraphics[width=0.3\linewidth]{figs/spectra/anom2.png}
     \includegraphics[width=0.3\linewidth]{figs/spectra/anom3.png}
-    \caption{Examples of anomalous spectra from past missions. From left to right, we see changes in RFI spike shape and location, changes in the shape of the spectrum, and changes in the readout bias level.}
+    \caption[Examples of Anomalous Spectra from Past Missions]{Examples of anomalous spectra from past missions. From left to right, we see changes in RFI spike shape and location, changes in the shape of the spectrum, and changes in the readout bias level.}
     \label{spectra/fig:examples}
 \end{figure}
 
@@ -154,7 +154,7 @@ We use this value as our anomaly score as it provides a measure of how different
     \centering
     \includegraphics[width=0.49\linewidth]{figs/spectra/HASP_Elbow.png}
     \includegraphics[width=0.49\linewidth]{figs/spectra/elbow.png}
-    \caption{Elbow plots for the HASP dataset. Left shows the amount of variance each component accounts for in the entire dataset and the right shows the average variance amount when using a rolling window of 10 spectra.}
+    \caption[Elbow Plots for PCA Component Selection with HASP Data]{Elbow plots for the HASP dataset. Left shows the amount of variance each component accounts for in the entire dataset and the right shows the average variance amount when using a rolling window of 10 spectra.}
     \label{spectra/fig:elbows}
 \end{figure}
 
@@ -176,7 +176,7 @@ Despite being an extremely clean dataset of over 20,000 spectra, there are insta
     \centering
     \includegraphics[width=0.49\linewidth]{figs/spectra/hasp1.png}
     \includegraphics[width=0.49\linewidth]{figs/spectra/hasp2.png}
-    \caption{Examples of spectra with the lowest (left) and highest (right) anomaly scores from the HASP dataset when using the PCA method to fit the entire HASP dataset.}
+    \caption[The Least and Most Novel Spectra in the HASP Data]{Examples of spectra with the lowest (left) and highest (right) anomaly scores from the HASP dataset when using the PCA method to fit the entire HASP dataset.}
     \label{spectra/fig:hasp}
 \end{figure}
 
@@ -190,7 +190,7 @@ This is outside the scope of this work but will be discussed in Section \ref{spe
 \begin{figure}[b]
     \centering
     \includegraphics[width=0.5\linewidth]{figs/spectra/asthros_timeseries.png}
-    \caption{A time series of anomaly scores using the PCA method for the 100GHz integration test data. Two large spikes are visible in the data indicating large changes between a spectrum and the previous spectra in the rolling window.}
+    \caption[Anomaly Score Over Time During the 100GHz Integration Test]{A time series of anomaly scores using the PCA method for the 100GHz integration test data. Two large spikes are visible in the data indicating large changes between a spectrum and the previous spectra in the rolling window.}
     \label{spectra/fig:timeseries}
 \end{figure}
 
@@ -219,7 +219,7 @@ As expected, the least anomalous spectra look relatively clean and the most anom
     \centering
     \includegraphics[width=0.49\linewidth]{figs/spectra/pca1.png}
     \includegraphics[width=0.49\linewidth]{figs/spectra/pca2.png}
-    \caption{Examples from the 100GHz integration test data showing the spectra at the time of the two spikes in Figure \ref{spectra/fig:timeseries}. The blue line shows the spectra that has the high anomaly score and the orange line shows the average spectrum from the past 10 spectra. These spectra were highlighted due to the PCA method's inability to recreate the features shown in the new spectra when trained on the rolling window of previous spectra.}
+    \caption[Novel Examples from the 100GHz Integration Test]{Examples from the 100GHz integration test data showing the spectra at the time of the two spikes in Figure \ref{spectra/fig:timeseries}. The blue line shows the spectra that has the high anomaly score and the orange line shows the average spectrum from the past 10 spectra. These spectra were highlighted due to the PCA method's inability to recreate the features shown in the new spectra when trained on the rolling window of previous spectra.}
     \label{spectra/fig:100ghz}
 \end{figure}
 
