@@ -4,7 +4,7 @@
 TODO:
 \section{Data}
 Our data comes from two main sources, the Stratospheric Observatory for Infrared Astronomy (SOFIA) and the Deep Space Network (DSN).
-% In addition to these data sources, we also use ancillary data from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) to compare our results \parencite{oberst2011205}.
+In addition to these data sources, we also use ancillary data from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) to compare our results \parencite{oberst2011205}.
 Additionally, for our calculations, we need a radio continuum brightness temperature, which we take from the Atacama Large Millimeter/submillimeter Array (ALMA) observations of the Carina Nebula \parencite{Rebolledo_2021}.
 
 \subsection{SOFIA --- Stratospheric Observatory for Infrared Astronomy}
@@ -31,13 +31,14 @@ ALMA is an array of radio telescopes located in the Atacama Desert in Chile, des
 We utilize data from \cite{Rebolledo_2021}, which provides a continuum brightness temperature map of the Carina Nebula between 1-3 GHz with a beam of \qty{24}{\arcsecond} spanning \qty{613}{\arcminute} by \qty{297}{\arcminute} (3574 x 3415 pixels).
 This data is in units of Jy/beam, which is a common unit for radio continuum observations but needs to be converted to brightness temperature (K) for our calculations.
 
-% \subsection{Other Ancillary Data}
-% \cite{oberst2011205} provides line intensities for ISO's [NII] 122 $\mu$m line and SPIFI's [NII] 205 $\mu$m line in the form of tables with coordinates and integrated intensities.
-% These values need to be processed into data cubes to be useful in our analysis.
-% When using FITS data, a World Coordinate System (WCS) is used to map the pixel coordinates to celestial coordinates, allowing for easy comparison of data from different instruments.
-% Without this WCS information, we cannot directly compare the data cubes.
-% Using the provided coordiantes in the tables, we can estimate a WCS for both of these datasets as explained in Section \ref{carina/fig:fits_fit}.
-% Additionally, the data is in units of line intensity (W m$^{-2}$ sr$^{-1}$) which needs to be converted to Main Beam Brightness Temperature (K$_{mb}$) for comparison with the SOFIA data.
+\subsection{Other Ancillary Data}
+\cite{oberst2011205} provides line intensities for ISO's [NII] 122 $\mu$m line and SPIFI's [NII] 205 $\mu$m line in the form of tables with coordinates and integrated intensities.
+These values need to be processed into data cubes to be useful in our analysis.
+When using FITS data, a World Coordinate System (WCS) is used to map the pixel coordinates to celestial coordinates, allowing for easy comparison of data from different instruments.
+Without this WCS information, we cannot directly compare the data cubes.
+Using the provided coordinates in the tables, we can estimate a WCS for both of these datasets as explained in Section \ref{carina/sec:fits_fit}.
+Additionally, the data is in units of line intensity (W m$^{-2}$ sr$^{-1}$) which needs to be converted to Main Beam Brightness Temperature (K$_{mb}$) for comparison with the SOFIA data.
+Between ISO and SPIFI, there are only about 3 pixels that overlap with the SOFIA data, so we will not be using these datasets in our analysis but will be using them to compare our results.
 
 \begin{figure}
     \centering
@@ -252,6 +253,96 @@ We then solve for the electron density using the sampled values and repeat this 
 This distribution can then be used to calculate the mean and standard deviation of the electron density for each pixel in the map, providing us with an uncertainty estimate for our electron density calculations.
 This method was chosen over direct propagation of uncertainties because it allows us to account for the non-linear relationship between the electron density and the ratio of intensities.
 
+\subsection{Aligning SPIFI and ISO Data}
+\label{carina/sec:fits_fit}
+To align the SPIFI and ISO data with the SOFIA data, we need to create a World Coordinate System (WCS) for each dataset.
+Given that we have a table of coordinate points and knowledge that these points are in a grid-like pattern, we can use a bit of image matrix manipulation to create a WCS for each dataset.
+A FITS header contains information about a data cube is normally parsed by programs like \texttt{astropy.io.fits} to create a WCS object that can be used to map pixel coordinates to celestial coordinates.
+We do not have a FITS header for the SPIFI and ISO data, so we will need to create one ourselves.
+The key values we need to set in the FITS header are the following:
+\begin{itemize}
+    \item \texttt{CRPIX1} and \texttt{CRPIX2}: The reference pixel coordinates in the x and y dimensions, respectively.
+    \item \texttt{CRVAL1} and \texttt{CRVAL2}: The celestial coordinates of the reference pixel in degrees.
+    \item \texttt{CDELT1} and \texttt{CDELT2}: The pixel size in degrees in the x and y dimensions, respectively.
+    \item \texttt{CROTA1} and \texttt{CROTA2}: The rotation angle of the coordinate system in degrees.
+\end{itemize}
+
+Our first step is to determine the reference pixel coordinates, which we can set to the center of the data cube.
+If our pixels are located on a grid, each pixel will have a both an index and celestial coordinate.
+To estimate the index grid, we can use Principal Component Analysis (PCA) to align the coordinates to their principal axes \parencite{wold1987principal}.
+In the case of a uniform grid rotated at some angle, this rotates the grid to align with the x and y axes.
+At that point, we query a K-Dimensional Tree of these points to find the median spacing between the points.
+We can then sort the x and y coordinates and use the following equation to determine each index:
+\begin{equation}
+    \text{index} = \left\lfloor \frac{\text{coordinate} - \text{min coordinate}}{\text{spacing}} \right\rfloor - \text{min index}
+    \label{carina/eq:index}
+\end{equation}
+This will give us a mapping of each coordinate to its index in the grid.
+
+The PCA step can be skipped if we have a good estimate of the rotation angle of the grid.
+In the case of the SPIFI data, this method works well for one half of the data, but not the other half.
+In this case, we can use the first half of the data to estimate the rotation angle and then apply that angle to the second half of the data.
+Instead of using PCA, we create the rotational matrix using the rotation angle and apply it to the coordinates to align them with the x and y axes 
+\begin{equation}
+    R_\theta = \begin{bmatrix}
+        \cos(\theta) & -\sin(\theta) \\
+        \sin(\theta) & \cos(\theta)
+    \end{bmatrix}
+\end{equation}
+where $\theta$ is the rotation angle in radians.
+
+After we have the indices and the world coordinates, we can compute an affine transformation matrix that maps the pixel coordinates to the celestial coordinates.
+Using the central index as the reference pixel, we can set the \texttt{CRPIXn} and \texttt{CRVALn} values to its index and coordinates.
+We then shift our indices and coordinate points relative to the critical pixel and use these values to calculate the coefficients in our affine transformation matrix.
+Our inputs and outputs now look like this:
+\begin{align}
+    A = \begin{bmatrix}
+        \Delta i_1 & \Delta j_1 & 1 \\
+        \Delta i_2 & \Delta j_2 & 1 \\
+        \vdots & \vdots & \vdots \\
+        \Delta i_n & \Delta j_n & 1
+    \end{bmatrix}, \quad
+    B = \begin{bmatrix}
+        \Delta RA_1 & \Delta Dec_1\\
+        \Delta RA_2 & \Delta Dec_1\\
+        \vdots \\
+        \Delta RA_n & \Delta Dec_n
+    \end{bmatrix}
+\end{align}
+where $\Delta i_n$ and $\Delta j_n$ are the pixel coordinates relative to the reference pixel, and $\Delta RA_n$ and $\Delta Dec_n$ are the celestial coordinates relative to the reference pixel.
+We can then solve for the coefficients of the affine transformation matrix using the least squares method:
+\begin{equation}
+    \begin{bmatrix}
+        a & b & \_ \\
+        c & d & \_
+    \end{bmatrix} = A^{-1}B
+\end{equation}
+This gives us the coefficients for the affine transformation matrix, which we can then use to set the \texttt{CDELTn} values in the FITS header as follows:
+\begin{align}
+    \texttt{CDELT1} &= \sqrt{a^2 + c^2}
+    \texttt{CDELT2} &= \sqrt{b^2 + d^2}
+    \texttt{CROTA1} &= 0
+    \texttt{CROTA2} &= \arctan{c/a}
+\end{align}
+
+Figure \ref{carina/fig:aligned_fits} shows the aligned SPIFI and ISO data with the SOFIA data.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{figs/carina/fits_coverage.png}
+    \caption[Aligned SPIFI and ISO Data with SOFIA Data]{
+        The aligned SPIFI (top) and ISO (bottom) data with the SOFIA data.
+        The SPIFI data is shown in blue, while the ISO data is shown in orange.
+        The SOFIA data is shown in green.
+        }
+    \label{carina/fig:aligned_fits}
+\end{figure}
+
+Finally, these values need to be converted from line intensities in W m$^{-2}$ sr$^{-1}$ to integrated main beam intensities in K km/s.
+This is accomplished using the following equation \cite{oberst2011205}
+\begin{equation}
+    \int{T_{mb} d\nu} = \frac{I_\nu \nu^3}{1000 k_b \pi}
+\end{equation}
+
 \section{Results}
 In observing the spectra of the [NII] 205 $\mu$m line and the RRL data, we can see two distinct regions of interest in the Carina Nebula.
 The first region is the Keyhole Nebula which is a prominent feature in the Carina Nebula and is known for its high electron density \cite{brooks2000unlocking}.
@@ -322,6 +413,9 @@ We tested up to 500 samples but, for optimal compute time, we would recommend li
 \end{figure}
 
 Figures \ref{carina/fig:result_carina} and \ref{carina/fig:result_keyhole} show maps for the [NII] 205 $\mu$m and RRL inputs as well as the calculated electron density for the Carina Extended and the Keyhole Nebula, respectively.
+These maps are generated after omitting pixels with an SNR less than 3 and those with an electron density greater than 1000 cm$^{-3}$.
+The top panel shows our inputs into the system, the integrated intensity of the [NII] 205 $\mu$m line (left) and the integrated intensity of the RRL data (right).
+The [NII] 205 $\mu$m line is shown at the original beam size of the SOFIA data so it can be consistent with the [NII] 122 $\mu$m line below it.
 
 \begin{figure}
     \centering
@@ -344,7 +438,30 @@ Figures \ref{carina/fig:result_carina} and \ref{carina/fig:result_keyhole} show 
 \end{figure}
 
 \section{Conclusions}
-TODO:
+Using the [NII] 205 $\mu$m line and the RRL data, we were able to calculate the electron density in the Carina Nebula.
+We found that the Keyhole Nebula has a higher electron density than the Carina Extended region, which is consistent with previous studies \parencite{brooks2000unlocking}.
+In comparison to \cite{oberst2011205}, we find that our electron density values are larger than those found in their study.
+This makes sense as the spectral resolution of our data is much higher, allowing us to resolve the [NII] 205 $\mu$m line more accurately.
+A scatter plot comparing the SPIFI and the SOFIA data is shown in Figure \ref{carina/fig:oberst}, which shows little correlation between the two datasets.
+This is likely due to the differences in resolution and sensitivity between the two datasets.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/carina/oberst.png}
+    \caption[Scatter Plot of SPIFI and SOFIA {[NII]} 205 $\mu$m Line Intensities]{
+        A scatter plot of the SOFIA data (x-axis) and the SPIFI data (y-axis) for the [NII] 205 $\mu$m line.
+        Intensities for SOFIA are integrated over the same spectral range as the SPIFI data, centered around the peak of the [NII] 205 $\mu$m line.
+        }
+    \label{carina/fig:oberst}
+\end{figure}
+
+We also estimated the [NII] 122 $\mu$m line intensity using the ratio of the two [NII] lines, which can be used to estimate electron density as well \parencite{goldsmith2015herschel}.
+ASTHROS, the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter Wavelengths, is a proposed mission that will observe the [NII] 122 $\mu$m line and the [NII] 205 $\mu$m line to measure electron density in star-forming regions \parencite{siles2020asthros}.
+In the proposal for ASTHROS, the goal is to achieve a signal-to-noise ratio (SNR) of 4 for the [NII] 122 $\mu$m line at a sensitivity of 0.1 K and a SNR of 10 for the [NII] 205 $\mu$m line at a sensitivity of 0.15 K.
+We can estimate the signal of our SNR by dividing our integrated intensity by the full width at half maximum (FWHM) of the line.
+This can be done at each pixel in our maps to estimate our average signal in Kelvin for both the Keyhole Nebula and the Carina Extended region.
+Dividing this signal by the expected sensitivity gives us the SNR for each pixel in our maps, as shown in Figure \ref{carina/fig:snr}.
+
 \begin{figure}
     \centering
     \includegraphics[width=.9\textwidth]{figs/carina/snr.png}
@@ -353,4 +470,15 @@ TODO:
         The diverging color scale is used to show how close the SNR is to the desired values for ASTHROS.
         For 122 $\mu$m, we want an SNR of 4 at a sensitivity of 0.1 K and for 205 $\mu$m, we want an SNR of 10 at a sensitivity of 0.15 K.
         }
+    \label{carina/fig:snr}
 \end{figure}
+
+Unfortunately, we find mixed results for the desired SNR in Carina. 
+Of the two lines and regions, the Keyhole Nebula's 122 $\mu$m line is the only one that meets the desired SNR of 4, with an average SNR of 5.3.
+The 205 $\mu$m line in the Keyhole Nebula has an average SNR of 4.0, which is below the desired SNR of 10.
+This makes sense as the electron density is relatively high in the Keyhole Nebula, which results in a higher signal for the [NII] 122 $\mu$m line as shown in Figure \ref{carina/fig:nii_curves}.
+The Carina Extended region has an average SNR of 1.1 for the [NII] 122 $\mu$m line and 4.0 for the [NII] 205 $\mu$m line, which is below the desired SNR for both lines.
+This is consistent with the lower electron density in the Carina Extended region, which results in a lower signal for the [NII] 122 $\mu$m line.
+Overall, these results suggest that ASTHROS needs to improve its sensitivity to observe both lines in the Carina Nebula, especially in the Carina Extended region.
+Additional calculations can be done to estimate the amount of integration time necessary to achieve the desired SNR for both lines in the Carina Nebula.
+Given that ASTHROS estimated s a sensitivity of 0.1 K for the [NII] 122 $\mu$m line and 0.15 K for the [NII] 205 $\mu$m line, we may be able to improve our SNR by increasing the integration time.
