@@ -3,6 +3,7 @@
 This chapter is from my published work \cite{horton2021integrating} and is included here as the ground work for the novelty detection systems I go on to use in Chapters \ref{ch:spectra} and \ref{ch:rst}.
 Being one of the first projects I undertook in my research career, this chapter describes the steps taken to operatealize novelty detection methods for use in planetary science for the Mars Science Laboratory (MSL) Curiosity rover.
 This chapter focuses on how to take theoretical novelty detection methods and create a pipeline to integrate them into the tactical planning process for MSL.
+In addition to the original publication, this chapter has been updated to include work done on the Planetary Data System (PDS) Image Atlas to provide new ways for users to search for information \cite{horton2020novelty}.
 It is included in this dissertation to provide a foundational understanding of how novelty detection systems can be operationalized.
 By detailing the integration of these systems into the Mars Science Laboratory (MSL) tactical planning pipeline, this chapter demonstrates the practical challenges and solutions involved in adapting machine learning techniques for real-world scientific missions. 
 The insights gained from this work serve as a basis for the on-board novelty detection methods developed to support mission operations for missions like ASTHROS and RST. 
@@ -19,6 +20,7 @@ This was achieved in two ways: by creating products for each sequence to identif
 These new products provide colorized heat maps of inferred novelty that operations staff can use to rapidly review downlinked data and focus their efforts on analyzing potentially new kinds of diagnostic multispectral signatures. 
 This approach has the potential to guide scientists to new discoveries by quickly drawing their attention to often subtle variations not detectable with simple color composites.
 The products developed in this work have shown promising benefits for integration into mission operations by potentially decreasing tactical operations planning time through guided triage.
+
 \section{Introduction}
 While discovering the unexpected is one of the most exciting parts of research, the process of making a discovery often involves countless hours of sifting through otherwise mundane data. 
 Advances in novelty detection systems can help to alleviate this arduous task by enabling researchers to focus their attention on the most interesting parts of their data. 
@@ -46,6 +48,15 @@ During tactical planning, the MSL Curiosity rover sends compressed observations 
 Rapid analysis is required for tactical planning as discoveries made outside of the time frame are subject to increased mission resource cost as the rover may need to reverse course to re-visit the target \parencite{kerner2020comparison}.
 This need for rapid analysis makes systems that can quickly extract information and identify regions of interest in scientific data vital to efficient tactical planning. 
 
+Additionally, on the ground, data from missions like MSL are often observed by both scientists and the public.
+The Planetary Data System (PDS) Image Atlas is a tool for both scientists and enthusiasts to explore vast image sets from various planetary missions. 
+Like a good photographer, some mission instruments take multiple views of the same scene in order to best capture a subject. 
+When browsing an instrument's reverse chronological photo album, an Image Atlas user may encounter large batches of nearly identical images. 
+This experience is not user friendly for both scientists, who may be looking for specific types of images, and enthusiasts, who may just be browsing a mission. 
+To assist in navigation, the Image Atlas offers tools to filter and classify images by metadata including time of collection, instrument used, and content (e.g., craters, dunes, layered rocks) \cite{wagstaff2018deep}.
+These navigation techniques work for users researching specific interests but are less useful for users looking to browse the image set. 
+To find interesting or unique examples, users must manually browse through the Atlas which can be a time-consuming and impractical process.
+
 This work primarily focuses on the Mastcam imaging system on the MSL Curiosity rover.
 Mastcam consists of a pair of multispectral Charge Coupled Device (CCD) imagers on MSL that are each capable of using an eight-position filter wheel to take red, green, and blue (RGB) images as well as multispectral images in nine bands from 400 to 1100 nm (visible to near-infrared) \parencite{bell_mastcam}.
 A set of image products from Mastcam is called a sequence.
@@ -64,6 +75,11 @@ While their work demonstrated the capabilities of the algorithms, it did not eva
 In order to be most useful to operations, these methods need to be automatically run on new data and integrated into tactical analysis workflows to accelerate tactical planning \parencite{donahoe2020new}.
 New advances in this work include further development of the algorithms and the creation of an implementation strategy for operations. 
 Additionally, we analyzed the outputs from the system to determine the usefulness of these methods in comparison to existing tactical planning procedures. 
+
+As an example of how these methods can be used, we created a pipeline to integrate novelty detection into the PDS Image Atlas.
+To meet users' needs, we implemented several image novelty and discovery tools.
+These tools can be used by the Image Atlas to display images for users looking to browse an image set in a more relevant manner. 
+The novelty tools are used to show users the most interesting examples in an image set and the discovery tools are used to show a diverse set of examples in an image set.
 
 \section{Related Work}
 Novelty detection is a form of anomaly detection that focuses on detecting novel examples in a data set \parencite{domingues2019comparative}. 
@@ -172,6 +188,27 @@ Individual sequence analysis is accomplished by visualizing the pixel novelty sc
 Analysts can quickly review these heat maps to identify the most novel regions within a sequence relative to all prior sequences. 
 To compare the novelty of different sequences, statistics can be calculated for each sequence and sorted.
 This can help prioritize which multispectral sequence to review first. 
+
+\subsection{PDS Image Atlas Integration}
+To integrate these tools into the Image Atlas, Amazon Web Services (AWS) SageMaker (SM) was used to train and deploy these tools as queryable endpoints. 
+SM allows developers to utilize a hosted Jupyter Notebook instance to deploy training jobs and inference endpoints on Elastic Compute Cloud (EC2) instances. 
+In most cases, training data is loaded using the PDS Image Atlas API \parencite{grimes2018pds}. 
+A training job is deployed to an EC2 instance and a model is saved to a Simple Storage Service (S3) bucket. 
+SM is then used to create an inference endpoint by paring the model in the S3 bucket with an EC2 instance. 
+Once the inference endpoint is made, it can be exposed outside of AWS using a Lambda function and the API Gateway.
+
+Image discovery is the process of identifying images of high content diversity in a dataset.
+We use an unsupervised novelty detection algorithm, requiring no prior knowledge of the dataset. 
+An image dataset is used as input, and the result is N images of diverse content, where N is a value specified by the user. 
+An example use case for this is having a carousel of images with high content diversity on the PDS Image Atlas website to give users a sample of a variety of images gathered from a particular mission or instrument.
+
+A pre-trained convolutional neural network (CNN) is used to extract feature vectors from each image in the data set, and then Discovery via Eigenbasis Modeling of Uninteresting Data (DEMUD) is run, which is an algorithm that detects novel items in a dataset \parencite{wagstaff_demud}.
+DEMUD selects interesting or novel images in a dataset with an iterative method where an item is selected from the dataset. 
+Image content is modeled with a singular value decomposition (SVD). 
+The remaining items are projected onto the model, and a reconstruction error is calculated for each item not already included in the SVD model. 
+The item with the highest reconstruction error, or most novel item, is then selected and incorporated into the model. 
+This enables the model to learn about the most novel items and avoid selecting them for future iterations. 
+This process continues until the N most diverse images are selected. 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -232,7 +269,7 @@ The scores are visualized without normalization when an analyst selects an indiv
 \centering
 \includegraphics[width=\linewidth]{figs/msl/top10.jpg}
 \includegraphics[width=\linewidth]{figs/msl/bottom10.jpg}
-\caption{The most and least novel sequences in the Mastcam left eye data set. Sequences are sorted by maximum novelty value obtained from a brightness corrected background distribution. The pixel novelty scores  are normalized across the entire data set.}
+\caption{The most and least novel sequences in the Mastcam left eye data set. Sequences are sorted by maximum novelty value obtained from a brightness corrected background distribution. The pixel novelty scores are normalized across the entire data set.}
 \label{msl/fig:sorted}
 \end{figure*}
 
@@ -266,3 +303,13 @@ Augmenting this system to support novelty detection would involve adding an infe
 As this system is currently in use by operations staff, a strong justification is necessary to perform this integration. 
 At the time, the novelty detection system has shown promising examples of novelty highlighting and sorting. 
 Further analysis is needed to demonstrate how these examples would fit into the tactical planning pipeline and the time saving benefits it might provide.
+
+In addition to operations, the development of the novelty and discovery API endpoints are key to enabling more intelligent ways of navigating planetary data on the PDS Image Atlas. 
+Currently, both tools have running prototype endpoints available for PDS devs to begin integration with future PDS Image Atlas releases.
+With the integration of these tools, the capabilities of the Image Atlas can expand to provide an overview of highly diverse images for each NASA mission, group images by similarity, and sort albums by their most interesting content.
+
+Future work involves creating models for more instruments, implementing new algorithms, and developing user interface prototypes. 
+A pipeline to deploy new endpoints has been set up on SM so that models can be developed for new instrument data sets. 
+This is done by simply specifying the data location and how it should be loaded and running the pipeline on the image set. 
+For novelty detection, new algorithms, such as principal component analysis and generative adversarial networks, can be adapted to the SM suite so that Image Atlas developers have more control over how they would like to sort the data. 
+Finally, proper prototypes for how these tools will work with the Image Atlas needs to be developed so full integration can begin.
