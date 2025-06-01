@@ -1,11 +1,38 @@
 \chapter[Electron Density Mapping in Carina Nebula]{Electron Density Mapping in Carina Nebula}
 \label{ch:carina}
+This chapter presents the methodology and results of mapping the electron density in the Carina Nebula using observations from the Stratospheric Observatory for Infrared Astronomy (SOFIA) and the Deep Space Network (DSN).
+Carina is a major target for ASTHROS and understanding how to map electron density is one of the key science goals of the mission.
+In order to better estimate ASTHROS's capabilities, we embarked on this project to use new observations from SOFIA, which has the same 2.5 meter telescope as ASTHROS, to map the electron density in Carina Nebula.
+This can give us a clearer estimate of the sensitivity necessary to map [NII] 205 and 122 $\mu$m lines when ASTHROS is in flight. 
+
+\section{Abstract}
+The Carina Nebula is one of the most massive and active star-forming regions in the Milky Way, located approximately 2.3 kpc away in the Carina-Sagittarius arm of the galaxy.
+In this work, we present a method to map the electron density in the Carina Nebula using observations of the [NII] 205 $\mu$m fine-structure line and hydrogen radio recombination lines (RRLs) from the Stratospheric Observatory for Infrared Astronomy (SOFIA) and the Deep Space Network (DSN).
+We utilize a method used in \cite{pineda2019electron} to calculate the electron density from the ratio of the [NII] 205 $\mu$m line intensity to the RRL intensity.
+Additionally, we estimate the [NII] 122 $\mu$m line intensity using the relationship between the two [NII] lines.
+These observations show two spectrally distinct regions, the higher density region near the Keyhole Nebula and a lower density region behind the Keyhole Nebula, which we refer to as Carina Extedned.
+In the Keyhole Nebula, we find average electron densities of 350 cm$^{-3}$, while in the Carina Extended region, we find average electron densities of 176 cm$^{-3}$.
+We compared our results with previous observations from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) and found that our results are higher than previous measurements.
+\section{Keywords}
+\keywords{Carina Nebula, Electron Density, [NII] 205 $\mu$m, Hydrogen Radio Recombination Lines, SOFIA, Deep Space Network, ASTHROS}
+
 \section{Introduction}
-TODO:
-\section{Data}
-Our data comes from two main sources, the Stratospheric Observatory for Infrared Astronomy (SOFIA) and the Deep Space Network (DSN).
+The Carina Nebula, also known as NGC 3372, is one of the most massive and active star-forming regions in the Milky Way, located approximately $R_{gal}$ = 2.3 kpc away in the Carina-Sagittarius arm of the galaxy \parencite{smith2006census}.
+Within Carina is the Keyhole Nebula, located near the center of Carina next to massive stars, such as $\eta$ Carina, which constnatly blasts the nebula with ionizing radiation and stellar winds \parencite{brooks2005simba}.
+The nebula's complex structure, which includes dense molecular clouds, ionized gas regions, and young stellar clusters, makes it an ideal laboratory for studying the processes of star formation and feedback from massive stars \parencite{smith2007census}.
+
+Understanding the electron density in star-forming regions like the Carina Nebula is crucial for several reasons. 
+Firstly, the electron density can be used as a diagnostic tool for the pressure and density of the ionized gas within star forming regions, which can help us understand the conditions under which stars form \parencite{kaasinen2016cosmos}.
+At different evolutionary stages, the electron density in an HII region like Carina can vary significantly, providing insights into the physical processes at play in these regions \parencite{goldsmith2024electron}.
+Additionally, understanding the relationship between electron density at low redshift regions like Carina and help inform our understanding of the electron density in high redshift galaxies, which can be used to study the evolution of galaxies and the interstellar medium (ISM) over cosmic time \parencite{shirazi2014stars}.
+
+In this work, we aim to map the electron density in the Carina Nebula using observations of the [NII] 205 $\mu$m fine-structure line and hydrogen radio recombination lines (RRLs). 
+These lines are sensitive to the conditions of ionized gas and provide complementary information about the nebula's physical properties. 
+We utilize a method used in \cite{pineda2019electron} to calculate the electron density from the ratio of the [NII] 205 $\mu$m integrated intensity to the RRL integrated intensity.
+\section{Observations}
+Our observations come from two main sources, SOFIA and the DSN.
 In addition to these data sources, we also use ancillary data from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) to compare our results \parencite{oberst2011205}.
-Additionally, for our calculations, we need a radio continuum brightness temperature, which we take from the Atacama Large Millimeter/submillimeter Array (ALMA) observations of the Carina Nebula \parencite{Rebolledo_2021}.
+Additonally, we utilize the Atacama Large Millimeter/submillemeter Array (ALMA) for continuum brightness temperature observations in our calculations \parencite{Rebolledo_2021}.
 
 \subsection{SOFIA --- Stratospheric Observatory for Infrared Astronomy}
 SOFIA was a joint project of NASA and the German Aerospace Center (DLR), operating from a Boeing 747 aircraft equipped with a 2.5-meter telescope designed for infrared observations.
