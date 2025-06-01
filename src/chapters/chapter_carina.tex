@@ -11,14 +11,14 @@ The Carina Nebula is one of the most massive and active star-forming regions in 
 In this work, we present a method to map the electron density in the Carina Nebula using observations of the [NII] 205 $\mu$m fine-structure line and hydrogen radio recombination lines (RRLs) from the Stratospheric Observatory for Infrared Astronomy (SOFIA) and the Deep Space Network (DSN).
 We utilize a method used in \cite{pineda2019electron} to calculate the electron density from the ratio of the [NII] 205 $\mu$m line intensity to the RRL intensity.
 Additionally, we estimate the [NII] 122 $\mu$m line intensity using the relationship between the two [NII] lines.
-These observations show two spectrally distinct regions, the higher density region near the Keyhole Nebula and a lower density region behind the Keyhole Nebula, which we refer to as Carina Extedned.
+These observations show two spectrally distinct regions, the higher density region near the Keyhole Nebula and a lower density region behind the Keyhole Nebula, which we refer to as Carina Extended.
 In the Keyhole Nebula, we find average electron densities of 350 cm$^{-3}$, while in the Carina Extended region, we find average electron densities of 176 cm$^{-3}$.
 We compared our results with previous observations from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) and found that our results are higher than previous measurements.
-Finally, we compare our calculated values with the expected performance for the A
+Finally, we compare our calculated values with the expected performance for the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter Wavelengths (ASTHROS) mission.
 
 \section{Introduction}
 The Carina Nebula, also known as NGC 3372, is one of the most massive and active star-forming regions in the Milky Way, located approximately $R_{gal}$ = 2.3 kpc away in the Carina-Sagittarius arm of the galaxy \parencite{smith2006census}.
-Within Carina is the Keyhole Nebula, located near the center of Carina next to massive stars, such as $\eta$ Carina, which constnatly blasts the nebula with ionizing radiation and stellar winds \parencite{brooks2005simba}.
+Within Carina is the Keyhole Nebula, located near the center of Carina next to massive stars, such as $\eta$ Carina, which constantly blasts the nebula with ionizing radiation and stellar winds \parencite{brooks2005simba}.
 The nebula's complex structure, which includes dense molecular clouds, ionized gas regions, and young stellar clusters, makes it an ideal laboratory for studying the processes of star formation and feedback from massive stars \parencite{smith2007census}.
 
 Understanding the electron density in star-forming regions like the Carina Nebula is crucial for several reasons. 
@@ -32,7 +32,7 @@ We utilize a method used in \cite{pineda2019electron} to calculate the electron 
 \section{Observations}
 Our observations come from two main sources, SOFIA and the DSN.
 In addition to these data sources, we also use ancillary data from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) to compare our results \parencite{oberst2011205}.
-Additonally, we utilize the Atacama Large Millimeter/submillemeter Array (ALMA) for continuum brightness temperature observations in our calculations \parencite{Rebolledo_2021}.
+Additionally, we utilize the Atacama Large Millimeter/submillimeter Array (ALMA) for continuum brightness temperature observations in our calculations \parencite{Rebolledo_2021}.
 
 \subsection{SOFIA --- Stratospheric Observatory for Infrared Astronomy}
 SOFIA was a joint project of NASA and the German Aerospace Center (DLR), operating from a Boeing 747 aircraft equipped with a 2.5-meter telescope designed for infrared observations.
@@ -47,7 +47,7 @@ Due to the calibration, the values are already in Main Beam Brightness Temperatu
 The DSN is a global network of antennas that supports interplanetary spacecraft missions and radio astronomy observations.
 For radio astronomy, the DSN Deep Space Station 43 (DSS-43) in Canberra, Australia, is equipped with a 70-meter dish that can observe radio recombination lines (RRLs) at frequencies within the K-band (17 to 27 GHz) \parencite{virkler2020broadband}.
 Our RRL data for Carina Nebula was collected using the DSS-43 antenna as an average of the RRL observations from H70$\alpha$ (18.768 GHz) to H62$\alpha$ (26.939 GHz).
-This average was taken by scaling all the components to the central value of H67$\alpha$ (21.385 GHz) and gridding the data to match the lowest frequency, H70$\alpha$.
+This average was taken by scaling all the components to the central value of H67$\alpha$ (21.385 GHz) and placing it on a grid to match the lowest frequency, H70$\alpha$.
 The resultant map is much larger than the original SOFIA map, spanning \qty{150}{\arcminute} by \qty{76}{\arcminute} (343 x 335 pixels) with a beam size of \qty{56}{\arcsecond} and a spectral resolution of 2.4 km/s across 165 channels (-300 to 98 km/s).
 Unlike the SOFIA data, the RRL data is in units of antenna temperature (K$_{Ta*}$), which is the raw output of the radio telescope before calibration.
 Using the efficiency of the antenna (0.5 for DSS-43), the data will need to be converted to the Main Beam Brightness Temperature (K$_{mb}$) units for comparison with the SOFIA data.
@@ -351,11 +351,11 @@ This gives us the coefficients for the affine transformation matrix, which we ca
     \texttt{CROTA1} &= 0 \\
     \texttt{CROTA2} &= \arctan{c/a}
 \end{align}
-
 Figure \ref{carina/fig:aligned_fits} shows the aligned SPIFI and ISO data with the SOFIA data.
+
 \begin{figure}
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/carina/fits_coverage.png}
+    \includegraphics[width=\textwidth]{figs/carina/fits_coverage.png}
     \caption[Aligned SPIFI and ISO Data with SOFIA Data]{
         The aligned SPIFI (top) and ISO (bottom) data with the SOFIA data.
         The SPIFI data is shown in blue, while the ISO data is shown in orange.
@@ -365,7 +365,7 @@ Figure \ref{carina/fig:aligned_fits} shows the aligned SPIFI and ISO data with t
 \end{figure}
 
 Finally, these values need to be converted from line intensities in W m$^{-2}$ sr$^{-1}$ to integrated main beam intensities in K km/s.
-This is accomplished using the following equation \cite{oberst2011205}
+This is accomplished using the following equation \parencite{oberst2011205}
 \begin{equation}
     \int{T_{mb} d\nu} = \frac{I_\nu \nu^3}{1000 k_b \pi}
 \end{equation}
