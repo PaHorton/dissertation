@@ -5,3 +5,4 @@ PMCC
 PMCCs
 GPIO
 PyMCC
+multispectral
