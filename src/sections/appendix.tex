@@ -1,3 +1,83 @@
+\chapter{ASHTORS Raspberry Pi Compute Module 4 Setup Guide}
+\label{readout/app:cm4_setup}
+From a fresh install of Raspberry Pi OS, we need to install the necessary packages to run the readout system.
+The first step is to enable Secure Shell (SSH) so that we can remotely access the Raspberry Pi.
+This can be done in the Raspberry Pi Configuration tool by enabling SSH in the Interfaces tab.
+While we're in the interfaces tool, we can also enable SPI and Remote GPIO. 
+These are necessary to interface with the PMCC.
+
+Next, we need to configure the networking interfaces. 
+\texttt{eth0} is the wired interface to the rest of the readout network. 
+We need a static IP for the CM4 to ensure that other devices on the network can easily find it.
+In the network settings at the top right of the screen, we can select "Edit Connections" under Advanced Options. 
+From there, you will see "Wired connection 1" which is the default name for the wired interface.
+Select the interface and navigate to the IPv4 Settings tab.
+Chance the method from "Automatic (DHCP)" to "Manual" and add the IP address, Netmask, and Gateway.
+For ASTHROS, we have the IP addresses of all CM4s set to \texttt{192.168.1.13X} where \texttt{X} is uniquely assigned to each CM4.
+The Netmask is set to \texttt{23} so we can access all devices on the \texttt{192.168.1.X} readout network as well as the \texttt{192.168.0.X} gondola network.
+Finally, the Gateway is set to \texttt{192.168.1.1} when attached to the gondola and \texttt{192.168.1.101} when attached to the readout network.
+This is because, when connected to a test bench, we utilize the NAS as our router to access other devices on the network.
+When connected in flight configuration, we disable the NAS's router functionality and use the gondola's router instead.
+
+Next, we need to configure the SPI interface to work with the PMCCs.
+This process is different for Compute Module 5s (CM5s) as they have a different SPI driver and interfaces for the GPIO pins.
+While we are in the process of upgrading to CM5s, the current version of the readout, and thus this documentation, is designed for CM4s.
+The first step is to increase the SPI buffer size.
+This is done by appending the following to the end of the \texttt{/boot/cmdline.txt} file:
+\begin{verbatim}
+    spidev.bufsiz=65536
+\end{verbatim}
+This sets the SPI buffer size to 64KB which is the maximum size to support the burst readout of the PMCCs.
+For loading on boot, we need to add the SPI device to the \texttt{/etc/modules} file.
+This is done by adding the following line to the file:
+\begin{verbatim}
+    spi_bcm2835
+\end{verbatim}
+Each of the CM4s will control up to four PMCCs, so we need to enable unique SPI busses for each PMCC.
+This is done on the \texttt{/boot/config.txt} file by adding the following lines:
+\begin{verbatim}
+    dtoverlay=spi0-1cs
+    dtoverlay=spi3-1cs
+    dtoverlay=spi4-1cs
+    dtoverlay=spi5-1cs
+\end{verbatim}
+This enables the SPI0, SPI3, SPI4, and SPI5 busses on the CM4.
+While we could, in theory, only use two SPI busses and use the chip select lines to control two PMCCs on each bus, we decided to use a single chip select line for each PMCC to simplify the wiring harness and ensure our bandwidth is not saturated.
+
+At this point, it is a good idea to reboot the CM4 to ensure that all changes have taken effect.
+To verify the SPI busses are enabled, we check the \texttt{/dev} directory for the SPI devices which should be \texttt{/dev/spidevX.0} where \texttt{X} is the SPI bus number (0, 3, 4, or 5).
+After rebooting and verifying the SPI has been set up, we recommend connecting the CM4 to the internet through a wireless hotspot in order to install the necessary libraries.
+The first library we need to install is the pigpio.
+This is a library that allows us to control the GPIO pins on the CM4 without needing root access.
+To install the pigpio library, we need to run the following commands:
+\begin{verbatim}
+    sudo apt-get update
+    sudo apt-get install pigpio
+\end{verbatim}
+After installing the pigpio library, we need to enable the pigpio daemon to run on boot.
+This is done by running the following command:
+\begin{verbatim}
+    sudo systemctl enable pigpiod
+\end{verbatim}
+
+Finally, we need to install the actual Python packages that we will use to control the PMCC.
+First we need to clone the \texttt{PyMCC} repository from GitHub.
+This is done by running the following command:
+\begin{verbatim}
+    git clone https://github.com/asthros/pymcc.git
+\end{verbatim}
+Because this is a private repository, you will need to enter your GitHub username and personal access token.
+You will need to generate a personal access token on GitHub and use that as your password when prompted.
+After cloning the repository, we need to install the Python packages.
+This is done by running the following command:
+\begin{verbatim}
+    pip3 install -r pymcc/requirements.txt
+\end{verbatim}
+This will install all the necessary packages to run the \texttt{PyMCC} package.
+
+Finally, we need to edit the hosts file on the CM4 to ensure that we can access the other devices on the readout network by name.
+This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{readout/app:hosts}.
+
 \chapter{ASTHROS Network Addresses}
 Lorem those ipsums
 \label{readout/app:hosts}

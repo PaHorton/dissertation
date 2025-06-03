@@ -1,100 +1,92 @@
 \chapter[ASTHROS Payload Readout System Design]{ASTHROS Payload Readout System Design}
 \label{ch:readout}
 ASTHROS, the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths, is a balloon-borne observatory designed to study the universe in the submillimeter wavelength range.
-The readout system is responsible for controlling the detectors, reading out the data, and storing the data on a solid state drive.
+This chapter describes the design and implementation of the ASTHROS payload readout system, which is responsible for controlling the detectors, reading out the data, and storing the data on a solid state drive.
+Additionally, the readout system is responsible for communicating with the gondola system which sends commands to the payload and receives data from the payload to send to the ground control system.
+In addition to reading out from our detectors, the readout system communicates with other hardware on the payload, such as the power supply units and antenna systems, to monitor their status and control their operation.
 The readout system is designed to be modular and scalable, allowing for easy integration of new detectors and readout systems.
 Each package is designed to be self-contained, focusing on a single device in the readout system, so that changes to the hardware can be made without affecting the rest of the system.
 
 The primary function of this chapter is to describe the readout system in excruciating detail so future users can understand how every part of ASTHROS works as well as the design decisions made during the development of the system.
 While this is not a traditional chapter in the dissertation sense, it is an important part of the work done during my research and documenting the system is vital to the success of the project.
-This chapter starts with a section on the overall network architecture of 
-TODO:
+Without developing a readout system, my on-board autonomy work in Chapter \ref{ch:spectra} would have nowhere to run and no data to process.
+
+\section{Introduction}
+The ASTHROS payload readout system is a fully modular network of subsystems that communicate with each other over a RabbitMQ network.
+Each piece of hardware on the payload had custom drivers developed to wrap the native interface of the hardware in a common structure so all devices on the network can communicate with each other with a common protocol.
+At the tradeoff of a more complexity during initial development, this design allows for easier intrgration of new devices and subsystems into the readout network.
+
+This chapter is divided into several sections that describe the design and implementation of the readout system.
+The network architecture of the readout system is described first, including the devices and subsystems that make up the network.
+Details are provided about the processes running on each device and how they communicate with each other.
+For the Raspberry Pi Compute Module 4, the process of setting up the device to run the readout system is detailed, including the necessary packages and libraries that need to be installed, as this system is often used in a standalone setting with the \texttt{PyMCC} package.
+
+Next we will describe the RabbitMQ message broker that is used to communicate between the devices on the readout network.
+This section will give an overview of how RabbitMQ works and how it is used in the ASTHROS readout system.
+Following that, we describe the functionality of the \texttt{RMQTools} package that we developed to simplify the process of creating publishers and subscribers to the RabbitMQ network.
+This package is used in every device on the readout network to communicate with the RabbitMQ server and send messages and receive commands.
+
+Following that, we go into detail about the modules developed to run subsystems on the readout network.
+For our science data, we detail the Pacific MicroCHIP Corporation (PMC) P19800B ASIC RF Spectrometer, or PMCC, which is the primary detector used on the ASTHROS payload and the \texttt{PyMCC} package that was developed to control the PMCCs and read out the data.
+Following that, we describe our Cryocool control system used to control the cryocooler that cools our detectors.
+Next, we describe the Antenna controls that are used to monitor the antenna temperature and control the secondary hexapod. 
+After that, we describe the Motor controls that are used to control a small stepper motor that we use to chop between the sky and a blackbody reference.
+All of these systems are controlled by a custom built Power Supply Unit (PSU) whose functionality we wrapped to allow us to control over the network.
+And finally, we describe the Variable Attenuators in both their hardware design and the firmware used to control them.
+
+Following all of this, we describe two of the harmonizing moudles that are used in the ASTHROS readout system.
+The first is Housekeeping which combines status messages from all of the previous moudles and sends them to the ground control system.
+The second is the Central Command module which is used to send commands to the devices on the readout network and receive responses from them.
+Finally, we conclude with a summer of next steps for the system and the plan for integration of Chatper \ref{ch:spectra} with the readout system on the Analysis computer. 
+
 \section{Network Architecture}
-TODO:
-\subsection{Command}
-TODO:
-\subsection{Storage}
-TODO:
-\subsection{Analysis}
-TODO:
-\subsection{Raspberry Pi Compute Module 4}
-From a fresh install of Raspberry Pi OS, we need to install the necessary packages to run the readout system.
-The first step is to enable Secure Shell (SSH) so that we can remotely access the Raspberry Pi.
-This can be done in the Raspberry Pi Configuration tool by enabling SSH in the Interfaces tab.
-While we're in the interfaces tool, we can also enable SPI and Remote GPIO. 
-These are necessary to interface with the PMCC.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{figs/spectra/system.png}
+    \caption[High Level System Diagram for ASTHROS]{A high level overview of the ASTHROS Readout Network System Architecture showing the Command, Storage, and Analysis computers. The Command computer is responsible for sending commands to other processes and receiving status updates from the various publishers on the RMQ network. The Storage computer is responsible for storing all science data and telemetry data collected during the flight. The Analysis computer is responsible for analyzing the science data collected during the flight. The overview also shows some of the various subsystems and how they're connected in the network.}
+    \label{readout/fig:system}
+\end{figure}
 
-Next, we need to configure the networking interfaces. 
-\texttt{eth0} is the wired interface to the rest of the readout network. 
-We need a static IP for the CM4 to ensure that other devices on the network can easily find it.
-In the network settings at the top right of the screen, we can select "Edit Connections" under Advanced Options. 
-From there, you will see "Wired connection 1" which is the default name for the wired interface.
-Select the interface and navigate to the IPv4 Settings tab.
-Chance the method from "Automatic (DHCP)" to "Manual" and add the IP address, Netmask, and Gateway.
-For ASTHROS, we have the IP addresses of all CM4s set to \texttt{192.168.1.13X} where \texttt{X} is uniquely assigned to each CM4.
-The Netmask is set to \texttt{23} so we can access all devices on the \texttt{192.168.1.X} readout network as well as the \texttt{192.168.0.X} gondola network.
-Finally, the Gateway is set to \texttt{192.168.1.1} when attached to the gondola and \texttt{192.168.1.101} when attached to the readout network.
-This is because, when connected to a test bench, we utilize the NAS as our router to access other devices on the network.
-When connected in flight configuration, we disable the NAS's router functionality and use the gondola's router instead.
+On board, we have four main types of devices that make up the readout network.
+Figure \ref{readout/fig:system} shows a high level overview of the readout network architecture.
+The first is the command computer, a WinSystems fight computer, which is our primary command and control computer.
+It is physically connected to the power supplies, antenna, cryocooler systems, and the motor controls for the chopper.
+Each of these systems is a custom process run on the command computer and they communicate with each other over the RabbitMQ network.
+Additionally, the command computer is responsible for running the Housekeeping and Central Command modules that are used to send commands to the devices on the readout network and receive status updates from them.
+The command computer connects to the rest of the system via a wired Ethernet connection to our Storage computer's network switch.
 
-Next, we need to configure the SPI interface to work with the PMCCs.
-This process is different for Compute Module 5s (CM5s) as they have a different SPI driver and interfaces for the GPIO pins.
-While we are in the process of upgrading to CM5s, the current version of the readout, and thus this documentation, is designed for CM4s.
-The first step is to increase the SPI buffer size.
-This is done by appending the following to the end of the \texttt{/boot/cmdline.txt} file:
-\begin{verbatim}
-    spidev.bufsiz=65536
-\end{verbatim}
-This sets the SPI buffer size to 64KB which is the maximum size to support the burst readout of the PMCCs.
-For loading on boot, we need to add the SPI device to the \texttt{/etc/modules} file.
-This is done by adding the following line to the file:
-\begin{verbatim}
-    spi_bcm2835
-\end{verbatim}
-Each of the CM4s will control up to four PMCCs, so we need to enable unique SPI busses for each PMCC.
-This is done on the \texttt{/boot/config.txt} file by adding the following lines:
-\begin{verbatim}
-    dtoverlay=spi0-1cs
-    dtoverlay=spi3-1cs
-    dtoverlay=spi4-1cs
-    dtoverlay=spi5-1cs
-\end{verbatim}
-This enables the SPI0, SPI3, SPI4, and SPI5 busses on the CM4.
-While we could, in theory, only use two SPI busses and use the chip select lines to control two PMCCs on each bus, we decided to use a single chip select line for each PMCC to simplify the wiring harness and ensure our bandwidth is not saturated.
+The second type of device is the storage computer, a custom RTD Embedded Technologies PC/104 stack.
+The PC/104 form factor is a standard for embedded computers that allows for stacking of multiple boards to create a custom computer system \parencite{5731130}.
+In our configuration, the PC/104 stack consists of a main compute board, two managed network switches, three bays for solid state drives, and a power supply board.
+This gives our Storage computer the ability to connect up to 16 devices to the readout network. 
+As this computer is centrally located on the network, it hosts the RabbitMQ server that is responsible for routing messages between all the devices. 
+Like the name implies, the Storage computer is responsible for storing all of the science and housekeeping data collected during the flight.
+We utilize four 4TB solid state drives in either a RAID 5 or 10 configuration to provide a total of 12 or 8 TB of storage for the science data.
+The decision between RAID 5 and 10 is based on the our level of redundancy and storage requirements. 
+With RAID 10, we have a total of 8 TB of storage, but we can survive at least a single drive failure without losing any data.
+With RAID 5, we would have more storage at 12 TB but would only be able to survive one drive failure.
+Currently, we use a RAID 10 configuration but would be open to switching to RAID 5 if we need more storage in the future after recalculating our data rates. 
 
-At this point, it is a good idea to reboot the CM4 to ensure that all changes have taken effect.
-To verify the SPI busses are enabled, we check the \texttt{/dev} directory for the SPI devices which should be \texttt{/dev/spidevX.0} where \texttt{X} is the SPI bus number (0, 3, 4, or 5).
-After rebooting and verifying the SPI has been set up, we recommend connecting the CM4 to the internet through a wireless hotspot in order to install the necessary libraries.
-The first library we need to install is the pigpio.
-This is a library that allows us to control the GPIO pins on the CM4 without needing root access.
-To install the pigpio library, we need to run the following commands:
-\begin{verbatim}
-    sudo apt-get update
-    sudo apt-get install pigpio
-\end{verbatim}
-After installing the pigpio library, we need to enable the pigpio daemon to run on boot.
-This is done by running the following command:
-\begin{verbatim}
-    sudo systemctl enable pigpiod
-\end{verbatim}
+The Storage computer is configured as a Network Attached Storage (NAS) device that allows other computers on the network to access the data.
+This allows systems to mount the NAS and save data directly to the NAS without having to worry about the underlying storage system.
+In addition to science data, the Storage computer is also responsible for storing all of the telemetry data collected during the flight.
+As a proof of concept, we've developed an ODOO sever that uses a PostgreSQL database to store housekeeping. 
+The ODOO server allows for web-based access to the data for real time monitoring of the payload.
+This is useful in test configurations when we have easy access networking to ASTHROS and can load the ODOO web application on connected devices.
+ODOO has workers that are configured as subscribers to the RabbitMQ network and will receive messages from various sources and route them to the correct database tables.
 
-Finally, we need to install the actual Python packages that we will use to control the PMCC.
-First we need to clone the \texttt{PyMCC} repository from GitHub.
-This is done by running the following command:
-\begin{verbatim}
-    git clone https://github.com/asthros/pymcc.git
-\end{verbatim}
-Because this is a private repository, you will need to enter your GitHub username and personal access token.
-You will need to generate a personal access token on GitHub and use that as your password when prompted.
-After cloning the repository, we need to install the Python packages.
-This is done by running the following command:
-\begin{verbatim}
-    pip3 install -r pymcc/requirements.txt
-\end{verbatim}
-This will install all the necessary packages to run the \texttt{PyMCC} package.
+The third system is the Analysis computer, an NVIDIA Jetson based system that is responsible for analyzing the science data collected during the flight.
+The Analysis computer is connected to the Storage computer via a wired Ethernet connection and is responsible for running the on-board autonomy system that processes the science data and sends it to the ground control system.
+Currently, the Analysis computer is our least developed system as we are still working on integrating the on-board autonomy system with the readout network.
+The final system will mount the NAS and connect to the ODOO server to review a queue of science data that needs to be processed.
+Details for implementation of the on-board autonomy system are described later in Section \ref{readout/section:future}.
 
-Finally, we need to edit the hosts file on the CM4 to ensure that we can access the other devices on the readout network by name.
-This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{readout/app:hosts}.
+Finally, we have the Raspberry Pi Compute Module 4s (CM4s) that are used to control the PMCCs. 
+Each CM4 is connected to up to four PMCCs via SPI and is responsible for reading out the data from the PMCCs and saving it to the Storage computer through the NAS mount.
+We do not send our raw data through the RabbitMQ network in order to reduce the load on the system for non control critical data. 
+The CM4s are connected to the Storage computer via a wired Ethernet connection and communicate with the RabbitMQ server to send status updates and receive commands.
+These CM4s are often used in the lab independently of the rest of the readout network.
+As such, we have included a guide on how to setup a CM4 in Appendix \ref{readout/app:cm4_setup}.
 
 \section{RabbitMQ}
 \label{readout/section:rmqtools}
@@ -1140,6 +1132,106 @@ This is returned in the rmqtools wrapper to be packaged and sent back to the sen
 
 After defining all of these functions, we simply run \texttt{rmq.start()} to start the threads and begin listening for commands.
 
+\section{Antenna}
+ASTHROS flys with a 2.5m diameter antenna to collect far-infrared light. 
+The antenna and the structure surrounding it have built in heaters and temperature sensors to ensure the antenna is at the correct temperature during flight.
+Additionally the secondary hexapod mirror is affixed above the antenna and can be moved to adjust the focus of the telescope.
+The antenna and hexapod are controlled by an on board computer embedded in the structure of the telescope.
+This computer is connected directly to the central command computer via RS-485 as well as broadly to the rest of the system via Ethernet through the readout network.
+
+The \texttt{antenna} package includes the \texttt{antenna} module that contains the \texttt{Antenna} class which is used for all communication with the computer controlling the antenna.
+The \texttt{Antenna} class is initialized with a configuration file that contains the connection parameters for the RS-485 connection as well as a path to a YAML file that contains the register configuration for the antenna.
+This YAML file outlines the registers on the antenna as shown in Table \ref{readout/table:antenna_regs}.
+
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{l|l|X}
+        \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
+        \texttt{INFO} & str & Description of the register \\
+        \texttt{FIELDS} & list & List of the fields contained in the register \\
+        \texttt{STRUCT} & str & Struct format string for the register to split into fields \\
+        \texttt{R} & int & Register read address (optional for write only addresses)\\
+        \texttt{W} & int & Register write address (optional for read only addresses)\\
+    \end{tabularx}
+    \caption{Antenna Register Configuration Parameters for a Single Register}
+    \label{readout/table:antenna_regs}
+\end{table}
+
+At the bottom of the YAML file are arrays for \texttt{ALARMS} and \texttt{NACK} errors. 
+In the case that we recieve an error from the antenna, we can check the error code against the \texttt{ALARMS} and \texttt{NACK} arrays to determine the error.
+
+For communication with the antenna, our most bare-bones method is the \texttt{decode\_read()} method which reads whatever is in the serial buffer and returns the byte array.
+It accomplishes this by reading the first four bytes of the buffer to determine the length of the message in the header. 
+It then reads the message from the buffer plus the checksum and returns the header plus the message as a byte array.
+This method is used primarily in \texttt{command()} which is used to send read and write commands to the antenna.
+This method takes a \texttt{message\_id}, \texttt{payload} and \texttt{encoding} for the payload.
+The payload is a dictionary matching the \texttt{FIELDS} in the register configuration file for writes. 
+The method then uses \texttt{encode\_frame()} to encode the message and add the checksum.
+If any of the data in the payload is in the wrong format, we cast it to the correct format based on the encoding using \texttt{fix\_payload()}.
+For the checksum, the antenna utilizes a CRC-16 CCITT checksum with a precomputed lookup table computed table \parencite{koopman2004cyclic}.
+The process for calculating the checksum is as follows:
+\begin{enumerate}
+    \item Initialize the checksum to 0xFFFF.
+    \item For each \texttt{byte} in the message, use the following equation:
+    \begin{equation}
+        \texttt{crc = ((crc < < 8 ) XOR table[(crc > > 8 ) XOR byte])}
+    \end{equation}
+    \item To keep the checksum as a 16 bit integer, mask the checksum with \texttt{0xFFFF}.
+    \item After iterating through all the bytes in the message, the checksum is the final value.
+\end{enumerate}
+After a request byte array is created, the method writes the request using the serial buffer and then uses \texttt{decode\_read()} to read the response from the antenna.
+Similar to \texttt{encode\_frame()} we have a decode frame that takes in a byte array and the encoding for the payload.
+During decoding, we check the checksum of the message and return the payload if the checksum is correct.
+In the case of an error from the antenna, we unpack the message as bytes and return the error message.
+
+With \texttt{command()} in place, we have implemented the user facing methods for the \texttt{Antenna} class.
+These methods are \texttt{read\_reg()}, \texttt{read\_all()}, \texttt{write\_reg()} and \texttt{read\_write\_reg()}.
+\texttt{read\_reg()} takes in a register label and reads the register from the antenna.
+It checks if the register has a read address and then calls \texttt{command()} to read the register.
+We then map the fields in the register to the values in the response and return 0 and a dictionary of the fields and values.
+If the message is an error, we check the error against the \texttt{NACK} table and return 1 and the error message.
+\texttt{read\_all()} simply iterates over all of the registers in the configuration file, checks if the register has a read address, and then runs \texttt{read\_reg()}.
+
+\texttt{write\_reg()} is used to write to a register on the antenna.
+The method takes in a register label and fields as keyword arguments (\texttt{kwargs}) to write to the register.
+After checking that the label exists and the register has a write address, the method creates a payload dictionary. 
+First, we check if the \texttt{default}  was passed to the method, giving us a default value for any fields not passed.
+Then we iterate through all of the fields in the register, checking if they're in the fields passed to the method and adding them to the payload.
+If a field is missing from the \texttt{kwargs} it will be set to the default value if provided or raise an exception. 
+Once the payload is created, we call the \texttt{command()} method to write the register and return the response or error message if necessary. 
+
+Finally, \texttt{read\_write\_reg()} is used to read and write to a register on the antenna.
+This is primarily used to make changes to a specific field in a register without changing the other fields.
+The method takes in a register label and \texttt{kwargs} for any fields to write to the register.
+The method first reads the register using \texttt{read\_reg()} and then updates the fields in the register with the fields passed to the method.
+After updating the fields, the method calls \texttt{write\_reg()} to write the register back to the antenna, returning the response. 
+
+\subsection{RabbitMQ Control Loop}
+For the antenna's main control loop, we utilize \texttt{rmqtools} to manage sending housekeeping at regular intervals and handling commands from other parts of the network.
+We load the configuration file and separate the antenna configuration from the RabbitMQ configuration.
+We then create and configure \texttt{Antenna} and \texttt{RmqConnection} objects and start the main loop.
+Much like other control loops, we define a \texttt{PriorityLock} and will be utilizing this to prevent collisions when communicating with the antenna. 
+
+For status publishing, we define a \texttt{antenna\_status()} function that is decorated with \texttt{rmq.publish\_status()} at a 15 second interval and the lowest level of priority lock. 
+\texttt{antenna.read\_all()} is called and the response is wrapped with the status of the command as well as the time of the response for time harmonization.
+If any error occurs when reading the values, the status is set to 1 and the error message is returned in place of the data.
+These values are sent to \texttt{housekeeping.antenna} on the status exchange.
+
+Unlike other systems, we also have a \texttt{antenna\_position()} function that provides a higher temporal resolution status of just the antenna position.
+This is decorated with \texttt{rmq.publish\_status()} at a 1 second interval and the lowest level of priority lock.
+This function calls \texttt{antenna.read\_reg()} twice with \texttt{ELEVATION\_MEAS} and \texttt{HEXA\_POS\_REAL} to obtain the elevation and position of the hexapod. 
+These values are packaged handled exactly like the \texttt{antenna\_status()} function and published to the status exchange with the queue name \texttt{pointing.antenna} on the status exchange.
+
+Finally, we define a \texttt{antenna\_command()} function that is decorated with \texttt{rmq.handle\_command()} with the \texttt{antenna.command} key and a priority lock of 1 to prioritize it over status and pointing publishing. 
+To expose the methods in the \texttt{Antenna} class, we define a set of commands that can be sent to the antenna: 
+\begin{itemize}
+    \item \texttt{read} - Reads a specific register based on an ID label in the configuration file.
+    \item \texttt{write} - Writes to a specific register using the ID label in the configuration file and keyword arguments for the fields to write.
+    \item \texttt{read\_write} - Performs a read and write on a specific register using the ID label in the configuration file and keyword arguments for the fields to write, falling back to the read values if not provided.
+    \item \texttt{specsheet} - Returns a listing of all of the registers in the configuration file along with their descriptions and ability to read and write. Useful when you forget the label of a register.
+\end{itemize}
+The response from these commands is packed as a \texttt{ResponseObject} and sent back to the sender as a response.
+
 \section{Motor}
 Behind the antenna is a small stepper motor used to chop between the sky and the internal calibration source.
 This motor is controlled using the intelligent motion systems MDrive Motion Control System \parencite{mdrive}.
@@ -1272,106 +1364,6 @@ The command parses the command string from the RPC execution and matches it to o
     \item \texttt{status} - Receives the status of the motor from \texttt{motor.status()}
 \end{itemize}
 The response from the command is packaged as a \texttt{ResponseObject} and returned from the function to be handled by the \texttt{rmqtools} package to return to the sender. 
-
-\section{Antenna}
-ASTHROS flys with a 2.5m diameter antenna to collect far-infrared light. 
-The antenna and the structure surrounding it have built in heaters and temperature sensors to ensure the antenna is at the correct temperature during flight.
-Additionally the secondary hexapod mirror is affixed above the antenna and can be moved to adjust the focus of the telescope.
-The antenna and hexapod are controlled by an on board computer embedded in the structure of the telescope.
-This computer is connected directly to the central command computer via RS-485 as well as broadly to the rest of the system via Ethernet through the readout network.
-
-The \texttt{antenna} package includes the \texttt{antenna} module that contains the \texttt{Antenna} class which is used for all communication with the computer controlling the antenna.
-The \texttt{Antenna} class is initialized with a configuration file that contains the connection parameters for the RS-485 connection as well as a path to a YAML file that contains the register configuration for the antenna.
-This YAML file outlines the registers on the antenna as shown in Table \ref{readout/table:antenna_regs}.
-
-\begin{table}
-    \centering
-    \begin{tabularx}{\textwidth}{l|l|X}
-        \textbf{Key} & \textbf{Type} & \textbf{Description} \\ \hline    
-        \texttt{INFO} & str & Description of the register \\
-        \texttt{FIELDS} & list & List of the fields contained in the register \\
-        \texttt{STRUCT} & str & Struct format string for the register to split into fields \\
-        \texttt{R} & int & Register read address (optional for write only addresses)\\
-        \texttt{W} & int & Register write address (optional for read only addresses)\\
-    \end{tabularx}
-    \caption{Antenna Register Configuration Parameters for a Single Register}
-    \label{readout/table:antenna_regs}
-\end{table}
-
-At the bottom of the YAML file are arrays for \texttt{ALARMS} and \texttt{NACK} errors. 
-In the case that we recieve an error from the antenna, we can check the error code against the \texttt{ALARMS} and \texttt{NACK} arrays to determine the error.
-
-For communication with the antenna, our most bare-bones method is the \texttt{decode\_read()} method which reads whatever is in the serial buffer and returns the byte array.
-It accomplishes this by reading the first four bytes of the buffer to determine the length of the message in the header. 
-It then reads the message from the buffer plus the checksum and returns the header plus the message as a byte array.
-This method is used primarily in \texttt{command()} which is used to send read and write commands to the antenna.
-This method takes a \texttt{message\_id}, \texttt{payload} and \texttt{encoding} for the payload.
-The payload is a dictionary matching the \texttt{FIELDS} in the register configuration file for writes. 
-The method then uses \texttt{encode\_frame()} to encode the message and add the checksum.
-If any of the data in the payload is in the wrong format, we cast it to the correct format based on the encoding using \texttt{fix\_payload()}.
-For the checksum, the antenna utilizes a CRC-16 CCITT checksum with a precomputed lookup table computed table \parencite{koopman2004cyclic}.
-The process for calculating the checksum is as follows:
-\begin{enumerate}
-    \item Initialize the checksum to 0xFFFF.
-    \item For each \texttt{byte} in the message, use the following equation:
-    \begin{equation}
-        \texttt{crc = ((crc < < 8 ) XOR table[(crc > > 8 ) XOR byte])}
-    \end{equation}
-    \item To keep the checksum as a 16 bit integer, mask the checksum with \texttt{0xFFFF}.
-    \item After iterating through all the bytes in the message, the checksum is the final value.
-\end{enumerate}
-After a request byte array is created, the method writes the request using the serial buffer and then uses \texttt{decode\_read()} to read the response from the antenna.
-Similar to \texttt{encode\_frame()} we have a decode frame that takes in a byte array and the encoding for the payload.
-During decoding, we check the checksum of the message and return the payload if the checksum is correct.
-In the case of an error from the antenna, we unpack the message as bytes and return the error message.
-
-With \texttt{command()} in place, we have implemented the user facing methods for the \texttt{Antenna} class.
-These methods are \texttt{read\_reg()}, \texttt{read\_all()}, \texttt{write\_reg()} and \texttt{read\_write\_reg()}.
-\texttt{read\_reg()} takes in a register label and reads the register from the antenna.
-It checks if the register has a read address and then calls \texttt{command()} to read the register.
-We then map the fields in the register to the values in the response and return 0 and a dictionary of the fields and values.
-If the message is an error, we check the error against the \texttt{NACK} table and return 1 and the error message.
-\texttt{read\_all()} simply iterates over all of the registers in the configuration file, checks if the register has a read address, and then runs \texttt{read\_reg()}.
-
-\texttt{write\_reg()} is used to write to a register on the antenna.
-The method takes in a register label and fields as keyword arguments (\texttt{kwargs}) to write to the register.
-After checking that the label exists and the register has a write address, the method creates a payload dictionary. 
-First, we check if the \texttt{default}  was passed to the method, giving us a default value for any fields not passed.
-Then we iterate through all of the fields in the register, checking if they're in the fields passed to the method and adding them to the payload.
-If a field is missing from the \texttt{kwargs} it will be set to the default value if provided or raise an exception. 
-Once the payload is created, we call the \texttt{command()} method to write the register and return the response or error message if necessary. 
-
-Finally, \texttt{read\_write\_reg()} is used to read and write to a register on the antenna.
-This is primarily used to make changes to a specific field in a register without changing the other fields.
-The method takes in a register label and \texttt{kwargs} for any fields to write to the register.
-The method first reads the register using \texttt{read\_reg()} and then updates the fields in the register with the fields passed to the method.
-After updating the fields, the method calls \texttt{write\_reg()} to write the register back to the antenna, returning the response. 
-
-\subsection{RabbitMQ Control Loop}
-For the antenna's main control loop, we utilize \texttt{rmqtools} to manage sending housekeeping at regular intervals and handling commands from other parts of the network.
-We load the configuration file and separate the antenna configuration from the RabbitMQ configuration.
-We then create and configure \texttt{Antenna} and \texttt{RmqConnection} objects and start the main loop.
-Much like other control loops, we define a \texttt{PriorityLock} and will be utilizing this to prevent collisions when communicating with the antenna. 
-
-For status publishing, we define a \texttt{antenna\_status()} function that is decorated with \texttt{rmq.publish\_status()} at a 15 second interval and the lowest level of priority lock. 
-\texttt{antenna.read\_all()} is called and the response is wrapped with the status of the command as well as the time of the response for time harmonization.
-If any error occurs when reading the values, the status is set to 1 and the error message is returned in place of the data.
-These values are sent to \texttt{housekeeping.antenna} on the status exchange.
-
-Unlike other systems, we also have a \texttt{antenna\_position()} function that provides a higher temporal resolution status of just the antenna position.
-This is decorated with \texttt{rmq.publish\_status()} at a 1 second interval and the lowest level of priority lock.
-This function calls \texttt{antenna.read\_reg()} twice with \texttt{ELEVATION\_MEAS} and \texttt{HEXA\_POS\_REAL} to obtain the elevation and position of the hexapod. 
-These values are packaged handled exactly like the \texttt{antenna\_status()} function and published to the status exchange with the queue name \texttt{pointing.antenna} on the status exchange.
-
-Finally, we define a \texttt{antenna\_command()} function that is decorated with \texttt{rmq.handle\_command()} with the \texttt{antenna.command} key and a priority lock of 1 to prioritize it over status and pointing publishing. 
-To expose the methods in the \texttt{Antenna} class, we define a set of commands that can be sent to the antenna: 
-\begin{itemize}
-    \item \texttt{read} - Reads a specific register based on an ID label in the configuration file.
-    \item \texttt{write} - Writes to a specific register using the ID label in the configuration file and keyword arguments for the fields to write.
-    \item \texttt{read\_write} - Performs a read and write on a specific register using the ID label in the configuration file and keyword arguments for the fields to write, falling back to the read values if not provided.
-    \item \texttt{specsheet} - Returns a listing of all of the registers in the configuration file along with their descriptions and ability to read and write. Useful when you forget the label of a register.
-\end{itemize}
-The response from these commands is packed as a \texttt{ResponseObject} and sent back to the sender as a response.
 
 \section{Power Supply Unit}
 On ASTHROS, we use custom Smart Power Supply Units (PSU) to provide power to almost every component on the readout system.
@@ -1945,3 +1937,29 @@ This occurs as we have multiple CM4s on the gondola, each with their own spectro
 To handle this, we place a \texttt{PriorityLock} on the response handler for the command so that only one command is executed at a time.
 Each command updates a response dictionary with the response from the command, which harmonizes the responses into a single dictionary.
 This allows us the end user to transparently communicate with multiple spectrometer systems at once without having to worry about the underlying implementation.
+
+\section{Future Work}
+One of the final steps in the readout system is to implement the functionaly for on-board analysis and anomaly detection.
+When the spectrometers finish an HDF5 file, it is flagged in the ODOO database for processing.
+Currently, we have scripts built out that take the timestamps from the HDF5 file and harmonize them with data queried from the ODOO database from that time period.
+The data is then inerpolated and processed to create a Level 1 data product that can be used for analysis.
+A single test was done before ASTHROS was packed up generating a Level 1 data product from the HDF5 file and the ODOO database.
+The results were promising, but due to an error in how we stored the timestamps in the HDF5 file, we were unable to properly align the data with the temporal precision necessary for mapmaking.
+With further testing of the readout system and the gondola system, we will be able to refine the process and ensure that the data is properly aligned for analysis.
+
+For Level 2 data products, we plan to chop and smooth the data to reduce the overall size of the files for downlinking and analysis. 
+We are still working on discussing appropriate signal to noise ratios (SNR) for the snapshot data products, but methods to perform this are already implemented. 
+Both the Level 1 and Level 2 data product prototypes have been created but not fully implemented in the readout system as an automated process on the Analysis computer. 
+The Level 2 data would then be downlinked to the ground station for further analysis and archiving.
+This allows us to create maps while the flight is still ongoing, allowing us to quickly identify any issues with the data and make adjustments as necessary.
+
+Another feature for the Analysis computer is to implement a system that can detect anomalies in the data.
+The theory behind our approach is outlined in \ref{ch:spectra} but we have not yet implemented the system in the readout pipeline.
+The information we recieve from the gondola is not sufficient in determing which spectra are ON and OFF measurements, so work will need to be done in conjunction with the gondola systems team to ensure we have the necessary information to perform the anomaly detection.
+We could, in theory, perform the anomaly detection on every spectra, regardless of whether it is an ON or OFF measurement, but this would result in a lot of false positives and would not be useful for mission operations.
+Calculating just on the OFF measurements would produce anomaly scores that are the most useful for mission operations as these calibration measurements will likely be the most stable as they are not dependent on the target being observed.
+
+Finally, there is a good deal of polishing that needs to be done once all of the readout systems are implemented with the gondola systems.
+The two systems were developed with an agreed upon interface but there are still some discrepancies that need to be resolved.
+Given the changes to the gondola, we may be starting from scratch with the gondola systems team, but the readout system will remain the same.
+This actually gives us more flexibility in how we integrate the readout system with the gondola system as we can have more control over the interface and between the two systems.
