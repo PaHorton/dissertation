@@ -14,7 +14,7 @@ Without developing a readout system, my on-board autonomy work in Chapter \ref{c
 \section{Introduction}
 The ASTHROS payload readout system is a fully modular network of subsystems that communicate with each other over a RabbitMQ network.
 Each piece of hardware on the payload had custom drivers developed to wrap the native interface of the hardware in a common structure so all devices on the network can communicate with each other with a common protocol.
-At the trade off of a more complexity during initial development, this design allows for easier intrgration of new devices and subsystems into the readout network.
+At the trade off of a more complexity during initial development, this design allows for easier integration of new devices and subsystems into the readout network.
 
 This chapter is divided into several sections that describe the design and implementation of the readout system.
 The network architecture of the readout system is described first, including the devices and subsystems that make up the network.
@@ -34,8 +34,8 @@ After that, we describe the Motor controls that are used to control a small step
 All of these systems are controlled by a custom built Power Supply Unit (PSU) whose functionality we wrapped to allow us to control over the network.
 And finally, we describe the Variable Attenuators in both their hardware design and the firmware used to control them.
 
-Following all of this, we describe two of the harmonizing moudles that are used in the ASTHROS readout system.
-The first is Housekeeping which combines status messages from all of the previous moudles and sends them to the ground control system.
+Following all of this, we describe two of the harmonizing modules that are used in the ASTHROS readout system.
+The first is Housekeeping which combines status messages from all of the previous modules and sends them to the ground control system.
 The second is the Central Command module which is used to send commands to the devices on the readout network and receive responses from them.
 Finally, we conclude with a summer of next steps for the system and the plan for integration of Chapter \ref{ch:spectra} with the readout system on the Analysis computer. 
 
@@ -82,7 +82,7 @@ The final system will mount the NAS and connect to the ODOO server to review a q
 Details for implementation of the on-board autonomy system are described later in Section \ref{readout/section:future}.
 
 Finally, we have the Raspberry Pi Compute Module 4s (CM4s) that are used to control the PMCCs. 
-Each CM4 is connected to up to four PMCCs via SPI and is responsible for reading out the data from the PMCCs and saving it to the Storage computer through the NAS mount.
+Each CM4 is physically connected to up to four PMCCs via SPI and is responsible for reading out the data from the PMCCs and saving it to the Storage computer through the NAS mount.
 We do not send our raw data through the RabbitMQ network in order to reduce the load on the system for non control critical data. 
 The CM4s are connected to the Storage computer via a wired Ethernet connection and communicate with the RabbitMQ server to send status updates and receive commands.
 These CM4s are often used in the lab independently of the rest of the readout network.
@@ -1939,12 +1939,12 @@ Each command updates a response dictionary with the response from the command, w
 This allows us the end user to transparently communicate with multiple spectrometer systems at once without having to worry about the underlying implementation.
 
 \section{Future Work}
-One of the final steps in the readout system is to implement the functionaly for on-board analysis and anomaly detection.
+One of the final steps in the readout system is to implement the functionality for on-board analysis and anomaly detection.
 When the spectrometers finish an HDF5 file, it is flagged in the ODOO database for processing.
 Currently, we have scripts built out that take the timestamps from the HDF5 file and harmonize them with data queried from the ODOO database from that time period.
-The data is then inerpolated and processed to create a Level 1 data product that can be used for analysis.
+The data is then interpolated and processed to create a Level 1 data product that can be used for analysis.
 A single test was done before ASTHROS was packed up generating a Level 1 data product from the HDF5 file and the ODOO database.
-The results were promising, but due to an error in how we stored the timestamps in the HDF5 file, we were unable to properly align the data with the temporal precision necessary for mapmaking.
+The results were promising, but due to an error in how we stored the timestamps in the HDF5 file, we were unable to properly align the data with the temporal precision necessary for map making.
 With further testing of the readout system and the gondola system, we will be able to refine the process and ensure that the data is properly aligned for analysis.
 
 For Level 2 data products, we plan to chop and smooth the data to reduce the overall size of the files for downlinking and analysis. 
@@ -1955,9 +1955,15 @@ This allows us to create maps while the flight is still ongoing, allowing us to 
 
 Another feature for the Analysis computer is to implement a system that can detect anomalies in the data.
 The theory behind our approach is outlined in \ref{ch:spectra} but we have not yet implemented the system in the readout pipeline.
-The information we recieve from the gondola is not sufficient in determing which spectra are ON and OFF measurements, so work will need to be done in conjunction with the gondola systems team to ensure we have the necessary information to perform the anomaly detection.
+The information we receive from the gondola is not sufficient in determining which spectra are ON and OFF measurements, so work will need to be done in conjunction with the gondola systems team to ensure we have the necessary information to perform the anomaly detection.
 We could, in theory, perform the anomaly detection on every spectra, regardless of whether it is an ON or OFF measurement, but this would result in a lot of false positives and would not be useful for mission operations.
 Calculating just on the OFF measurements would produce anomaly scores that are the most useful for mission operations as these calibration measurements will likely be the most stable as they are not dependent on the target being observed.
+
+In addition to analysis steps, there are calibration tasks left to be done with the PMCCs.
+Currently, we are using the manufacturer suggested default settings for the spectrometers and they perform well for most of our science goals.
+However, if we were to read out these spectrometers at a much faster rate, it would unlock new ways for us to collect data and help our overall commissioning after launch.
+We can achieve these data rates by limiting the number of channels in the spectrometer to integrate at a lower spectral resolution but with a higher temporal bandwidth. 
+Because of how we designed the \texttt{PyMCC} module, these changes can be easily made in the configuration file for both testing and generation of mode specific configs.
 
 Finally, there is a good deal of polishing that needs to be done once all of the readout systems are implemented with the gondola systems.
 The two systems were developed with an agreed upon interface but there are still some discrepancies that need to be resolved.
