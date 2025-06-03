@@ -14,7 +14,7 @@ Without developing a readout system, my on-board autonomy work in Chapter \ref{c
 \section{Introduction}
 The ASTHROS payload readout system is a fully modular network of subsystems that communicate with each other over a RabbitMQ network.
 Each piece of hardware on the payload had custom drivers developed to wrap the native interface of the hardware in a common structure so all devices on the network can communicate with each other with a common protocol.
-At the tradeoff of a more complexity during initial development, this design allows for easier intrgration of new devices and subsystems into the readout network.
+At the trade off of a more complexity during initial development, this design allows for easier intrgration of new devices and subsystems into the readout network.
 
 This chapter is divided into several sections that describe the design and implementation of the readout system.
 The network architecture of the readout system is described first, including the devices and subsystems that make up the network.
@@ -37,7 +37,7 @@ And finally, we describe the Variable Attenuators in both their hardware design 
 Following all of this, we describe two of the harmonizing moudles that are used in the ASTHROS readout system.
 The first is Housekeeping which combines status messages from all of the previous moudles and sends them to the ground control system.
 The second is the Central Command module which is used to send commands to the devices on the readout network and receive responses from them.
-Finally, we conclude with a summer of next steps for the system and the plan for integration of Chatper \ref{ch:spectra} with the readout system on the Analysis computer. 
+Finally, we conclude with a summer of next steps for the system and the plan for integration of Chapter \ref{ch:spectra} with the readout system on the Analysis computer. 
 
 \section{Network Architecture}
 \begin{figure}
