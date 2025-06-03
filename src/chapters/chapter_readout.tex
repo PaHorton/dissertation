@@ -97,7 +97,7 @@ Devices in such a system often use User Datagram Protocol (UDP) to broadcast mes
 This approach requires each device to listen for messages on a specific port and parse the messages to determine if they are intended for that device.
 For systems that require multiple devices to communicate with each other, this can become cumbersome as each device must be aware of the other devices on the network and the ports they are listening on.
 Additionally, UDP is a connectionless protocol, meaning that there is no guarantee that a message will be received by the intended recipient.
-To work around this, some ballooning readout systems would be built as a single monolithic program that orchestrates all the devices on the network \parencite{gordon2019highly}.
+To work around this, the BLAST readout systems was built as a single monolithic program that orchestrates all the devices on the network.
 This approach is not scalable and makes it difficult to debug and maintain the system.
 
 For ASTHROS, we wanted to build a system that was modular, consisting of microservices that can easily be integrated into the rest of the system using a shared protocol.
@@ -1939,6 +1939,7 @@ Each command updates a response dictionary with the response from the command, w
 This allows us the end user to transparently communicate with multiple spectrometer systems at once without having to worry about the underlying implementation.
 
 \section{Future Work}
+\label{readout/section:future}
 One of the final steps in the readout system is to implement the functionality for on-board analysis and anomaly detection.
 When the spectrometers finish an HDF5 file, it is flagged in the ODOO database for processing.
 Currently, we have scripts built out that take the timestamps from the HDF5 file and harmonize them with data queried from the ODOO database from that time period.
