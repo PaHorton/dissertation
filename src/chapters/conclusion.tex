@@ -1,24 +1,24 @@
 \chapter{Conclusions and Future Work}
 \label{ch:conclusion}
-The title of my dissertation is the "Development, Implementation, and Impacts of the Novelty Detection Systems for Mission Operations" and I wanted to take the opportunity to summarize the key findings my dissertation and discuss future work that can be done in support of this title. 
-I will start with Development. 
-Start with Chapter \ref{ch:msl}, we discuss how to take already existing systems for multispectral image novelty detection, improve and operationalize them, and then apply them to the Mars Science Laboratory's mission operation workflow.
-The next chapter, Chapter \ref{ch:rst} builds off this by adding a new dimension to our novelty detection system by adding a temporal component in the form of a time series of frames over an exposure.
-Unlike the MSL novelty detection system, I had the pleasure to work directly with the Integration and Testing Science Data Processing team at Goddard Space Flight Center to develop the system in a way that integrates with their analysis pipeline.
-Following that, we begin to discuss the smallest project I worked on, but largest impact I had throughout my Ph.D, ASTHROS. 
+The title of my dissertation is  "Development, Implementation, and Impacts of the Novelty Detection Systems for Mission Operations," and I wanted to take the opportunity to summarize the key findings of my dissertation and discuss future work that can be done in support of this title. 
+I will begin with Development. 
+Starting with Chapter \ref{ch:msl}, we discuss how to take already existing systems for multispectral image novelty detection, improve and operationalize them, and then apply them to the Mars Science Laboratory's (MSL) mission operation workflow.
+The next chapter, Chapter \ref{ch:rst}, builds off this by adding a new dimension to our novelty detection system by adding a temporal component in the form of a time series of frames over an exposure for Roman Space Telescope (RST).
+Unlike the MSL novelty detection system, I had the pleasure of working directly with the Integration and Testing Science Data Processing team at Goddard Space Flight Center to develop the system in a way that integrates with their analysis pipeline.
+Following that, we begin to discuss the smallest project I worked on but, ironically, the largest impact I had throughout my Ph.D: the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths (ASTHROS) ballooning mission. 
 Chapter \ref{ch:spectra} discusses the development of a novelty detection system for identifying bad calibration spectra from the ASTHROS readout system.
-The development did not end there though as I quickly realized that the system needed to be fully operational before I could truly call my work implemented and accomplish the next step of my dissertation title.
+The development did not end there, though, as I quickly realized that the system needed to be fully operational before I could truly call my work implemented and accomplish the next step of my dissertation title.
 As such, I became the Software Systems Engineering Lead for the ASTHROS mission, which meant I was responsible for the development and implementation of the readout system for the ASTHROS payload.
-This is discussed in Chapter \ref{ch:readout} where I used my Software Engineering background to develop a readout system that was not only capable of reading out the data from the payload, but structured in a way that allows for easy integration with the novelty detection system I had developed in Chapter \ref{ch:spectra}.
+This is discussed in Chapter \ref{ch:readout}, where I used my Software Engineering background to develop a readout system that was not only capable of reading out the data from the payload but structured in a way that allows for easy integration with the novelty detection system I had developed in Chapter \ref{ch:spectra}.
 For me, this is the most important part of my dissertation, as it finally bridges the gap between my background as a Software Engineer and my work as a Scientist in the Exploration Systems Design program.
 
 This is further emphasized in Chapter \ref{ch:carina}, where I dive into the scientific goals of ASTHROS by analyzing data from SOFIA. 
 While the paper is written for a more science-oriented audience, I wanted to use this conclusion to discuss the importance of being both the Systems Engineer reading out the data and the Scientist analyzing it.
-By being able to understand both sides of the equation, I was able to develop a readout system that not only satisfied the engineering requirements, but also constantly kept the science goals in mind.
+By being able to understand both sides of the equation, I was able to develop a readout system that not only satisfied the engineering requirements but also constantly kept the science goals in mind.
 Doing the data analysis on SOFIA allowed me to develop new methods and scripts for analyzing the data that I can easily turn around and implement as on-board systems for ASTHROS.
 These methods can be used to provide quicker feedback to the operations team during the flight. 
 Much like analyzing multispectral images from MSL by only their RGB channels is incomplete, determining the quality spectral data before a proper map is created only gives us a partial picture of our performance.
-Systems like the one in Chapter \ref{ch:spectra} are necessary to ensure that our instrument is behaving properly but, without analysis like the one in Chapter \ref{ch:carina}, we cannot fully understand the data we are collecting.
+Systems like the one in Chapter \ref{ch:spectra} are necessary to ensure that our instrument is behaving properly, but without analysis like the one in Chapter \ref{ch:carina}, we cannot fully understand the data we are collecting.
 
 This leads me to the last part of my dissertation title, Impacts.
 While I would have loved to talk all about how my system performed during the flight of ASTHROS, that flight is still to come.
@@ -27,11 +27,11 @@ The readout system is in an operational state and is used regularly to test the 
 Once we are ready to do pre-flight testing, the novelty detection system will be used to ensure that the data we are collecting is of the highest quality.
 We have already begun theorizing how to use the novelty detection system in more ways than just identifying bad calibration spectra, such as identifying sources during commissioning and looking at telemetry data to identify potential issues with the payload before they become a problem.
 
-The future of this work is vital to the success of ASTHROS and I hope to see it through to the end.
+The future of this work is vital to the success of ASTHROS, and I hope to see it through to the end.
 As outlined at the end of Chapter \ref{ch:readout}, there are pending tasks that need to be completed before the readout system is fully operational and ready for flight.
-These final steps include integration with the gondola's flight computer, and implementing the on-board analysis systems developed in Chapter \ref{ch:spectra}.
+These final steps include integration with the gondola's flight computer and implementing the on-board analysis systems developed in Chapter \ref{ch:spectra}.
 I am excited to see how these systems come together and how they will impact the mission to be one of the most technically streamlined ballooning missions to date.
-In addition, there is work to be done to oversee, finalize, and implement the novelty detection systems for MSL and RST.
+In addition, work needs to be done to oversee, finalize, and implement the novelty detection systems for MSL and RST.
 The MSL system can be further refined to be a standalone system that can slowly be integrated into the mission operations workflow.
 This would allow mission operations time to get acquainted with the system and provide feedback on how it can be improved.
 The RST system also has room for performance improvements, such as improving the speed and performance of the system.
@@ -39,7 +39,7 @@ Methods on JWST may be able to be adapted to RST, but this is still an open area
 
 Finally, there is work to be done in terms of improving the software development process of science missions as a whole.
 The ASTHROS readout system is a prime example of how a software development process can be used to create a robust and reliable system that meets the needs of the mission.
-Many of components of the readout system are reusable and can be adapted for other missions.
-Using RabbitMQ as a framework for modularization is something that can be applied to other small scale missions and I hope to see it adopted by other missions in the future.
+Many of the components of the readout system are reusable and can be adapted for other missions.
+Using RabbitMQ as a framework for modularization is something that can be applied to other small-scale missions, and I hope to see it adopted by other missions in the future.
 Having attended conferences on scientific ballooning, I have seen and heard about the struggles that other missions have had with their readout systems.
 I hope that my work can serve as a guide for other missions to follow and that it can help improve the software development process for scientific ballooning missions as a whole.
