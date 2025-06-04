@@ -1,6 +1,6 @@
 \chapter{Introduction}
 \label{chap:introduction}
-\section{Background and Motivation}
+\section{Motivation and Background}
 Mission operations are one of the most critical aspects of any space mission.
 They involve the planning, execution, and monitoring of all activities to ensure science goals are met and the safety of the instrument is maintained.
 With more complex instruments and larger data volumes, mission operations have become increasingly challenging.
@@ -44,6 +44,7 @@ Figure \ref{intro/fig:atmosphere} shows the atmospheric opacity at various wavel
     This makes ballooning a critical component of submillimeter astronomy. NASA (original); SVG by Mysid., Public domain, via Wikimedia Commons.
     \label{intro/fig:atmosphere}
 }
+\end{figure}
 
 This higher vantage point is not without its drawbacks, however, as communication with the instrument is has limited bandwidth and latency. 
 Because of this, ballooning mission store all of their data on board the instrument and only send back samples of the data for diagnostic purposes.
@@ -76,8 +77,8 @@ Chapter \ref{ch:msl}, Data Discovery Systems for Planetary Science,  was my firs
 This work has a strong focus on background knowledge about novelty detection, as well as the development of a system to integrate novelty detection into the operations of MSL.
 This being one of the first projects I worked on, laid the foundation for my future work as I began to adapt the system for other instruments and missions.
 
-Chapter \ref{ch:rst}, Anomaly Detection for the Roman Space Telescope Wide Field Instrument's Science Data Processing Pipeline, builds on the work done in Chapter \ref{ch:msl} and focuses on the development of a system to integrate novelty detection into the integration and testing (I&T) of RST WFI.
-With the support of a NASA Space Technology Graduate Research Opportunity (NSTGRO) fellowship, I began working with the RST WFI I&T Science Data Pipeline team to develop a system that could identify snowballs and cosmic rays in their data. 
+Chapter \ref{ch:rst}, Anomaly Detection for the Roman Space Telescope Wide Field Instrument's Science Data Processing Pipeline, builds on the work done in Chapter \ref{ch:msl} and focuses on the development of a system to integrate novelty detection into the integration and testing (I\&T) of RST WFI.
+With the support of a NASA Space Technology Graduate Research Opportunity (NSTGRO) fellowship, I began working with the RST WFI I\&T Science Data Pipeline team to develop a system that could identify snowballs and cosmic rays in their data. 
 This work culminated in the publication of \cite{horton2024anomaly}, which describes our approach to identifying these anomalies. 
 
 Following that, Chapter \ref{ch:spectra}, On-Board Science Data Quality Analysis using Anomaly Detection for ASTHROS, focuses on the development of a system to integrate novelty detection into the operations of ASTHROS.
@@ -98,6 +99,6 @@ The manual outlines the design choices made during the development of the system
 For the sake of completeness, this chapter is long and detailed, as it is intended to be a standalone document that can be used by the ASTHROS team to understand how each system works and how to use it.
 
 We end with our conclusions and future work in Chapter \ref{ch:conclusion}.
-This chapter summarizes the key findings of the dissertation and discusses future work that can be done in support of the title, "Development, Implementation, and Impacts of Novelty Detection Systems for Mission Operations."
+This chapter summarizes the key findings of the dissertation and discusses to what extend we've covered the title, "Development, Implementation, and Impacts of Novelty Detection Systems for Mission Operations."
 We evaluate what each of those three components in the title means and how they relate to the work done in this dissertation.
 And finally, we discuss the future work that can be done to measure the impacts of these systems during a flight, and improve the scientific software development process as a whole.
