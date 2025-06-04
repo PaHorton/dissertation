@@ -79,16 +79,19 @@ The following are potential candidate methods for accomplishing these two tasks.
         \hline
         Principal Component Analysis (PCA) & Convolutional Neural Network (CNN)\\
         \parencite{cillis2018snowballs} & \parencite{gu2018recent} \\
-                \hline
+        \hline
+        Ordinary Least Squares (OLS) & \\
+        \parencite{robberto2015cr} & \\
+        \hline
     \end{tabular}
     \caption{Methods for Locating and Classifying Anomalies}
     \label{rst/tab:methods}
 \end{table}
 
-There are other viable methods for accomplishing these tasks, such as Reed-Xiaoli (RX), Localized Reed-Xiaoli (LRX), and James Webb Space Telescope's (JWST) Bayesian Generalized Least Squares (GLS) for locating anomalies, but the scope of this work will focus on the methods in Table \ref{rst/tab:methods}.
+There are other viable methods for accomplishing these tasks, such as Reed-Xiaoli (RX), Localized Reed-Xiaoli (LRX), and James Webb Space Telescope's (JWST) Ordinary Least Squares (OLS) for locating anomalies, shown in Table \ref{rst/tab:methods}.
 RX is an unsupervised learning methods that uses a window around a test pixel to compare with the local background \parencite{reed1990adaptive}.
 LRX is similar to RX but instead uses a double concentric window to compare the test pixel with a guarded local background \parencite{molero2013analysis}.
-JWST's GLS estimator is also an unsupervised method that calculates the slope, or ramp, of each pixel along the time domain and determines the probability that discontinuities in the ramp occurred due to cosmic rays \parencite{robberto2015cr}.
+JWST's OLS estimator is also an unsupervised method that calculates the slope, or ramp, of each pixel along the time domain and determines the probability that discontinuities in the ramp occurred due to cosmic rays \parencite{robberto2015cr}.
 Please note that the JWST data was constructed similarly to the RST's, resulting in non-destructive accumulating frames. 
 
 Before any of the data is used for these methods, they must be loaded and pre-processed.
@@ -117,7 +120,7 @@ We are then left  with groupings of pixels that could potentially be either a co
 
 
 \subsubsection{Principal Component Analysis (PCA)}
-Given the majority of pixels within our image aren not affected by anomalies, we can use a random subset of pixels within an exposure and fit PCA to the ramps of these samples.
+Given the majority of pixels within our image are nnot affected by anomalies, we can use a random subset of pixels within an exposure and fit PCA to the ramps of these samples.
 If we limit our principal components to two, we can create a fit for the majority of simple ramps. 
 Using our PCA fit, we can reduce all of the pixels in our image to our latent space representation and then inverse transform them to compare the original and reconstructed result \parencite{wold1987principal}.
 Examples of this are shown in Figure \ref{rst/fig:PCA}. 
@@ -137,6 +140,43 @@ By limiting the number of PCA components to two, our reconstructed ramps will be
 
 Finally, like the statistical method, we create the pixel mask by highlighting any pixel whose change in residual is above the threshold.
 We then identify regions using the same topological transformations and scikit-image's measure library for finding blobs \parencite{scikit-image}.
+
+\subsubsection{Ordinary Least Squares (OLS)}
+JWST uses a OLS method, outlined in \cite{robberto2014generalized} and expanded in \cite{robberto2015cr}, to identify cosmic rays in their data by fitting a linear model to the ramp of each pixel as well as the ramp if a jump were to occur at a given frame.
+Using this Heaviside function, $\Theta(t)$, which returns 0 when below 0 and 1 when above 1, we can fit a linear model of a ramp of $t_n$ values with a jump at a given frame $t_{CR}$ as follows:
+\begin{equation}
+    c(t_i) = a + b\ t_i + CR \Theta(t_i - t_{CR})
+\end{equation}
+In this equation, $a$ is the initial value of the ramp, $b$ is the slope of the ramp, and $CR$ is the amount of DN added to the ramp at the time of the jump.
+In matrix form, this can be expressed as:
+\begin{equation}
+    c_i = \begin{bmatrix}
+        c_1 \\
+        c_2 \\
+        \vdots \\
+        c_n
+    \end{bmatrix} =
+    A = \begin{bmatrix}
+        1 & t_1 & 0 \\
+        1 & t_2 & 0 \\
+        \vdots & \vdots & \vdots \\
+        1 & t_{CR} & 1
+        \vdots & \vdots & \vdots \\
+        1 & t_n & 1
+    \end{bmatrix}
+    \alpha = \begin{bmatrix}
+        a \\ b \\ CR
+    \end{bmatrix}
+\end{equation}
+In order to test every possible frame for a jump, we can expand our matrix $A$ with a third dimension where each slice of the matrix is a different frame $t_{CR}$.
+This effectively looks like a triangular matrix, with each column representing the possibility of a jump at that frame.
+To solve for $\alpha$, we can use the OLS estimator \parencite{puntanen1989equality}:
+\begin{equation}
+    \hat{\alpha} = (\hat{A}^T \hat{A})^{-1} \hat{A}^T \hat{c}
+\end{equation}
+It is important to note that our matrix $A$ is now three-dimensional, with shape (N, N, 3) to account for the jump occurring at each frame.
+This will result in a two-dimensional matrix of $\hat{\alpha}$ values with shape (N, 3), where each slice of the row is the estimated parameters for a jump at that frame.
+By calculating this all at once, we can quickly calculate the residuals of each fit and to identify the best fit for each pixel using matrix operations.
 
 \subsection{Classifying Anomalies}
 From the locating anomalies methods, we obtain a frame and pixel mask matrix containing information about potential anomalies with a ramp for each pixel in an exposure. 
@@ -228,9 +268,37 @@ The PCA method found less groupings than the statistical thresholding method but
 We chose to use two principal components as any higher numbers of components would have fit to jumps in the ramp and caused lower errors.
 Two components also gives us an overall shape that matches a typical ramp and explains most of the variance of the exposure's ramps without over fitting to the curve as shown in Figure \ref{rst/fig:elbow}.
 This false negative rate varies from exposure to exposure but ranged from 65 to 80\% missed anomalies. 
-Despite being overly sensitive to any jump in the ramp, the statistical thresholding method is preferred here due to it's higher accuracy and lower runtime.
+Despite being overly sensitive to any jump in the ramp, the statistical thresholding method is preferred here due to its higher accuracy and lower runtime.
 This method had a false negative rate of 10\% across the entire labeled dataset of over 5000 hand labeled events. 
 A method that filters most of the image without removing real anomalies is preferable to a method that filters more of the images including anomalies. The second step, Classifying Anomalies, can then label these false positives as None or Potential Anomaly. 
+
+The JWST OLS method might be a better alternative to PCA and Statistical Thresholding as it is designed to identify cosmic rays in a similar up-the-ramp readout scheme.
+However, because linear regression is necessary across every pixel and every frame, the method is too computationally expensive to run on the entire exposure.
+Figure \ref{rst/fig:jwst_ols}, shows an example of the OLS method from two samples, with and without a snowball.
+In the example with a snowball, we can see that OLS does a very good job of identifying both that there is a jump in the ramp and the location of the jump.
+Looking at the residuals, we can see the massive dip in mean squared error at the time of the jump due to the OLS method fitting perfectly to the ramp.
+In the case without a snowball, almost every fit is perfect as OLS was finding tiny jumps at each frame instead of the larger jumps we were looking for.
+
+While this method works well for identifying single pixel with a jump, it does not scale well once we take into consideration the number of pixels in an exposure.
+The OLS method may produce a better metric than simple statistical thresholding to spot differences between two frames, but it is not efficient enough to run on the entire exposure.
+If we can find a way to optimize the OLS calculation, such as only calculating the OLS for pixels that have been flagged by the statistical thresholding method, we may be able to use it in the future.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=.49\linewidth]{figs/rst/ols_good.png}
+    \includegraphics[width=.49\linewidth]{figs/rst/ols_bad.png}
+    \includegraphics[width=.49\linewidth]{figs/rst/ols_good_res.png}
+    \includegraphics[width=.49\linewidth]{figs/rst/ols_bad_res.png}
+    \caption[Example of the JWST OLS Method on WFI Detector Data]{
+        An example of the JWST OLS method on WFI detector data.
+        The two images on the left show a standard ramp with no anomalies with the top showing how OLS fits the ramp and the bottom showing the mean squared error residuals of the fit.
+        The two images on the right show a ramp with a snowball in the middle of the exposure with the top showing how OLS fits the ramp and the bottom showing the mean squared error residuals of the fit.
+        Note the scales on the residual plots being vastly different.
+        In the case of the snowball, the OLS method only fits at one point in the ramp, resulting in a large dip in the residuals at near that point and a large error at all other points.
+    }
+    \label{rst/fig:jwst_ols}
+\end{figure}
+
 \subsection{Classifying Anomalies}
 For classifying anomalies, we have the traditional method using heuristic rules around the shape of the grouping and a CNN trained on samples from the labeled anomalies. 
 We utilized the output of the statistical thresholding method as the input into both of the classification methods. 
@@ -241,12 +309,12 @@ We tested training using a subset of all exposures in the labeled dataset as wel
 In both cases, we were unable to have the CNN generalize to different exposures. 
 Because of the class imbalance and hard to differentiate nature of the dataset, the CNN would misclassify cosmic rays as potential anomalies and almost never correctly identify them as cosmic rays unless the streak was large enough to differentiate. 
 The CNN was able to correctly classify snowballs about 50\% of the time, labeling them as potential anomalies in other cases. 
-In the future, this method may be better suited than heuristic rules but further refining of the labeled dataset is necessary. 
+In the future, this method may be better suited than heuristic rules, but further refining of the labeled dataset is necessary. 
 As it stands, with the overlap between cosmic rays and potential anomalies, there is little room for improvement without further defining how we want to differentiate these classes. 
 
 Heuristic rules outperformed our CNN method in both accuracy and runtime.
 The outputs from Event Table in locating anomalies include measurements of the size and shape of the anomaly. 
-This makes it very efficient to run through each entry of the table and pre-define a look up table to classify each anomaly. 
+This makes it very efficient to run through each entry of the table and pre-define a look-up table to classify each anomaly. 
 The time the heuristic rules pipeline takes to generate a report depends on the number of anomalies in the Event Table but, on average, it is able to classify 100 events from the Event Table a second. 
 
 \subsection{SDP Pipeline Integration}
@@ -269,10 +337,10 @@ This method is currently being used in the SDP pipeline to identify anomalies in
 This work is a preliminary analysis of the anomaly detection methods for the RST WFI SDP pipeline.
 There are many areas for improvement and future work to be done.
 First and foremost, more methods will need to be evaluated in order to determine a better alternative to the Heuristic Rules method for classification. 
-The CNN method is a good candidate but needs more fine tuning to generalize to different exposures.
+The CNN method is a good candidate but needs more fine-tuning to generalize to different exposures.
 In addition to this, more labeled data will be needed to train the CNN and other methods, such as Mask RCNN or transformer-based architectures, particularly on illuminated data.
 This labeled data could come from other tests if we were to generalize beyond just the dark exposures.
-With a more well defined dataset of labeled data, we will be able to better assess the accuracy of these methods too. 
+With a more well-defined dataset of labeled data, we will be able to better assess the accuracy of these methods too. 
 
 Another area for improvement may be finding better ways to locate anomalies.
 We may revisit PCA to see if we can adjust the parameters (number of components and threshold for error) to reduce its false negative rate.
@@ -284,5 +352,5 @@ This led to a large number of false positives from known bad pixels that appeare
 In the future, we will need to integrate the bad pixel mask into the anomaly detection pipeline to filter out these false positives and use that to better assess the accuracy of the system. 
 
 Finally, we will need to test the system on more than just dark exposures.
-The current system is designed to work with dark exposures but we will need to adjust the system to work with other types of exposures that might have more difficult to detect anomalies.
+The current system is designed to work with dark exposures, but we will need to adjust the system to work with other types of exposures that might have more difficult to detect anomalies.
 There may not be a one size fits all solution to this problem but testing different types of exposures will help us determine the best methods for each type of exposure.
