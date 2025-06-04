@@ -284,7 +284,7 @@ This method was chosen over direct propagation of uncertainties because it allow
 \label{carina/sec:fits_fit}
 To align the SPIFI and ISO data with the SOFIA data, we need to create a World Coordinate System (WCS) for each dataset.
 Given that we have a table of coordinate points and knowledge that these points are in a grid-like pattern, we can use a bit of image matrix manipulation to create a WCS for each dataset.
-A FITS header contains information about a data cube and is normally parsed by programs like \texttt{astropy.io.fits} to create a WCS object that can be used to map pixel coordinates to celestial coordinates \cite{}
+A FITS header contains information about a data cube and is normally parsed by programs like \texttt{astropy.io.fits} to create a WCS object that can be used to map pixel coordinates to celestial coordinates \parencite{wells1979fits}.
 We do not have a FITS header for the SPIFI and ISO data, so we will need to create one ourselves.
 The key values we need to set in the FITS header are the following:
 \begin{itemize}
