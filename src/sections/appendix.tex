@@ -76,11 +76,21 @@ This is done by running the following command:
 This will install all the necessary packages to run the \texttt{PyMCC} package.
 
 Finally, we need to edit the hosts file on the CM4 to ensure that we can access the other devices on the readout network by name.
-This is done by updating the \texttt{/etc/hosts} file with the IP addresses and hostnames in Appendix \ref{readout/app:hosts}.
-
-\chapter{ASTHROS Network Addresses}
-
-\label{readout/app:hosts}
+This is done by updating the \texttt{/etc/hosts} file with following the IP addresses and hostnames:
+\begin{verbatim}
+    192.168.1.102  Main Switch
+    192.168.1.103  Sub Switch
+    192.168.1.110  commander
+    192.168.1.111  storage
+    192.168.1.112  analysis
+    192.168.1.120  spectra1A
+    192.168.1.121  spectra1B
+    192.168.1.122  spectra2A
+    192.168.1.123  spectra2B
+    192.168.1.130  varattio1
+    192.168.1.131  varattio2
+    192.168.1.132  varattio3
+\end{verbatim}
 
 \chapter{Amplifier Chain Error Handling}
 Lorem those ipsums

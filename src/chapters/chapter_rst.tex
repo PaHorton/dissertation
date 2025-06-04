@@ -344,7 +344,8 @@ With a more well-defined dataset of labeled data, we will be able to better asse
 
 Another area for improvement may be finding better ways to locate anomalies.
 We may revisit PCA to see if we can adjust the parameters (number of components and threshold for error) to reduce its false negative rate.
-Additionally, other methods like RX, LRX and GLS, as described at the beginning of Section \ref{rst/sec:methods}, could be better suited for filtering the initial exposure.
+We may also revisit OLS if we can determine a way to further optimize the algorithm to make it viable for the massive image sizes. 
+Additionally, other methods like RX and LRX, as described at the beginning of Section \ref{rst/sec:methods}, could be better suited for filtering the initial exposure.
 
 The current implementation of the SDP pipeline uses a bad pixel mask to mask regions of the image that are problematic. 
 Because we didn't have a bad pixel mask for the data we were using, we had to analyze the entire image with our anomaly detection methods.
