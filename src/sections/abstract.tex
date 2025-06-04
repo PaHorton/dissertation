@@ -1,11 +1,13 @@
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Ut purus elit, vestibulum ut,
-placerat ac, adipiscing vitae, felis. Curabitur dictum gravida mauris. Nam arcu libero,
-nonummy eget, consectetuer id, vulputate a, magna. Donec vehicula augue eu neque.
-Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis
-egestas. Mauris ut leo. Cras viverra metus rhoncus sem. Nulla et lectus vestibulum urna
-fringilla ultrices. Phasellus eu tellus sit amet tortor gravida placerat. Integer sapien
-est, iaculis in, pretium quis, viverra ac, nunc. Praesent eget sem vel leo ultrices
-biben- dum. Aenean faucibus. Morbi dolor nulla, malesuada eu, pulvinar at, mollis ac,
-nulla. Curabitur auctor semper nulla. Donec varius orci eget risus. Duis nibh mi,
-congue eu, accumsan eleifend, sagittis quis, diam. Duis eget orci sit amet orci
-dignissim rutrum.
+NASA missions are producing increasingly large and complex datasets, placing significant demands on mission operations teams to analyze, prioritize, and react to scientific data in near real-time. 
+This dissertation presents the development, implementation, and evaluation of novelty detection systems designed to support mission operations across multiple domains of space science, including planetary exploration, and astrophysical observatories. 
+Additionally, this work spans multiple use cases and platforms, such as tactical planning, integration and testing, and onboard analysis, demonstrating the versatility of novelty detection techniques in various contexts.
+Often times in mission operations, typical data is well understood, but unexpected data can be difficult to identify and react to in a timely manner.
+Novelty detection algorithms identify anomalous or atypical features in data by measuring their deviation from a population, offering the potential to improve the efficiency and effectiveness of mission operations team by triaging data to be prioritized for analysis and decision-making.
+
+This dissertation approaches implementation of novelty detection systems in three primary domains. 
+The first domain of this work integrates novelty detection into tactical operations for the Mars Science Laboratory Curiosity rover, operationalizing previously developed algorithms to identify novel features in multispectral images from Mastcam.
+The second domain develops time-series anomaly detection methods for the Roman Space Telescope's Wide Field Instrument, using both statistical and data driven approaches to locate cosmic ray events and snowballs in readout ramps. 
+The third domain applies novelty detection directly onboard the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths (ASTHROS) balloon observatory, enabling the ability to identify problematic spectra in real-time during flight operations.
+ASTHROS is a major part of this dissertation, as I oversaw the development of the software for the entire readout system, providing the framework for the onboard novelty detection system.
+I also worked with the ASTHROS science team to analyze analogous data from the Stratospheric Observatory for Infrared Astronomy to generate maps of [NII] emission spectra and electron density in Carina Nebula, a task ASTHROS will perform during its operation.
+The results of this work culminates in a modular and bespoke software suite for ASTHROS capable of performing real-time data analysis and anomaly detection, making it a powerful tool for future balloon-borne astrophysics missions.
