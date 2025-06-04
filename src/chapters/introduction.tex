@@ -19,7 +19,7 @@ The primary goal of this dissertation is to develop a framework for data priorit
 Novelty detection is a key component of this framework, as it allows for the identification of unexpected features without prior knowledge of what constitutes an anomaly.
 This gives it the versatility to be applied to a wide range of data types and mission scenarios.
 For our domains of interest, I focused on the use of novelty detection to identify features in multispectral images from Mastcam on MSL \cite{horton2021integrating}, snowballs and cosmic rays on RST's Wide Field Instrument (WFI) \cite{horton2024anomaly}, and finally anomalous spectra on ASTHROS \cite{horton2024board}.
-In addition to scientifically different domains, these three instruments differ in their operational domains, with MSL being a currently operational mission analyzing data while in the field, RST being a future mission using data collected during integration and testing to identify potential issues, and ASTHROS also being a future mission but with the goal of performing this analysis onboard the instrument.
+In addition to scientifically different domains, these three instruments differ in their operational domains, with MSL being a currently operational mission analyzing data while in the field, RST being a future mission using data collected during integration and testing to identify potential issues, and ASTHROS also being a future mission but with the goal of performing this analysis on-board the instrument.
 
 \begin{figure}
 \centering
@@ -31,7 +31,7 @@ In addition to scientifically different domains, these three instruments differ 
 \label{intro/fig:asthros}
 \end{figure}
 
-ASTHROS, shown in Figure \ref{intro/fig:asthros}, is a major component of this dissertation as it was at a scale that allowed us to develop a complete end-to-end system with the implementation of onboard novelty detection in mind. 
+ASTHROS, shown in Figure \ref{intro/fig:asthros}, is a major component of this dissertation as it was at a scale that allowed us to develop a complete end-to-end system with the implementation of on-board novelty detection in mind. 
 ASTHROS is a scientific ballooning mission that gives us the opportunity to perform high spectral resolution observations at submillimeter wavelengths from the stratosphere \parencite{siles2020asthros}.
 Ballooning literally gives astronomers a much higher vantage point to observe than ground based telescopes by allowing us to get above the majority of the atmosphere, which is a major source of noise in submillimeter observations \cite{yajima2009scientific}.
 Figure \ref{intro/fig:atmosphere} shows the atmospheric opacity at various wavelengths, with the submillimeter wavelengths (100-1000 $\mu$m) being completely opaque from the ground.
@@ -49,7 +49,7 @@ Figure \ref{intro/fig:atmosphere} shows the atmospheric opacity at various wavel
 This higher vantage point is not without its drawbacks, however, as communication with the instrument is has limited bandwidth and latency. 
 Because of this, ballooning mission store all of their data on board the instrument and only send back samples of the data for diagnostic purposes.
 When the balloon lands, the instrument is recovered and the hard drives are read to review the full dataset \parencite{walker_STO}.
-This makes it an ideal candidate for on board novelty detection, as I can use the limited bandwidth to send only the most diagnostically relevant data back to the ground for review.
+This makes it an ideal candidate for on-board novelty detection, as I can use the limited bandwidth to send only the most diagnostically relevant data back to the ground for review.
 In our case, this is data that differs from the expected behavior of the instrument, which is what novelty detection is designed to identify.
 
 \begin{figure}
