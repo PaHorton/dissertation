@@ -24,7 +24,7 @@ RMQ allows us to modularly build our readout system and create additional functi
 
 \section{Introduction}
 ASTHROS (Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths) is a high-altitude ballooning mission utilizing an array of sixteen spectrometers to create high spatial resolution 3D maps of ionized nitrogen gas in galactic and extragalactic star-forming regions \parencite{siles2020asthros}. 
-On-the-fly (OTF) mapping will be employed during data collection where each spectrometer will continuously produce ON and OFF spectra as we scan across our target as show in in Figure \ref{spectra/fig:scan} \parencite{mangum2007fly}. 
+On-the-fly (OTF) mapping will be employed during data collection where each spectrometer will continuously produce ON and OFF spectra as we scan across our target as shown in Figure \ref{spectra/fig:scan} \parencite{mangum2007fly}. 
 
 \begin{figure}
     \centering
@@ -88,7 +88,7 @@ The methods described in this paper are run on this computer and are able to com
 Like other computers on the network, the Analysis computer is able to mount the storage computer as a network drive to read and write data.
 Using RMQ, the analysis computer is able to listen to the status exchange for pointing updates from the gondola.
 If the pointing data indicates that the telescope is observing a calibration source, the Analysis computer will pull the most recent calibration spectra from the storage computer and compare it to a series of past calibrations to determine if the system is behaving as expected.
-In addition to it's primary function of analyzing science data, the Analysis computer is also able to run additional processes to prepare data for the science team. 
+In addition to its primary function of analyzing science data, the Analysis computer is also able to run additional processes to prepare data for the science team. 
 It does this by time harmonizing the science data with the pointing data from the gondola to label each spectra with the correct pointing information so that it may be used for mapping. 
 
 Apart from the main three computers, the ASTHROS readout system also consists of a set of Raspberry Pi Compute Module 4s (CM4s) that control the spectrometers and a set of Arduino Nano Every microcontrollers that control the amplifier chains. 
@@ -128,17 +128,17 @@ When a new spectrum is input into the VAE, the encoded and then decoded spectrum
 The architecture for our VAE is a simple feedforward neural network with multiple layers.
 Our encoder consists of an input layer, a hidden layer, and two output layers for the mean and variance of the latent space.
 The input layer has $8192$ nodes, one for each channel in our calibration spectra.
-The hidden layer has $256$ nodes which feeds into our output layer which has $64$ nodes of mean and variance.
+The hidden layer has $256$ nodes which feed into our output layer which has $64$ nodes of mean and variance.
 We re-parameterize the mean and variance to sample from the latent space and feed this into the decoder which has the same architecture hidden layer and input layers as the encoder but in reverse.
 The output layer of the decoder has $8192$ nodes to reconstruct the original spectrum.
 
 To train the VAE, we have to normalize our spectra to values between $0$ and $1$.
 We then split our data into a training and testing set and train the VAE on the training set.
-We then use the VAE to encode the testing set to it's latent space representation and decode it to produce a reconstructed version.
+We then use the VAE to encode the testing set to its latent space representation and decode it to produce a reconstructed version.
 
-To generate an anomaly score from this method, we take a test spectrum, transform it using the VAE to it's latent space representation, and then decode the spectrum to produce a reconstructed version.
+To generate an anomaly score from this method, we take a test spectrum, transform it using the VAE to its latent space representation, and then decode the spectrum to produce a reconstructed version.
 This reconstruction is imperfect as the VAE model is fit to our typical spectra.
-We compare the reconstruction to our original spectrum to calculate error from the difference between the two specra.
+We compare the reconstruction to our original spectrum to calculate error from the difference between the two spectra.
 This score can be used as a time series of anomaly scores to determine if a new spectrum is significantly different from the rest of the data. 
 For flight, we will have to retrain the VAE on a subset of the data to account for changes in the system over time, making for more challenging flight integration.
 
@@ -153,7 +153,7 @@ This can be done in two ways, fitting the PCA model to a subset of the spectra i
 The first method can be used to determine if PCA is a good method for fitting to the dataset by seeing how many principal components are necessary to cover the variance of a typical spectrum. 
 The second method can then be used in a real time setting to determine how a new spectrum compares to the recent history of previous spectra. 
 
-To generate an anomaly score from this method, we take a test spectrum, transform it using the fit PCA model to it's latent space representation, and then inverse transform the spectrum to produce a reconstructed version. 
+To generate an anomaly score from this method, we take a test spectrum, transform it using the fit PCA model to its latent space representation, and then inverse transform the spectrum to produce a reconstructed version. 
 This reconstruction is imperfect as the PCA model is fit to our typical spectra.
 We compare the reconstruction to our original spectrum to calculate the mean squared error from the difference between the two spectra. 
 We use this value as our anomaly score as it provides a measure of how different a given spectrum is from previous spectra. 
@@ -206,7 +206,7 @@ Both datasets are unlabeled, which makes measuring accuracy difficult so we have
 The end use case of this method is to provide a trackable metric that the operations team can use to monitor data quality.
 While accuracy is certainly important, any method that is able to enhance the manual monitoring process is sufficient. 
 As such, we compare the methods based on their ability to be implemented into the ASTHROS System Architecture and how well the anomaly score metric tracks with manual monitoring of the time series of spectra over time. 
-Additionally, we can compare the least and most anomalous spectra form the system to what sorts of anomalies produce high anomaly scores. 
+Additionally, we can compare the least and most anomalous spectra from the system to what sorts of anomalies produce high anomaly scores. 
 
 With both datasets, the large number of features in the $8192$ channels, made it difficult for the VAE to learn the latent space for the spectra. 
 Even after we managed to get it to behave properly, it became apparent that this method wouldn't adapt well for a rolling window of previous spectra. 
@@ -217,8 +217,8 @@ With more refining and tests with domain adaptation, we may be able to revisit t
 PCA was an ideal method for this use case. 
 We began with the HASP dataset to see how the method would be able to rank spectra from least to most anomalous.
 We first fit all of the $7000$ spectra with PCA to determine the number of components that would be optimal for comparison.
-Most of the variances was captured with the first two principal components but, we opted to use five components as the variance increases when we're only looking at a portion of the dataset as shown in Figure \ref{spectra/fig:elbows}.
-Using these number of components, we calculate the anomaly score for all of the spectra in the dataset to review the least and most anomalous spectra. 
+Most of the variances were captured with the first two principal components but, we opted to use five components as the variance increases when we're only looking at a portion of the dataset as shown in Figure \ref{spectra/fig:elbows}.
+Using this number of components, we calculate the anomaly score for all of the spectra in the dataset to review the least and most anomalous spectra. 
 See Figure \ref{spectra/fig:hasp} for the least and most anomalous spectra in the dataset. 
 We've zoomed into a range of indices that were heavily affected by RFI, likely from another instrument. 
 As expected, the least anomalous spectra look relatively clean and the most anomalous spectra are all very noisy. 
@@ -235,7 +235,7 @@ On the cleaner 100GHz dataset, the method truly shined.
 Using the same rolling window of 10 spectra and 5 principal components, we were able to produce a time series of anomaly scores for all 20,000 spectra as shown in Figure \ref{spectra/fig:timeseries}.
 These values on their own don't provide much information but, when compared with other values across the dataset, we are able to pick out instances where our anomaly scores spiked. 
 In the time series, there are two major spikes in the time series and a handful of smaller spikes throughout the test. 
-We looked into these larger spikes in anomaly score and, they corresponded with spectrum that had changes in their RFI spikes.
+We looked into these larger spikes in anomaly score and they corresponded with spectrum that had changes in their RFI spikes.
 Figure \ref{spectra/fig:100ghz} shows the affected channels of these anomalous spectra by overlapping them with the average of the previous 10 spectra. 
 As shown in both examples, the new spectra has an increase in RFI that is different from the most recent spectra. 
 On the other hand, the least anomalous spectra all closely match their predecessors. 

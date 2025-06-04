@@ -1,10 +1,10 @@
-\chapter[Electron Density Mapping in Carina Nebula]{Electron Density Mapping in Carina Nebula}
+\chapter[Electron Density Mapping in the Carina Nebula]{Electron Density Mapping in the Carina Nebula}
 \label{ch:carina}
 This chapter presents the methodology and results of mapping the electron density in the Carina Nebula using observations from the Stratospheric Observatory for Infrared Astronomy (SOFIA) and the Deep Space Network (DSN).
 Carina is a major target for ASTHROS and understanding how to map electron density is one of the key science goals of the mission.
-In order to better estimate ASTHROS' capabilities, I embarked on this project to use new observations from SOFIA, which has the same 2.5 meter telescope as ASTHROS, to map the electron density in Carina Nebula.
+In order to better estimate ASTHROS' capabilities, I embarked on this project to use new observations from SOFIA, which has the same 2.5 meter telescope as ASTHROS, to map the electron density in the Carina Nebula.
 This can give us a clearer estimate of the sensitivity necessary to map [NII] 205 and 122 $\mu$m lines when ASTHROS is in flight. 
-Additionally, this work publishes previously unpublished data from SOFIA providing the scientific community a first glimpse of [NII] 205 $\mu$m in Carina Nebula from the instrument. 
+Additionally, this work publishes previously unpublished data from SOFIA providing the scientific community a first glimpse of [NII] 205 $\mu$m in the Carina Nebula from the instrument. 
 
 \section{Abstract}
 The Carina Nebula is one of the most massive and active star-forming regions in the Milky Way, located approximately 2.3 kpc away in the Carina-Sagittarius arm of the galaxy.
@@ -71,7 +71,7 @@ Between ISO and SPIFI, there are only about 3 pixels that overlap with the SOFIA
     \centering
     \includegraphics[width=0.6\textwidth]{figs/carina/raw_NII.png}
     \includegraphics[width=0.6\textwidth]{figs/carina/raw_RRL.png}
-    \caption[Raw Data Cubes for {[}NII{]} and RRLs in Carina Nebula]{
+    \caption[Raw Data Cubes for {[}NII{]} and RRLs in the Carina Nebula]{
         The raw data cubes for the [NII] 205 $\mu$m line (top) and the RRL data (bottom). 
         Both lines are integrated intensities across the entire spectral range of the dataset.
         The [NII] 205 $\mu$m line is shown using Main Beam Temperatures, while the RRL data is shown in Antenna Temperature.
@@ -139,7 +139,7 @@ After this step, we have two data cubes that are on the same grid, with the [NII
     \centering
     \includegraphics[width=0.6\textwidth]{figs/carina/final_NII.png}
     \includegraphics[width=0.6\textwidth]{figs/carina/final_RRL.png}
-    \caption[Preprocessed Data Cubes for {[}NII{]} and RRLs in Carina Nebula]{
+    \caption[Preprocessed Data Cubes for {[}NII{]} and RRLs in the Carina Nebula]{
         The processed data cubes for the [NII] 205 $\mu$m line (top) and the RRL data (bottom).
         Both lines are the integrated main beam intensities across the entire spectral range of the dataset.
         }
@@ -492,7 +492,7 @@ Dividing this signal by the expected sensitivity gives us the SNR for each pixel
 \begin{figure}
     \centering
     \includegraphics[width=.9\textwidth]{figs/carina/snr.png}
-    \caption[SNR of the {[}NII{]} 122 $\mu$m and 205 $\mu$m Lines in Carina Nebula]{
+    \caption[SNR of the {[}NII{]} 122 $\mu$m and 205 $\mu$m Lines in the Carina Nebula]{
         The signal-to-noise ratio (SNR) of the [NII] 122 $\mu$m line (left) and the [NII] 205 $\mu$m line (right) for both the Keyhole Nebula (top) and the Carina Extended region (bottom).
         The diverging color scale is used to show how close the SNR is to the desired values for ASTHROS.
         For 122 $\mu$m, we want an SNR of 4 at a sensitivity of 0.1 K and for 205 $\mu$m, we want an SNR of 10 at a sensitivity of 0.15 K.
@@ -500,7 +500,7 @@ Dividing this signal by the expected sensitivity gives us the SNR for each pixel
     \label{carina/fig:snr}
 \end{figure}
 
-Unfortunately, we find mixed results for the desired SNR in Carina. 
+Unfortunately, we find mixed results for the desired SNR in the Carina Nebula. 
 Of the two lines and regions, the Keyhole Nebula's 122 $\mu$m line is the only one that meets the desired SNR of 4, with an average SNR of 5.3.
 The 205 $\mu$m line in the Keyhole Nebula has an average SNR of 4.0, which is below the desired SNR of 10.
 This makes sense as the electron density is relatively high in the Keyhole Nebula, which results in a higher signal for the [NII] 122 $\mu$m line as shown in Figure \ref{carina/fig:nii_curves}.

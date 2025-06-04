@@ -1,6 +1,6 @@
 \chapter[Data Discovery Systems for Planetary Science]{Data Discovery Systems for Planetary Science}
 \label{ch:msl}
-This chapter is from my published work \cite{horton2021integrating} and is included here as the ground work for the novelty detection systems I go on to use in Chapters \ref{ch:spectra} and \ref{ch:rst}.
+This chapter is from my published work \cite{horton2021integrating} and is included here as the groundwork for the novelty detection systems I go on to use in Chapters \ref{ch:spectra} and \ref{ch:rst}.
 Being one of the first projects I undertook in my research career, this chapter describes the steps taken to operationalize novelty detection methods for use in planetary science for the Mars Science Laboratory (MSL) Curiosity rover.
 This chapter focuses on how to take theoretical novelty detection methods and create a pipeline to integrate them into the tactical planning process for MSL.
 In addition to the original publication, this chapter has been updated to include work conducted on the Planetary Data System (PDS) Image Atlas to provide new methods for users to search for information \cite{horton2020novelty}.
@@ -104,7 +104,7 @@ All of these methods, except RX, are reconstruction based methods that attempt t
 When trained on typical examples, these methods are able to reconstruct normal examples well but are unable to represent novel examples.
 The novelty detection system is able to identify novel regions based on the reconstruction error, which is the difference between the input and recreated image.
 For Mastcam multispectral sequences, these images have six bands instead of the traditional one (grayscale) or three (RGB). 
-It is important to note that Kerner et al.~evaluated these methods to identify novel geology in multispectral sequences, not create a visualization for tactical analysis that maximizes their ability spot hard-to-find features. 
+It is important to note that Kerner et al.~evaluated these methods to identify novel geology in multispectral sequences, not create a visualization for tactical analysis that maximizes their ability to spot hard-to-find features. 
 Our goal is to create novelty detection products that could be integrated into actual tactical operations pipelines and evaluate their effectiveness for triaging analyst time in tactical operations.
 
 \section{Data Set}
@@ -147,11 +147,11 @@ The images in this data set were pre-processed in the same way as the original d
 Starting with every thumbnail taken by Mastcam, the data set was filtered by sequences containing 7 different filters: RGB (no filter) and 6 narrow-band spectral filters.
 Additionally, sequences containing the calibration tool were omitted. 
 This filtering resulted in about 900 total sequences split between the left and right eye. 
-The six narrow-band sequences were used as inputs into the algorithm and the RGB is was used for reference.
+The six narrow-band sequences were used as inputs into the algorithm and the RGB was used for reference.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methods}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-In this work, we employed a the pixel-wise RX method for novelty scoring.
+In this work, we employed a pixel-wise RX method for novelty scoring.
 Pixel-wise RX is a distribution-based method that calculates the distance between each pixel in a test image and a background distribution, which can be visualized at the image level as a heatmap of novelty scores. 
 In comparison with other methods, pixel-wise RX is out-performed when identifying images with certain types of novelties such as float rocks, veins, bedrock, and broken rock, but performs better for other novel categories. 
 While this may seem like RX is a poor choice for novelty detection, the novelty scores in \cite{kerner2020comparison} were aggregated to image-level scores and did not compare algorithms on the basis of their ability to highlight novel pixels in an image in a way that is useful for tactical planners. 
@@ -219,7 +219,7 @@ The novelty detection system using pixel-wise RX performs well for highlighting 
 Figure \ref{msl/fig:easyNovel} shows examples of some of the easy to catch novelties that the system is able to detect. 
 We claim that these examples are relatively easy for analysts to identify because the novelties they highlight can be found through careful analysis of a single RGB image.
 In the first example, a broken rock is shown near the center of the image.
-The novelty heat map highlights the broken rock well as well other broken rocks in the area as shown by the yellow regions.
+The novelty heat map highlights the broken rock as well as other broken rocks in the area as shown by the yellow regions.
 The second example shows veins which are highlighted well in its corresponding heat map. 
 By just looking at the RGB thumbnail, an untrained analyst could likely spot something novel in the image. 
 Finally, the last image shows a dump pile.
@@ -259,7 +259,7 @@ To prioritize high novelty scores corresponding to localized features, we used t
 %Maximum pixel novelty score highlights sequences with clear outliers making them clearer candidates for follow up analysis. 
 Examples of the top and bottom ten images sorted by maximum RX score are shown in Figure \ref{msl/fig:sorted}. 
 The top-scoring sequences show images of high variability when compared with the low-scoring images. 
-The highest scoring pixel in these sequences are typically rover parts which, while being spectrally novel, are not necessarily useful for operations.
+The highest scoring pixels in these sequences are typically rover parts which, while being spectrally novel, are not necessarily useful for operations.
 Additionally, sequences containing shadows that move over time tend to have higher scores, as the shadow fans across the different channels and creates a rainbow.
 The low-scoring sequences mostly consist of sky and sand images which are relatively low interest from a tactical perspective. 
 When comparing multiple images, we normalized the pixel novelty scores across the data set in order to display relative novelty. 
