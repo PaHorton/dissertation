@@ -94,7 +94,7 @@ LRX is similar to RX but instead uses a double concentric window to compare the 
 JWST's OLS estimator is also an unsupervised method that calculates the slope, or ramp, of each pixel along the time domain and determines the probability that discontinuities in the ramp occurred due to cosmic rays \parencite{robberto2015cr}.
 Please note that the JWST data was constructed similarly to the RST's, resulting in non-destructive accumulating frames. 
 
-Before any of the data is used for these methods, they must be loaded and pre-processed.
+Before any of the data is used for these methods, they must be loaded and preprocessed.
 For more information about this and the dataset selection, see Section \ref{rst/sec:data}.
 
 \subsection{Locating Anomalies}
@@ -256,7 +256,7 @@ For performance, these methods require calculating the difference between values
 On average, this takes about 2 minutes and 10 seconds for each dark image with 100 frames. 
 Because the PCA method needs to fit, transform, and inverse transform the entire exposure, running it adds an average of 42 seconds to locate anomalies. 
 The OLS method takes over an hour just to calculate the residuals for each pixel across each frame.
-This makes the statistical threshold method faster than PCA in every experiment because PCA requires pre-processing. 
+This makes the statistical threshold method faster than PCA in every experiment because PCA requires preprocessing. 
 OLS is far too slow to be considered for analysis without further optimization.
 
 \begin{figure}

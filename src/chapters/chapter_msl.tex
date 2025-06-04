@@ -117,7 +117,7 @@ Our goal is to create novelty detection products that could be integrated into a
 \label{msl/fig:NovelCategories}
 \end{figure*}
 
-In this work, we created a data set of all multispectral Mastcam sequences based on the pre-processing methods outlined in the labeled Mars multispectral novelty detection data set \parencite{kerner_data}.
+In this work, we created a data set of all multispectral Mastcam sequences based on the preprocessing methods outlined in the labeled Mars multispectral novelty detection data set \parencite{kerner_data}.
 This previous data set provided images with both \textit{typical} and \textit{novel} labels cropped from the M-100 right eye of Mastcam on MSL between sols 1 to 1666.
 Each example in the data set is a 64-by-64 tile with six bands corresponding to 6 different filters.
 The tiles were sub-sampled from larger thumbnail images of around 140-by-100 pixels in size. 
@@ -136,9 +136,9 @@ While our system should be able to identify novelties such as large veins and br
 %Many of the examples in the original training set contain novelties that a tactical operations staff member could easily spot. 
 %These examples are visible in the RGB images and do not require a novelty detection system to draw attention to them.
 The \cite{kerner2020comparison} data set did not account for these operational priorities when evaluating novelty detection performance. 
-In order to fully evaluate the benefit of our novelty detection system in tactical operations, we created a new data set using the same pre-processing as the Kerner et al. data set. 
+In order to fully evaluate the benefit of our novelty detection system in tactical operations, we created a new data set using the same preprocesssing as the Kerner et al. data set. 
 Instead of separating the images into typical and novel data sets, we included all multispectral sequences from Mastcam's left and right eyes in an unsupervised manner.
-The images in this data set were pre-processed in the same way as the original data set but kept as full-size thumbnails instead of tiles in order to provide detections at the same resolution as they are viewed by operations staff. 
+The images in this data set were preprocesssed in the same way as the original data set but kept as full-size thumbnails instead of tiles in order to provide detections at the same resolution as they are viewed by operations staff. 
 Starting with every thumbnail taken by Mastcam, the data set was filtered by sequences containing seven different filters: RGB (no filter) and six narrow-band spectral filters.
 Additionally, sequences containing the calibration tool were omitted. 
 This filtering resulted in about 900 total sequences split between the left and right eye. 

@@ -1,10 +1,10 @@
 \chapter[Electron Density Mapping in the Carina Nebula]{Electron Density Mapping in the Carina Nebula}
 \label{ch:carina}
 This chapter presents the methodology and results of mapping the electron density in the Carina Nebula using observations from the Stratospheric Observatory for Infrared Astronomy (SOFIA) and the Deep Space Network (DSN).
-Carina is a major target for ASTHROS and understanding how to map electron density is one of the key science goals of the mission.
-In order to better estimate ASTHROS' capabilities, I embarked on this project to use new observations from SOFIA, which has the same 2.5 meter telescope as ASTHROS, to map the electron density in the Carina Nebula.
+Carina is a major target for ASTHROS, and understanding how to map electron density is one of the key science goals of the mission.
+In order to better estimate ASTHROS' capabilities, I embarked on this project to use new observations from SOFIA, which has the same 2.5-meter telescope as ASTHROS, to map the electron density in the Carina Nebula.
 This can give us a clearer estimate of the sensitivity necessary to map [NII] 205 and 122 $\mu$m lines when ASTHROS is in flight. 
-Additionally, this work publishes previously unpublished data from SOFIA providing the scientific community a first glimpse of [NII] 205 $\mu$m in the Carina Nebula from the instrument. 
+Additionally, this work publishes previously unpublished data from SOFIA, providing the scientific community a first glimpse of [NII] 205 $\mu$m in the Carina Nebula from the instrument. 
 
 \section{Abstract}
 The Carina Nebula is one of the most massive and active star-forming regions in the Milky Way, located approximately 2.3 kpc away in the Carina-Sagittarius arm of the galaxy.
@@ -13,7 +13,7 @@ We utilize a method used in \cite{pineda2019electron} to calculate the electron 
 Additionally, we estimate the [NII] 122 $\mu$m line intensity using the relationship between the two [NII] lines.
 These observations show two spectrally distinct regions, the higher density region near the Keyhole Nebula and a lower density region behind the Keyhole Nebula, which we refer to as Carina Extended.
 In the Keyhole Nebula, we find average electron densities of 350 cm$^{-3}$, while in the Carina Extended region, we find average electron densities of 176 cm$^{-3}$.
-We compared our results with previous observations from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) and found that our results are higher than previous measurements.
+We compared our results with previous observations from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) and found that our results were higher than previous measurements.
 Finally, we compare our calculated values with the expected performance for the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter Wavelengths (ASTHROS) mission.
 
 \section{Introduction}
@@ -22,15 +22,15 @@ Within Carina is the Keyhole Nebula, located near the center of Carina next to m
 The nebula's complex structure, which includes dense molecular clouds, ionized gas regions, and young stellar clusters, makes it an ideal laboratory for studying the processes of star formation and feedback from massive stars \parencite{smith2007census}.
 
 Understanding the electron density in star-forming regions like the Carina Nebula is crucial for several reasons. 
-Firstly, the electron density can be used as a diagnostic tool for the pressure and density of the ionized gas within star forming regions, which can help us understand the conditions under which stars form \parencite{kaasinen2016cosmos}.
+Firstly, the electron density can be used as a diagnostic tool for the pressure and density of the ionized gas within star-forming regions, which can help us understand the conditions under which stars form \parencite{kaasinen2016cosmos}.
 At different evolutionary stages, the electron density in an HII region like Carina can vary significantly, providing insights into the physical processes at play in these regions \parencite{goldsmith2024electron}.
-Additionally, understanding the relationship between electron density at low redshift regions like Carina and help inform our understanding of the electron density in high redshift galaxies, which can be used to study the evolution of galaxies and the interstellar medium (ISM) over cosmic time \parencite{shirazi2014stars}.
+Additionally, understanding the relationship between electron density at low redshift regions like Carina can help inform our understanding of the electron density in high redshift galaxies, which can be used to study the evolution of galaxies and the interstellar medium (ISM) over cosmic time \parencite{shirazi2014stars}.
 
 In this work, we aim to map the electron density in the Carina Nebula using observations of the [NII] 205 $\mu$m fine-structure line and hydrogen radio recombination lines (RRLs). 
 These lines are sensitive to the conditions of ionized gas and provide complementary information about the nebula's physical properties. 
 We utilize a method used in \cite{pineda2019electron} to calculate the electron density from the ratio of the [NII] 205 $\mu$m integrated intensity to the RRL integrated intensity.
 \section{Observations}
-Our observations come from two main sources, SOFIA and the DSN.
+Our observations come from two main sources: SOFIA and the DSN.
 In addition to these data sources, we also use ancillary data from the South Pole Imaging Fabry-Perot Interferometer (SPIFI) and the Infrared Satellite Observatory (ISO) to compare our results \parencite{oberst2011205}.
 Additionally, we utilize the Atacama Large Millimeter/submillimeter Array (ALMA) for continuum brightness temperature observations in our calculations \parencite{Rebolledo_2021}.
 
@@ -38,7 +38,7 @@ Additionally, we utilize the Atacama Large Millimeter/submillimeter Array (ALMA)
 SOFIA was a joint project of NASA and the German Aerospace Center (DLR), operating from a Boeing 747 aircraft equipped with a 2.5-meter telescope designed for infrared observations.
 On SOFIA was the German REceiver for Astronomy at Terahertz frequencies (GREAT) which observed a wide range of spectral lines between 1.25 and 2.5 THz using a heterodyne receiver \parencite{heyminck2012great}.
 Using the L1 channel of GREAT, we observed the [NII] 205 $\mu$m line in the Carina Nebula, providing a high-resolution spectral cube of the region.
-This spectral cube was generated using the SOFIA Data Processing System (DPS) which processes raw data from the instruments, calibrates it, and combines multiple exposures to create a final spectral cube \parencite{shuping2014overview}.
+This spectral cube was generated using the SOFIA Data Processing System (DPS), which processes raw data from the instruments, calibrates it, and combines multiple exposures to create a final spectral cube \parencite{shuping2014overview}.
 The cube itself is a 36 by 36 pixel map spanning \qty{11}{\arcminute} by \qty{11}{\arcminute} with a 202 spectral channels covering a velocity range of -110 to 90 km/s with a velocity resolution of 1 km/s.
 The data has a beam size of \qty{20.77}{\arcminute}  and is tuned to a frequency of 1.45 MHz for measuring the [NII] 205 $\mu$m line.
 Due to the calibration, the values are already in Main Beam Brightness Temperature (K$_{mb}$) units.
@@ -87,21 +87,21 @@ Our methodology for analysis consists of preprocessing the data cubes to ensure 
 In addition to the electron density, we are also able to estimate the [NII] 122 $\mu$m line intensity, which whose ratio with the [NII] 205 $\mu$m line can be used to estimate electron density as well \parencite{goldsmith2015herschel}.
 Figure \ref{carina/fig:raw_data} shows the raw data cubes for both the [NII] 205 $\mu$m line and the RRL data.
 
-\subsection{Pre-processing the Data Cubes}
-In order to properly compare the two data cubes, we first need to pre-process everything to ensure our data points match both spatially and spectrally.
+\subsection{Preprocessing the Data Cubes}
+In order to properly compare the two data cubes, we first need to preprocess everything to ensure our data points match both spatially and spectrally.
 First, we need our data to be in the same units, so we will convert the RRL data from antenna temperature (K$_{Ta*}$) to Main Beam Brightness Temperature (K$_{mb}$) using the efficiency of the antenna as shown in Equation \ref{eq:mb_temp}, where $T_{Ta*}$ is the antenna temperature and $\eta_{mb}$ is the main beam efficiency of the antenna.
 \begin{equation}
     T_{mb} = \frac{T_{Ta*}}{\eta_{mb}}
     \label{eq:mb_temp}
 \end{equation}
-Next we need to ensure both datasets have a common beam size.
+Next, we need to ensure that both datasets have a common beam size.
 As the SOFIA data has a smaller beam than the RRL data, we will convolve the [NII] 205 $\mu$m data with a Gaussian kernel that matches the beam size of the RRL data.
 This is handled by the \texttt{spectral-cube} package, which uses the \texttt{astropy.convolution} module to convolve the data with a Gaussian kernel that matches the beam size of the RRL data.
 We perform this step first to ensure that the [NII] 205 $\mu$m data is properly smoothed to match the RRL data before interpolating the data to a common grid, where we may lose some spatial resolution. 
 
 Following this, we spectrally interpolate the [NII] 205 $\mu$m data to match the larger spectral resolution of the RRL data.
 We also crop both data cubes to the same spectral range. 
-This is accomplished by convolving the [NII] 205 $\mu$m data with a Gaussian kernel with a standard deviation with that matches the difference in spectral resolution between the two datasets as shown in Equation \ref{eq:gaussian_kernel}, where $\sigma$ is the standard deviation of the Gaussian kernel, $\Delta \nu_{[NII]}$ is the spectral resolution of the [NII] 205 $\mu$m data, and $\Delta \nu_{RRL}$ is the spectral resolution of the RRL data.
+This is accomplished by convolving the [NII] 205 $\mu$m data with a Gaussian kernel with a standard deviation that matches the difference in spectral resolution between the two datasets as shown in Equation \ref{eq:gaussian_kernel}, where $\sigma$ is the standard deviation of the Gaussian kernel, $\Delta \nu_{[NII]}$ is the spectral resolution of the [NII] 205 $\mu$m data, and $\Delta \nu_{RRL}$ is the spectral resolution of the RRL data.
 \begin{equation}
     \sigma_{FWHM} = \frac{\Delta \nu_{RRL}^2 - \Delta \nu_{[NII]}^2}{\sqrt{8\ln(2)}}
     \label{eq:gaussian_kernel}
@@ -119,7 +119,7 @@ Figure \ref{carina/fig:spectral_means} shows the mean spectra of both the [NII] 
     \includegraphics[width=0.95\textwidth]{figs/carina/spec_final.png}
     \caption[Mean Spectra of {[}NII{]} 205 $\mu$m and RRL Data During Preprocessing]{
         The mean spectra of the [NII] 205 $\mu$m line (blue) and the RRL line (orange) at each step of preprocessing.
-        Note that the first three panels show the mean spectra of the entire RRL region which includes more area than the SOFIA data.
+        Note that the first three panels show the mean spectra of the entire RRL region, which includes more area than the SOFIA data.
         The top panel shows the raw spectra prior to any spectral interpolation or smoothing.
         The second panel shows the spectra after spectral interpolation to the RRL data's spectral resolution and cropping to the same common range.
         The third panel shows the spectra after applying a Savitzky-Golay filter to smooth the data.
@@ -153,14 +153,14 @@ This is done using Equation \ref{carina/eq:alma_temp}, where $T_b$ is the bright
     T_C = \frac{S\ \lambda^2}{2.65\ \theta^2}
     \label{carina/eq:alma_temp}
 \end{equation}
-The also needs to be corrected to match the frequency of the RRL data.
+It also needs to be corrected to match the frequency of the RRL data.
 This is accomplished by using a power law to scale the brightness temperature to the frequency of the RRL data as shown in Equation \ref{carina/eq:alma_freq}, where $T_{Bf}$ is the final brightness temperature in K, $T_{Bi}$ is the initial brightness temperature in K, $\nu_{f}$ is the final frequency in GHz, $\nu_i$ is the initial frequency in GHz, and $\alpha$ is the spectral index.
 \begin{equation}
     T_{Bf} = T_{Bi} \left( \frac{\nu_f}{\nu_i} \right)^\alpha
     \label{carina/eq:alma_freq}
 \end{equation}
 For Carina Nebula, we use a spectral index of -0.1, which is used for optically thin thermal bremsstrahlung emission \parencite{salatino2012spectral}.
-As our RRL data is scaled to the H67$\alpha$ line, we will use the frequency of this line (21.385 GHz) as our final frequency, extrapolating from the ALMA data which is centered around 2.1 GHz.
+As our RRL data is scaled to the H67$\alpha$ line, we will use the frequency of this line (21.385 GHz) as our final frequency, extrapolating from the ALMA data, which is centered around 2.1 GHz.
 Finally, while ALMA data is not a spectral cube, \texttt{spectral-cube} can handle spatial interpolation of 2D data as well.
 We use the WCS of the final [NII] 205 $\mu$m data cube to reproject the ALMA data to the same grid.
 
@@ -172,7 +172,7 @@ We begin with the following equation for the integrated intensity of the [NII] l
     \int{T_{mb}^{[NII]}} d\nu = \frac{A_{ul}hc^3N_u}{8\pi k_b \nu_{ul}^2}\\
 \end{equation}
 In this equation, $A_{ul}$ is the Einstein A coefficient for spontaneous decay rate, $h$ is Planck's constant, $c$ is the speed of light, $N_u$ is the column density of the upper level, $k_b$ is Boltzmann's constant, and $\nu_{ul}$ is the frequency of the transition.
-We can simply this further by noting that the upper level column density, $N_u$, is related to the fractional population of the upper level, $f(^uP_l)$, and the total column density of ionized nitrogen, $N(N^+)$, as follows:
+We can simply this further by noting that the upper-level column density, $N_u$, is related to the fractional population of the upper level, $f(^uP_l)$, and the total column density of ionized nitrogen, $N(N^+)$, as follows:
 \begin{equation}
     N_u = f(^3P_u) N(N^+)
     \label{carina/eq:N_u}
@@ -219,7 +219,7 @@ Finally, we can compute the ratio of Equation \ref{carina/eq:intensity_NII_final
     R^{[NII]}_{RRL} = \frac{\int{T^{[NII]}_{mb} d\nu}}{\int{T^{RRL}_{mb} d\nu}} = \num{2.75e21}\ \frac{A_{ul}\nu_{RRL}T_e^{3/2}}{\nu_{ul}^2}\ \frac{N(N^+)}{N(H^+)}\ \frac{f(^3P_u)}{n_e G_{NLTE}(n_e,T_c)}
     \label{carina/eq:ratio_final}
 \end{equation}
-Most of the terms in this equation are constants that do not depend on the electron density, $n_e$, except for the last term, RHS = $f(^3P_u)/n_e G_{NLTE}(n_e,T_c)$.
+Most of the terms in this equation are constants that do not depend on the electron density, $n_e$, except for the last term, RHS = $f(^3P_u)/n_e G_{NLTE}(n_e, T_c)$.
 The remaining unknown terms $T_e$ the electron temperature in K, and $N(N^+)/N(H^+)$, the abundance ratio of ionized nitrogen with respect to ionized hydrogen, can be estimated using the distance to the Galactic center, $R_{gal}$, in kpc \parencite{pineda2019electron, balser2015azimuthal, esteban2018revisiting}:
 \begin{align}
     T_e &= (4446 \pm 301) + (467 \pm 34) R_{gal} \\
@@ -227,10 +227,10 @@ The remaining unknown terms $T_e$ the electron temperature in K, and $N(N^+)/N(H
 \end{align}
 
 Rearranging Equation \ref{carina/eq:ratio_final} to isolate the term that depends on electron density allows us to look at the relationship between those terms and electron density in Figure \ref{carina/fig:gnlte_curves}.
-The curves are generated using fractional population data from \cite{luridiana2015pyneb} and GNLTE coefficients from \cite{gordon2002radio} to write a function that calculates RHS for a given electron density, $n_e$, and continuum brightness temperature, $T_c$.
+The curves are generated using fractional population data from \cite{luridiana2015pyneb}, and GNLTE coefficients from \cite{gordon2002radio} to write a function that calculates RHS for a given electron density, $n_e$, and continuum brightness temperature, $T_c$.
 Because these curves are related to the ratio of the [NII] 205 $\mu$m line intensity to the RRL intensity, we can use them to calculate the electron density for a given ratio of intensities.
-This is accomplished by calculating the ratio of the integrated intensities and dividing by the constant terms. 
-Then we can use a root solving algorithm, such as \texttt{scipy.optimize.fsolve}, find the value of electron density that whose RHS matches the calculated ratio \parencite{2020SciPy-NMeth}.
+This is accomplished by calculating the ratio of the integrated intensities and dividing it by the constant terms. 
+Then, we can use a root-solving algorithm, such as \texttt{scipy.optimize.fsolve}, to find the value of electron density whose RHS matches the calculated ratio \parencite{2020SciPy-NMeth}.
 This process is repeated for each pixel in the [NII] 205 $\mu$m data cube, resulting in a map of electron density across the Carina Nebula.
 
 \begin{figure}
@@ -239,7 +239,7 @@ This process is repeated for each pixel in the [NII] 205 $\mu$m data cube, resul
         \centering
         \includegraphics[width=\textwidth]{figs/carina/gnlte_curves.png}
         \caption{
-        The fractional population of the 205 $\mu$m level of ionized nitrogen, $f(^3P_1)$, and the GNLTE coefficients, $G_{NLTE}(n_e,T_c)$, as a function of electron density for various continuum brightness temperatures.
+        The fractional population of the 205 $\mu$m level of ionized nitrogen, $f(^3P_1)$, and the GNLTE coefficients, $G_{NLTE}(n_e, T_c)$, as a function of electron density for various continuum brightness temperatures.
         }
         \label{carina/fig:gnlte_curves}
     \end{subfigure}%
@@ -268,12 +268,12 @@ Figure \ref{carina/fig:nii_curves} shows the ratio of the two lines at the calcu
 The primary sources of uncertainty in our electron density calculations come from the actual measurements of the [NII] 205 $\mu$m line and the RRL data, as well as the usage of $R_{gal}$ to estimate the electron temperature and nitrogen abundance.
 As we are taking the integrated intensities of the [NII] 205 $\mu$m line and the RRL data, we can calculate the uncertainties in these measurements using the RMS noise of the data cubes.
 We calculate this by taking the standard deviation of the data cube in a region where we expect no signal, such as the edges of the spectral range for each pixel, far away from the center of the spectral line where Carina is located. 
-This produces a per channel noise map for each pixel in the data cube which we can use to calculate the uncertainties in our integrated intensities as follows:
+This produces a per-channel noise map for each pixel in the data cube, which we can use to calculate the uncertainties in our integrated intensities as follows:
 \begin{equation}
     \sigma_{int} = \text{RMS} \times \sqrt{N_{chan}} \times \Delta \nu
     \label{carina/eq:uncertainty_intensity}
 \end{equation}
-This uncertainty, along with the uncertainties in $T_e$ and $N(N^+)/N(H^+)$, can be propagated through the calculations to estimate the uncertainty of the value used to calculate the electron density in the root solving algorithm.
+This uncertainty, along with the uncertainties in $T_e$ and $N(N^+)/N(H^+)$, can be propagated through the calculations to estimate the uncertainty of the value used to calculate the electron density in the root-solving algorithm.
 
 To calculate electron density, we use a Monte Carlo approach, where we randomly sample from a normal distribution centered around the measured value with a standard deviation equal to the uncertainty.
 We then solve for the electron density using the sampled values and repeat this process many times (e.g., 1000 iterations) to generate a distribution of electron density values.
@@ -284,7 +284,7 @@ This method was chosen over direct propagation of uncertainties because it allow
 \label{carina/sec:fits_fit}
 To align the SPIFI and ISO data with the SOFIA data, we need to create a World Coordinate System (WCS) for each dataset.
 Given that we have a table of coordinate points and knowledge that these points are in a grid-like pattern, we can use a bit of image matrix manipulation to create a WCS for each dataset.
-A FITS header contains information about a data cube is normally parsed by programs like \texttt{astropy.io.fits} to create a WCS object that can be used to map pixel coordinates to celestial coordinates.
+A FITS header contains information about a data cube and is normally parsed by programs like \texttt{astropy.io.fits} to create a WCS object that can be used to map pixel coordinates to celestial coordinates \cite{}
 We do not have a FITS header for the SPIFI and ISO data, so we will need to create one ourselves.
 The key values we need to set in the FITS header are the following:
 \begin{itemize}
@@ -295,10 +295,10 @@ The key values we need to set in the FITS header are the following:
 \end{itemize}
 
 Our first step is to determine the reference pixel coordinates, which we can set to the center of the data cube.
-If our pixels are located on a grid, each pixel will have a both an index and celestial coordinate.
+If our pixels are located on a grid, each pixel will have both an index and celestial coordinate.
 To estimate the index grid, we can use Principal Component Analysis (PCA) to align the coordinates to their principal axes \parencite{wold1987principal}.
 In the case of a uniform grid rotated at some angle, this rotates the grid to align with the x and y axes.
-At that point, we query a K-Dimensional Tree of these points to find the median spacing between the points.
+At that point, we query a K-dimensional tree of these points to find the median spacing between the points.
 We can then sort the x and y coordinates and use the following equation to determine each index:
 \begin{equation}
     \text{index} = \left\lfloor \frac{\text{coordinate} - \text{min coordinate}}{\text{spacing}} \right\rfloor - \text{min index}
@@ -307,7 +307,7 @@ We can then sort the x and y coordinates and use the following equation to deter
 This will give us a mapping of each coordinate to its index in the grid.
 
 The PCA step can be skipped if we have a good estimate of the rotation angle of the grid.
-In the case of the SPIFI data, this method works well for one half of the data, but not the other half.
+In the case of the SPIFI data, this method works well for one half of the data but not the other half.
 In this case, we can use the first half of the data to estimate the rotation angle and then apply that angle to the second half of the data.
 Instead of using PCA, we create the rotational matrix using the rotation angle and apply it to the coordinates to align them with the x and y axes 
 \begin{equation}
@@ -357,7 +357,7 @@ Figure \ref{carina/fig:aligned_fits} shows the aligned SPIFI and ISO data with t
     \centering
     \includegraphics[width=\textwidth]{figs/carina/fits_coverage.png}
     \caption[Aligned SPIFI and ISO Data with SOFIA Data]{
-        The aligned SPIFI (top) and ISO (bottom) data with the SOFIA data.
+        The SPIFI (top) and ISO (bottom) data were aligned with the SOFIA data.
         The SPIFI data is shown in blue, while the ISO data is shown in orange.
         The SOFIA data is shown in green.
         }
@@ -372,7 +372,7 @@ This is accomplished using the following equation \parencite{oberst2011205}
 
 \section{Results}
 In observing the spectra of the [NII] 205 $\mu$m line and the RRL data, we can see two distinct regions of interest in the Carina Nebula.
-The first region is the Keyhole Nebula which is a prominent feature in the Carina Nebula and is known for its high electron density \cite{brooks2000unlocking}.
+The first region is the Keyhole Nebula, which is a prominent feature in the Carina Nebula and is known for its high electron density \cite{brooks2000unlocking}.
 Behind the Keyhole Nebula is the Carina Extended region, which is a more diffuse region with lower electron density.
 Table \ref{carina/tab:slabs} shows the spectral slabs used to calculate the electron density for both regions.
 
@@ -408,10 +408,10 @@ Using the Monte Carlo approach, we perform 500 iterations to generate a distribu
 Many of the pixels in our maps have a low signal-to-noise ratio (SNR), which results in a large uncertainty in the electron density.
 In some cases, the root finding algorithm fails to converge, resulting in an undefined value for the electron density.
 We omit these values as well as those with an SNR less than 3.
-We also omit values whose calculated $n_e$ exceed 1000 as our coverage of the $G_{NLTE}$ coefficients do not extend past that and we would be extrapolating. 
-Figure \ref{carina/fig:calculations_keyhole} and \ref{carina/fig:calculations_carina} show the relationship between the density dependent variables of Equation \ref{carina/eq:ratio_final} and the electron density for the Keyhole Nebula and Carina Extended region.
+We also omit values whose calculated $n_e$ exceed 1000 as our coverage of the $G_{NLTE}$ coefficients do not extend past that, and we would be extrapolating. 
+Figure \ref{carina/fig:calculations_keyhole} and \ref{carina/fig:calculations_carina} shows the relationship between the density-dependent variables of Equation \ref{carina/eq:ratio_final} and the electron density for the Keyhole Nebula and Carina Extended region.
 Below that, in Figure \ref{carina/fig:monte_carlo}, we show the the uncertainty of our calculations as a function of the number of samples in our Monte Carlo simulations.
-We tested up to 500 samples but, for optimal compute time, we would recommend limiting the value to around 150 as the uncertainty plateaus past that point. 
+We tested up to 500 samples, but for optimal compute time, we would recommend limiting the value to around 150 as the uncertainty plateaus past that point. 
 
 \begin{figure}
     \centering
@@ -434,22 +434,22 @@ We tested up to 500 samples but, for optimal compute time, we would recommend li
         \label{carina/fig:monte_carlo}
     \end{subfigure}
     \caption[Density Dependent Variables for Electron Density Calculations and Monte Carlo Simulation]{
-        The density dependent variables of Equation \ref{carina/eq:ratio_final} for the Keyhole Nebula (top left) and Carina Extended region (top right).
+        The density-dependent variables of Equation \ref{carina/eq:ratio_final} for the Keyhole Nebula (top left) and Carina Extended region (top right).
         }
     \label{carina/fig:calculations}
 \end{figure}
 
 Figures \ref{carina/fig:result_carina} and \ref{carina/fig:result_keyhole} show maps for the [NII] 205 $\mu$m and RRL inputs as well as the calculated electron density for the Carina Extended and the Keyhole Nebula, respectively.
 These maps are generated after omitting pixels with an SNR less than 3 and those with an electron density greater than 1000 cm$^{-3}$.
-The top panel shows our inputs into the system, the integrated intensity of the [NII] 205 $\mu$m line (left) and the integrated intensity of the RRL data (right).
-The [NII] 205 $\mu$m line is shown at the original beam size of the SOFIA data so it can be consistent with the [NII] 122 $\mu$m line below it.
+The top panel shows our inputs into the system, the integrated intensity of the [NII] 205 $\mu$m line (left), and the integrated intensity of the RRL data (right).
+The [NII] 205 $\mu$m line is shown at the original beam size of the SOFIA data, so it can be consistent with the [NII] 122 $\mu$m line below it.
 
 \begin{figure}
     \centering
     \includegraphics[width=.9\textwidth]{figs/carina/keyhole/keyhole.png}
     \caption[Calculated Electron Density and {[}NII{]} 122 $\mu$m Maps for the Keyhole Nebula]{
         The inputs and outputs of our electron density calculations for the Keyhole Nebula.
-        The top left panel shows the integrated intensity of the RRL data, the top right panel shows the integrated intensity of the [NII] 205 $\mu$m line, the bottom left panel shows the calculated electron density, and the bottom right panel shows the estimated integrated intensity of the [NII] 122 $\mu$m line.
+        The top left panel shows the integrated intensity of the RRL data, the top right panel shows the integrated intensity of the [NII] 205 $\mu$m line, the bottom left panel shows the calculated electron density and the bottom right panel shows the estimated integrated intensity of the [NII] 122 $\mu$m line.
         }
     \label{carina/fig:result_keyhole}
 \end{figure}
@@ -459,7 +459,7 @@ The [NII] 205 $\mu$m line is shown at the original beam size of the SOFIA data s
     \includegraphics[width=.9\textwidth]{figs/carina/carina/carina.png}
     \caption[Calculated Electron Density and {[}NII{]} 122 $\mu$m Maps for the Extended Carina Nebula]{
         The inputs and outputs of our electron density calculations for the Extended Carina Nebula.
-        The top left panel shows the integrated intensity of the RRL data, the top right panel shows the integrated intensity of the [NII] 205 $\mu$m line, the bottom left panel shows the calculated electron density, and the bottom right panel shows the estimated integrated intensity of the [NII] 122 $\mu$m line.
+        The top left panel shows the integrated intensity of the RRL data, the top right panel shows the integrated intensity of the [NII] 205 $\mu$m line, the bottom left panel shows the calculated electron density and the bottom right panel shows the estimated integrated intensity of the [NII] 122 $\mu$m line.
         }
     \label{carina/fig:result_carina}
 \end{figure}
@@ -484,7 +484,7 @@ This is likely due to the differences in resolution and sensitivity between the 
 
 We also estimated the [NII] 122 $\mu$m line intensity using the ratio of the two [NII] lines, which can be used to estimate electron density as well \parencite{goldsmith2015herschel}.
 ASTHROS, the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter Wavelengths, is a proposed mission that will observe the [NII] 122 $\mu$m line and the [NII] 205 $\mu$m line to measure electron density in star-forming regions \parencite{siles2020asthros}.
-In the proposal for ASTHROS, the goal is to achieve a signal-to-noise ratio (SNR) of 4 for the [NII] 122 $\mu$m line at a sensitivity of 0.1 K and a SNR of 10 for the [NII] 205 $\mu$m line at a sensitivity of 0.15 K.
+In the proposal for ASTHROS, the goal is to achieve a signal-to-noise ratio (SNR) of 4 for the [NII] 122 $\mu$m line at a sensitivity of 0.1 K and an SNR of 10 for the [NII] 205 $\mu$m line at a sensitivity of 0.15 K.
 We can estimate the signal of our SNR by dividing our integrated intensity by the full width at half maximum (FWHM) of the line.
 This can be done at each pixel in our maps to estimate our average signal in Kelvin for both the Keyhole Nebula and the Carina Extended region.
 Dividing this signal by the expected sensitivity gives us the SNR for each pixel in our maps, as shown in Figure \ref{carina/fig:snr}.
@@ -495,7 +495,7 @@ Dividing this signal by the expected sensitivity gives us the SNR for each pixel
     \caption[SNR of the {[}NII{]} 122 $\mu$m and 205 $\mu$m Lines in the Carina Nebula]{
         The signal-to-noise ratio (SNR) of the [NII] 122 $\mu$m line (left) and the [NII] 205 $\mu$m line (right) for both the Keyhole Nebula (top) and the Carina Extended region (bottom).
         The diverging color scale is used to show how close the SNR is to the desired values for ASTHROS.
-        For 122 $\mu$m, we want an SNR of 4 at a sensitivity of 0.1 K and for 205 $\mu$m, we want an SNR of 10 at a sensitivity of 0.15 K.
+        For 122 $\mu$m, we want an SNR of 4 at a sensitivity of 0.1 K, and for 205 $\mu$m, we want an SNR of 10 at a sensitivity of 0.15 K.
         }
     \label{carina/fig:snr}
 \end{figure}
@@ -508,4 +508,4 @@ The Carina Extended region has an average SNR of 1.1 for the [NII] 122 $\mu$m li
 This is consistent with the lower electron density in the Carina Extended region, which results in a lower signal for the [NII] 122 $\mu$m line.
 Overall, these results suggest that ASTHROS needs to improve its sensitivity to observe both lines in the Carina Nebula, especially in the Carina Extended region.
 Additional calculations can be done to estimate the amount of integration time necessary to achieve the desired SNR for both lines in the Carina Nebula.
-Given that ASTHROS estimated s a sensitivity of 0.1 K for the [NII] 122 $\mu$m line and 0.15 K for the [NII] 205 $\mu$m line, we may be able to improve our SNR by increasing the integration time.
+Given that ASTHROS estimated a sensitivity of 0.1 K for the [NII] 122 $\mu$m line and 0.15 K for the [NII] 205 $\mu$m line, we may be able to improve our SNR by increasing the integration time.
