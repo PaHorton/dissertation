@@ -61,7 +61,7 @@ In our configuration, the PC/104 stack consists of a main compute board, two man
 This gives our Storage computer the ability to connect up to 16 devices to the readout network. 
 As this computer is centrally located on the network, it hosts the RabbitMQ server that is responsible for routing messages between all the devices. 
 Like the name implies, the Storage computer is responsible for storing all of the science and housekeeping data collected during the flight.
-We utilize four 4TB solid state drives in either a RAID 5 or 10 configuration to provide a total of 12 or 8 TB of storage for the science data.
+We utilize four 4 TB solid state drives in either a RAID 5 or 10 configuration to provide a total of 12 or 8 TB of storage for the science data.
 The decision between RAID 5 and 10 is based on the our level of redundancy and storage requirements. 
 With RAID 10, we have a total of 8 TB of storage, but we can survive at least a single drive failure without losing any data.
 With RAID 5, we would have more storage at 12 TB but would only be able to survive one drive failure.
