@@ -95,7 +95,6 @@ This is done by updating the \texttt{/etc/hosts} file with following the IP addr
 \chapter{Amplifier Chain Error Handling}
 \label{readout/app:if_amp_errors}
 Error codes for the amplifier chain are hard coded into the firmware of the Arduino.
-
 Our driver code returns the following status codes whenever an error occurs in performing any read or write operation to the amplifier chain.
 The hundreds digit of the error code indicates at what point in the control loop the error occurred.
 In the case of a read, this value is 0 as there is only one operation performed.
@@ -103,35 +102,35 @@ In the case of a write, the value is 0 if an error occurred during the write ope
 
 Our first response is what occurs during nominal operation:
 \begin{itemize}
-    \item \textbf{X00} - No error
+    \item \texttt{X00} - No error
 \end{itemize}
 From here on, the errors are sorted by the system that is reporting the error.
 Errors with data validation:
 \begin{itemize}
-    \item \textbf{X01} - Bad Address Received
-    \item \textbf{X02} - Bad Attenuation Received
+    \item \texttt{X01} - Bad Address Received
+    \item \texttt{X02} - Bad Attenuation Received
 \end{itemize}
 Errors with connecting to the LCT4302:
 \begin{itemize}
-    \item \textbf{X11} - Buffer Overflow from LCT4302 Connection
-    \item \textbf{X12} - NACK Received from LCT4302 connection
-    \item \textbf{X13} - Bus Error or Arbitration Lost from LCT4302 connection
-    \item \textbf{X14} - Timeout from LCT4302 connection
-    \item \textbf{X15} - Unknown Error from LCT4302 connection
+    \item \texttt{X11} - Buffer Overflow from LCT4302 Connection
+    \item \texttt{X12} - NACK Received from LCT4302 connection
+    \item \texttt{X13} - Bus Error or Arbitration Lost from LCT4302 connection
+    \item \texttt{X14} - Timeout from LCT4302 connection
+    \item \texttt{X15} - Unknown Error from LCT4302 connection
 \end{itemize}
 Errors connecting to the PCA9571:
 \begin{itemize}
-    \item \textbf{X21} - Buffer Overflow from PCA9571 Connection
-    \item \textbf{X22} - NACK Received from PCA9571 connection
-    \item \textbf{X23} - Bus Error or Arbitration Lost from PCA9571 connection
-    \item \textbf{X24} - Timeout from PCA9571 connection
-    \item \textbf{X25} - Unknown Error from PCA9571 connection
+    \item \texttt{X21} - Buffer Overflow from PCA9571 Connection
+    \item \texttt{X22} - NACK Received from PCA9571 connection
+    \item \texttt{X23} - Bus Error or Arbitration Lost from PCA9571 connection
+    \item \texttt{X24} - Timeout from PCA9571 connection
+    \item \texttt{X25} - Unknown Error from PCA9571 connection
 \end{itemize}
 Errors disconnecting from the LCT4302:
 \begin{itemize}
-    \item \textbf{X31} - Buffer Overflow from LCT4302 Disconnection
-    \item \textbf{X32} - NACK Received from LCT4302 disconnection
-    \item \textbf{X33} - Bus Error or Arbitration Lost from LCT4302 disconnection
-    \item \textbf{X34} - Timeout from LCT4302 disconnection
-    \item \textbf{X35} - Unknown Error from LCT4302 disconnection
+    \item \texttt{X31} - Buffer Overflow from LCT4302 Disconnection
+    \item \texttt{X32} - NACK Received from LCT4302 disconnection
+    \item \texttt{X33} - Bus Error or Arbitration Lost from LCT4302 disconnection
+    \item \texttt{X34} - Timeout from LCT4302 disconnection
+    \item \texttt{X35} - Unknown Error from LCT4302 disconnection
 \end{itemize}
