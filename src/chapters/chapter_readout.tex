@@ -138,54 +138,6 @@ This allows a queue to be bound broadly to a specific type of message, such as \
 For systems that have multiple devices, this allows us to easily ingest all data from those devices without having to know the specific routing keys for each device.
 
 \subsection{RMQTools}
-The ASTHROS readout system relies on RabbitMQ to communicate between different devices and systems on the readout network.
-Past ballooning missions, such as BLAST-TNG, utilize sockets to communicate between systems \parencite{gordon2019highly}.
-The resulting network of sockets across multiple devices becomes difficult to manage and debug as many of the definitions for the sockets are hard-coded into the software.
-Devices in such a system often use User Datagram Protocol (UDP) to broadcast messages across the network.
-This approach requires each device to listen for messages on a specific port and parse the messages to determine if they are intended for that device.
-For systems that require multiple devices to communicate with each other, this can become cumbersome as each device must be aware of the other devices on the network and the ports they are listening on.
-Additionally, UDP is a connectionless protocol, meaning that there is no guarantee that a message will be received by the intended recipient.
-To work around this, the BLAST readout system was built as a single monolithic program that orchestrates all the devices on the network.
-This approach is not scalable and makes it difficult to debug and maintain the system.
-
-For ASTHROS, we wanted to build a system that was modular, consisting of microservices that could easily be integrated into the rest of the system using a shared protocol.
-To accomplish this, we needed to decouple the devices so that data production and consumption are separated.
-Services that produce housekeeping data are not concerned with who needs the data, and services that consume housekeeping data are not concerned with where the data comes from, simply how the data is formatted. 
-This is where a message broker like RabbitMQ comes in.
-RabbitMQ is an open-source Advances Messaging Queue Protocol (AMQP) implementation that serves as a broker for incoming and outgoing messages by routing messages to bound destination queues located on an exchange \parencite{dunne2018comparison}.
-We chose RabbitMQ because of the centralized message broker architecture that allows for easy integration of new devices and services.
-All of our devices are networked together, making a centralized message broker the ideal solution for our readout system.
-
-The core of RabbitMQ is explained in this documentation as well as \cite{toshev2015learning}.
-We like to use a post office analogy to explain how RabbitMQ works.
-Within RabbitMQ are three main components: producers, queues, and consumers. 
-Producers are the senders of a message, which is analogous to a person sending a letter.
-In our case, a message is any binary or blob of data, but we typically use JSON-formatted strings.
-When a producer sends a message, it addresses the message with a routing key.
-A queue is similar to a mailbox, where letters are stored until they are picked up by the recipient.
-The recipient of the message is the consumer, who retrieves the message from the queue.
-Just like a normal mailbox, a queue can have multiple producers sending data to it and multiple consumers who can try and read the data.
-
-In all of this, the message broker is the post office and postal workers.
-When a producer makes a message, it hands it to the post office to be delivered to all who need it.
-This is done using the routing key that specifies the queue to which the message should be delivered.
-The post office then takes the message and delivers it to the correct mailbox. 
-When a consumer is ready to read a message, it checks its mailbox for any messages and reads them.
-If the consumer is not ready to read the message, the message stays in the mailbox until the consumer is ready.
-
-Behind the scenes, there is a fourth concept important to RabbitMQ: exchanges.
-Exchanges are the post office's sorting facility.
-Typically, producers do not send messages directly to queues. 
-Instead, they publish messages to an exchange with a specific routing key.
-When a queue is made, it can be bound to an exchange with routing keys.
-If the routing key of the messages matches one of the routing keys bound to the queue, the message is delivered to that queue.
-Routing keys can be wildcards, allowing queues to subscribe to specific types of messages. 
-For ASTHROS, we follow the format of \texttt{<type>.<device>.<subtype>} for our routing keys.
-For example, a housekeeping value from temperature sensors on Power Supply Unit 4 would be \texttt{housekeeping.temp.4}.
-This allows a queue to be bound broadly to a specific type of message, such as \texttt{housekeeping.*.*} to receive all housekeeping messages or \texttt{*.temp.*} to receive all temperature messages.
-For systems that have multiple devices, this allows us to easily ingest all data from those devices without having to know the specific routing keys for each device.
-
-\subsection{RMQTools}
 While RabbitMQ serves as a powerful backbone for our networking infrastructure, we needed to develop a way to wrap our devices in ways that would communicate with the RabbitMQ server.
 To accomplish this, we developed a Python package called \texttt{RMQTools} that provides a simple interface for creating both publisher-to-subscriber systems as well as Remote Procedure Call (RPC) frameworks.
 At its core is the \texttt{RmqConnection} class that wraps the \texttt{pika} library to add additional functionality and simplify the process of creating a RabbitMQ connection \parencite{pika}.
@@ -281,7 +233,7 @@ As we needed to control multiple PMCCs and have them communicate with the rest o
 The core of \texttt{PyMCC} is a Python driver for the PMCCs that provides an interface for controlling the PMCCs and reading out the data.
 Built on top of the driver are Python programs that allow for manual control of the PMCCs, as well as a server that allows for control of the PMCCs over the RabbitMQ network.
 
-\subsection{\texttt{spi\_utils}}
+\subsection[spi\_utils]{\texttt{spi\_utils}}
 At the lowest level of the \texttt{PyMCC} driver is the \texttt{spi\_utils} module.
 This module provides an interface for communicating with the PMCCs over SPI using the \texttt{spidev} Python library.
 The \texttt{spidev} library provides an interface to the Linux kernel's SPI device driver \parencite{spidev}.
@@ -389,7 +341,7 @@ To complete the transaction, we write the modified buffer back to the PMCC using
 
 Finally, we provide a \texttt{close()} method that simply calls the \texttt{close()} method on the \texttt{spidev} object to close the SPI connection.
 
-\subsection{\texttt{config}}
+\subsection[config]{\texttt{config}}
 There are a number of device-specific configurations that need to be set for each PMCC in order for it to operate correctly.
 To simplify the process of writing code to configure the PMCCs, we utilize the YAML configuration file format to store the configuration for each PMCC \parencite{yaml}.
 This YAML file has information about the RMQ configuration as well as the spectrometer configuration. 
@@ -476,14 +428,14 @@ Finally, the pre-calibrated values are loaded from the \texttt{spec\_file} by se
 If the chip is not found in the file, we raise an exception that the configuration provided was not valid. 
 The final product is a \texttt{PMCC\_Config} object that contains all the necessary information to configure both the CM4 and any number of PMCCs connected to it. 
 
-\subsection{\texttt{consts}}
+\subsection[consts]{\texttt{consts}}
 The \texttt{consts} module is simply a collection of constants used throughout the \texttt{PyMCC} module.
 Many of these are register addresses so that we can easily reference them in the code without having to go back and forth between the PMCC manual and the code.
 Additionally, we have some large arrays that are used in configuration that we don't want to hard code into the code.
 For example, \texttt{WINDOW\_COEFFS} is a vector of 513 values used to configure the symmetrical 1024-point FFT on the DSP. 
 In addition to addresses and coefficients, we keep an array of default values for the PMCC registers so that we can easily identify issues with the device after reset. 
 
-\subsection{\texttt{driver}}
+\subsection[driver]{\texttt{driver}}
 The \texttt{driver} module is the highest level of the \texttt{PyMCC} package and is responsible for providing all functionality for the PMCCs. 
 Each PMCC is controlled by a \texttt{PMCC\_Driver} object that is initialized with a \texttt{PMCC\_Config} object and the index of the spectrometer in the config that we want to control.
 After initializing the object, the user must call the \texttt{initialize\_interface()} method to set up a \texttt{PMCC\_SPI} object to communicate with the PMCC.
@@ -781,7 +733,7 @@ There are 512 different SPI addresses that can be read and written to on the PMC
 This method allows us to dump the current state of the PMCC or set the PMCC to a known state.
 These are mostly used for debugging and are not used in the normal operation of the PMCC.
 
-\subsection{\texttt{data\_utils}}
+\subsection[data\_utils]{\texttt{data\_utils}}
 \texttt{data\_utils} provides a few handy classes to handle storing data from the PMCC. 
 The simplest of these is the \texttt{PMCC\_Register\_Writer}, which, as the name suggests, is able to write the PMCC registers to a file. 
 This is useful for debugging and for storing the state of the PMCC for later use.
@@ -835,7 +787,7 @@ After creating the file, we start a counter at 0 to keep track of the number of 
         \texttt{window\_bit\_growth} & True if window bit growth is enabled \\
         \texttt{butterfly\_shift}  & True if butterfly shift is enabled\\
     \end{tabularx}
-    \caption{Attributes of the \texttt{data} dataset in the HDF5 file}
+    \caption{Attributes of the Data Portion of the HDF5 File}
     \label{readout/table:h5_header}
 \end{table}
 
@@ -928,7 +880,7 @@ The pressure sensor is connected to the central command computer via an RS-485 i
 
 These three systems are split into different modules in the \texttt{cryocool} package.
 
-\subsection{\texttt{cryocool}}
+\subsection[cryocool]{\texttt{cryocool}}
 \begin{table}
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
@@ -1107,7 +1059,7 @@ We then iterate over all registers in the configuration file and read the value 
 that wasn't read in the status command.
 This method accepts keyword arguments for \texttt{convert} and \texttt{in\_kelvin} to convert the values to the intended units in the \texttt{get\_status()} and \texttt{get\_data()} methods.
 
-\subsection{\texttt{cryotemp}}
+\subsection[cryotemp]{\texttt{cryotemp}}
 The \texttt{cryotemp} module wraps the lakeshore package with a \texttt{Lakeshore} class that can be used to read values from a Lakeshore 240. 
 The configuration for the Lakeshore devices is stored in the YAML file that contains the device's connection parameters.
 On ASTHROS, we have two Lakeshore 240s that are connected to the central command computer via USB.
@@ -1132,7 +1084,7 @@ The class then implements three simple methods to read the values from the Lakes
 \texttt{read\_channel()} and \texttt{read\_index()} are used to read data from the Lakeshore device for a specific channel number or index in the configuration file.
 The \texttt{read\_all()} method reads all channels on the Lakeshore device and stores them in a dictionary with the channel name as the key and the value as the value.
 
-\subsection{\texttt{pressure}}
+\subsection[pressure]{\texttt{pressure}}
 The \texttt{pressure} module is used to read data from the pressure sensor on ASTHROS.
 This method is relatively simple as the pressure sensor is a single device connected to the central command computer via RS-485.
 The only configuration needed for the pressure sensor is the connection parameters for the RS-485 connection (\texttt{PORT}, \texttt{BAUD}, and \texttt{READ\_TIMEOUT}).
@@ -1783,6 +1735,7 @@ If there is no data in the queue by the time the clock is ready to move, we skip
 If there is data, we encode it along with the status of the system and send it to the socket.
 Afterward, we sleep until the next tick of the clock and repeat the process.
 In practice, this looks like the following sequence, where the clock has a 12 second cycle, and each block is checked every second:
+
 \begin{table}
     \centering
     \begin{tabularx}{\textwidth}{l|l|X}
