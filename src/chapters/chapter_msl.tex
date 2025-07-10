@@ -132,9 +132,14 @@ Sub-sampled tiles that intersected with these bounding boxes were included in th
 
 The goal of this work is to triage tactical analysis time by prioritizing interesting images and highlighting features that are otherwise difficult to identify in multispectral sequences.
 While our system should be able to identify novelties such as large veins and broken rocks, which are relatively easy for analysts to identify in RGB or single-band images, highlighting these examples will not reduce tactical analysis time as much as other features that are difficult or impossible to see without detailed analysis of multispectral sequences. 
+As an example, a distant meteorite might be difficult to spot in a single RGB image, especially if it blends in with the surrounding terrain.
+In the multispectral, the meteorite will be easily identifiable as it will have a different spectral signature than the surrounding terrain.
+The goal of the novelty detection system is not to answer science questions but instead to triage potential science targets for mission operations staff to analyze.
+This enables operations staff to spend more time on the most interesting targets and reduces missed opportunities for discovery.
 %they can be easily seen without a novelty detection system.
 %Many of the examples in the original training set contain novelties that a tactical operations staff member could easily spot. 
 %These examples are visible in the RGB images and do not require a novelty detection system to draw attention to them.
+
 The \cite{kerner2020comparison} data set did not account for these operational priorities when evaluating novelty detection performance. 
 In order to fully evaluate the benefit of our novelty detection system in tactical operations, we created a new data set using the same preprocesssing as the Kerner et al. data set. 
 Instead of separating the images into typical and novel datasets, we included all multispectral sequences from Mastcam's left and right eyes in an unsupervised manner.
@@ -299,6 +304,11 @@ Augmenting this system to support novelty detection would involve adding an infe
 As this system is currently being used by operations staff, a strong justification is necessary to perform this integration. 
 At the time, the novelty detection system has shown promising examples of novelty highlighting and sorting. 
 Further analysis is needed to demonstrate how these examples would fit into the tactical planning pipeline and the time-saving benefits they might provide.
+
+At the time of publishing this chapter, Mastcam on the MSL curiosity rover was still operational.
+Since then, the filter wheel on the MSL Mastcam has failed, and the instrument is no longer able to take multispectral images.
+That said, the novelty detection system still has value as a method that can be integrated into the Perseverance rover's Mastcam-Z instrument.
+Being a currently operational instrument, Mastcam-Z is the new ideal platform for integrating novelty detection products into tactical planning workflows for further development of this system.
 
 In addition to operations, the development of the novelty and discovery API endpoints are key to enabling more intelligent ways of navigating planetary data on the PDS Image Atlas. 
 Currently, both tools have running prototype endpoints available for PDS devs to begin integration with future PDS Image Atlas releases.

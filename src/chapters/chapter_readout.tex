@@ -46,6 +46,15 @@ Finally, we conclude with a summary of the next steps for the system and the pla
     \label{readout/fig:system}
 \end{figure}
 
+Beyond ASTHROS, this readout system is designed with reusability in mind so that other missions using similar hardware can use the same software packages to control their payloads.
+In particular, the package developed for controlling the spectrometers, \texttt{PyMCC}, is designed to be mission agnostic, with configuration files that can easily be adjuted.
+Other modules are tied to custom ASTHROS hardware, such as the power supply units and antenna systems, but if other missions adopt similar hardware the packages can be used with little modification.
+While these modules may have niche uses, we plan to open source the code and documentation so that other missions can use the software to control their payloads.
+
+In to sharing the individual control packages, we have already open-sourced the \texttt{RMQTools} package that is used to communicate with the RabbitMQ server.
+This framework has received  interest from the community for integration into other balloon borne missions so we made it available on GitHub with an MIT License\footnote{\url{https://github.com/217690thompson/rmqtools}}.
+While it has not yet been used in other missions, we hope to conitnue development of the package and use it beyond ASTHROS to slowly gain adoption in the community and help support a more modular approach to payload readout systems.
+
 \section{Network Architecture}
 On board, we have four main types of devices that make up the readout network.
 Figure \ref{readout/fig:system} shows a high level overview of the readout network architecture.

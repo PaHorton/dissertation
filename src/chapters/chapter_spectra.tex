@@ -215,18 +215,38 @@ This is outside the scope of this work but will be discussed in Section \ref{spe
     \label{spectra/fig:100ghz}
 \end{figure}
 
-\section{Results and Conclusions}
+\section{Results}
 \label{spectra/sec:results}
-Both datasets are unlabeled, which makes measuring accuracy difficult, so we have to use more qualitative methods to compare them, such as looking at the least and most anomalous spectra from each method and seeing if the scores provide a useful metric for the operations team to monitor data quality.
-The end use case of this method is to provide a trackable metric that the operations team can use to monitor data quality.
-While accuracy is certainly important, any method that is able to enhance the manual monitoring process is sufficient. 
-As such, we compare the methods based on their ability to be implemented into the ASTHROS System Architecture and how well the anomaly score metric tracks with manual monitoring of the time series of spectra over time. 
-Additionally, we can compare the least and most anomalous spectra from the system to what sorts of anomalies produce high anomaly scores. 
 
+\begin{table}[h]
+    \centering
+    \caption{Comparison of VAE and PCA methods on the HASP and 100\,GHz datasets.}
+    \label{spectra/tab:method_comparison}
+    \begin{tabular}{|l|c|c|}
+    \hline
+    \textbf{Aspect} & \textbf{VAE} & \textbf{PCA} \\
+    \hline
+    \textbf{Adaptability} & Poor & Good \\
+    \hline
+    \textbf{Ease of Implementation} & Complex retraining required & Simple, no retraining needed \\
+    \hline
+    \textbf{Performance on HASP} & Struggled with 8192 channels & Good separation with 5 PCs \\
+    \hline
+    \textbf{Performance on 100\,GHz} & Not tested due to overhead & Very promising, clear anomaly score spikes \\
+    \hline
+    \textbf{Suitability for Rolling Window} & Requires frequent retraining & Well-suited \\
+    \hline
+    \textbf{Overall On-Board Viability} & Limited by overhead & High potential for ASTHROS \\
+    \hline
+    \end{tabular}
+\end{table}
+
+
+Both datasets are unlabeled, which makes measuring accuracy difficult, so we have to use more qualitative methods to compare them, such as looking at the least and most anomalous spectra from each method and seeing if the scores provide a useful metric for the operations team to monitor data quality.
 With both datasets, the large number of features in the $8192$ channels made it difficult for the VAE to learn the latent space for the spectra. 
 Even after finetuning the parameters, it became apparent that this method would not adapt well to a rolling window of previous spectra.
 We would have to retrain the system on the fly to ensure that it adapted to gradual changes in instrument behavior.
-With more refining and tests with domain adaptation, we may be able to revisit this method, but due to the overhead of having to retrain and the overall complexity of the system, we opted to focus on more adaptable methods. 
+With more refining and tests with domain adaptation, we may be able to revisit this method, but due to the overhead of having to retrain and the overall complexity of the system, we opted to focus on more adaptable methods.
 
 PCA is an ideal method for this use case. 
 We begin with the HASP dataset to see how the method would be able to rank spectra from least to most anomalous.
@@ -235,7 +255,7 @@ Most of the variances were captured with the first two principal components, but
 Using this number of components, we calculate the anomaly score for all of the spectra in the dataset to review the least and most anomalous spectra. 
 See Figure \ref{spectra/fig:hasp} for the least and most anomalous spectra in the dataset. 
 We've zoomed into a range of indices that were heavily affected by RFI, likely from another instrument. 
-As expected, the least anomalous spectra look relatively clean, and the most anomalous spectra are all very noisy. 
+As expected, the least anomalous spectra look relatively clean, and the most anomalous spectra are all very noisy.
 
 On the cleaner 100GHz dataset, the method showed even more promise for operational use.
 Using the same rolling window of 10 spectra and five principal components, we were able to produce a time series of anomaly scores for all 20,000 spectra, as shown in Figure \ref{spectra/fig:timeseries}.
@@ -244,8 +264,16 @@ In the time series, there are two major spikes in the time series and a handful 
 We looked into these larger spikes in anomaly score, and they corresponded with the spectrum that had changes in its RFI spikes.
 Figure \ref{spectra/fig:100ghz} shows the affected channels of these anomalous spectra by overlapping them with the average of the previous 10 spectra. 
 As shown in both examples, the new spectra have an increase in RFI that is different from the most recent spectra. 
-On the other hand, the least anomalous spectra all closely match their predecessors. 
-Of the tested methods, PCA has shown the most promise for implementation into the ASTHROS Readout System. 
+On the other hand, the least anomalous spectra all closely match their predecessors.
+
+\section{Conclusions}
+\label{spectra/sec:conclusions}
+
+The end use case of this method is to provide a trackable metric that the operations team can use to monitor data quality.
+While accuracy is certainly important, any method that is able to enhance the manual monitoring process is sufficient when compared to the current method of manually checking each spectrum.
+As such, we compare the methods based on their ability to be implemented into the ASTHROS System Architecture and how well the anomaly score metric tracks with manual monitoring of the time series of spectra over time.
+Additionally, we can compare the least and most anomalous spectra from the system to what sorts of anomalies produce high anomaly scores.
+Of the tested methods, PCA has shown the most promise for implementation into the ASTHROS Readout System.
 
 \section{Future Work}
 \label{spectra/sec:future}
