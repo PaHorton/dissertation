@@ -501,10 +501,18 @@ This is likely due to the differences in resolution and sensitivity between the 
     \label{carina/fig:oberst}
 \end{figure}
 
-We also estimated the [NII] 122 $\mu$m line intensity using the ratio of the two [NII] lines, which can be used to estimate electron density \parencite{goldsmith2015herschel}.
+We also estimated the [NII] 122 $\mu$m line intensity using the ratio of the two [NII] lines in conjunction with our calcualted electron density \parencite{goldsmith2015herschel}.
+In making these calculations we have made a few assumptions along the way.
+First, we assumed that the electron temperature is constant across the Carina Nebula using the distance to the Galactic center, $R_{gal}$, to estimate the electron temperature.
+Second, we assumed that the abundance ratio of ionized nitrogen with respect to ionized hydrogen is constant across the Carina Nebula also using $R_{gal}$ to estimate the value.
+While error was propagated through our calculations, these assumptions may introduce additional uncertainty into our electron density estimates. 
+
 ASTHROS, the Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter Wavelengths, is a proposed mission that will observe the [NII] 122 $\mu$m line and the [NII] 205 $\mu$m line to measure electron density in star-forming regions \parencite{siles2020asthros}.
 In the proposal for ASTHROS, the goal is to achieve a signal-to-noise ratio (SNR) of 4 for the [NII] 122 $\mu$m line at a sensitivity of 0.1 K and an SNR of 10 for the [NII] 205 $\mu$m line at a sensitivity of 0.15 K.
+These values were based on the previous measurements of the 122 and 205 $\mu$m lines from SPIFI and ISO \parencite{oberst2011205}.
+As shown with the comparison of the line intensities, the SPIFI and SOFIA data do not match well, so we need to update our SNR calculations given the new data.
 We can estimate the signal of our SNR by dividing our integrated intensity by the full width at half maximum (FWHM) of the line.
+This assumption uses the FWHM as measured for each region at each pixel and to estimate the average signal in Kelvin for each line. 
 This can be done at each pixel in our maps to estimate our average signal in Kelvin for both the Keyhole Nebula and the Carina Extended region.
 Dividing this signal by the expected sensitivity gives us the SNR for each pixel in our maps, as shown in Figure \ref{carina/fig:snr}.
 
