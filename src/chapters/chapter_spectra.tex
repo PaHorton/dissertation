@@ -215,38 +215,32 @@ This is outside the scope of this work but will be discussed in Section \ref{spe
     \label{spectra/fig:100ghz}
 \end{figure}
 
-\section{Results}
-\label{spectra/sec:results}
-
-\begin{table}[h]
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\begin{table}
     \centering
+    \begin{tabularx}{\textwidth}{r|L|L}
+        \textbf{Aspect} & \textbf{VAE} & \textbf{PCA} \\
+        \hline
+        \textbf{Adaptability} & Poor & Good \\
+        \textbf{Implementation} & Complex retraining required & Simple, no retraining needed \\
+        \textbf{HASP Performance} & Struggled with 8192 channels & Good separation with 5 PCs \\
+        \textbf{100\,GHz Performance} & Not tested due to overhead & Very promising, clear anomaly score spikes \\
+        \textbf{Rolling Window} & Requires frequent retraining & Well-suited \\
+        \textbf{On-Board Viability} & Limited by overhead & High potential for ASTHROS \\
+    \end{tabularx}
     \caption{Comparison of VAE and PCA methods on the HASP and 100\,GHz datasets.}
     \label{spectra/tab:method_comparison}
-    \begin{tabular}{|l|c|c|}
-    \hline
-    \textbf{Aspect} & \textbf{VAE} & \textbf{PCA} \\
-    \hline
-    \textbf{Adaptability} & Poor & Good \\
-    \hline
-    \textbf{Ease of Implementation} & Complex retraining required & Simple, no retraining needed \\
-    \hline
-    \textbf{Performance on HASP} & Struggled with 8192 channels & Good separation with 5 PCs \\
-    \hline
-    \textbf{Performance on 100\,GHz} & Not tested due to overhead & Very promising, clear anomaly score spikes \\
-    \hline
-    \textbf{Suitability for Rolling Window} & Requires frequent retraining & Well-suited \\
-    \hline
-    \textbf{Overall On-Board Viability} & Limited by overhead & High potential for ASTHROS \\
-    \hline
-    \end{tabular}
 \end{table}
 
-
+\section{Results}
+\label{spectra/sec:results}
 Both datasets are unlabeled, which makes measuring accuracy difficult, so we have to use more qualitative methods to compare them, such as looking at the least and most anomalous spectra from each method and seeing if the scores provide a useful metric for the operations team to monitor data quality.
 With both datasets, the large number of features in the $8192$ channels made it difficult for the VAE to learn the latent space for the spectra. 
 Even after finetuning the parameters, it became apparent that this method would not adapt well to a rolling window of previous spectra.
 We would have to retrain the system on the fly to ensure that it adapted to gradual changes in instrument behavior.
 With more refining and tests with domain adaptation, we may be able to revisit this method, but due to the overhead of having to retrain and the overall complexity of the system, we opted to focus on more adaptable methods.
+
+
 
 PCA is an ideal method for this use case. 
 We begin with the HASP dataset to see how the method would be able to rank spectra from least to most anomalous.
