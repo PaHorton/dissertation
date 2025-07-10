@@ -1,38 +1,38 @@
 \chapter[Data Discovery Systems for Planetary Science]{Data Discovery Systems for Planetary Science}
 \label{ch:msl}
-This chapter is from my published work \cite{horton2021integrating} and is included here as the groundwork for the novelty detection systems I go on to use in Chapters \ref{ch:spectra} and \ref{ch:rst}.
-Being one of the first projects I undertook in my research career, this chapter describes the steps taken to operationalize novelty detection methods for use in planetary science for the Mars Science Laboratory (MSL) Curiosity rover.
+This chapter is from my published work \cite{horton2021integrating} and is included here as the groundwork for the novelty detection systems I go on to use in Chapters \ref{ch:rst} and \ref{ch:spectra}.
+As one of the first projects I undertook in my research career, this chapter describes the steps taken to operationalize novelty detection methods for use in planetary science for the Mars Science Laboratory (MSL) Curiosity rover.
 This chapter focuses on how to take theoretical novelty detection methods and create a pipeline to integrate them into the tactical planning process for MSL.
-In addition to the original publication, this chapter has been updated to include work conducted on the Planetary Data System (PDS) Image Atlas to provide new methods for users to search for information \cite{horton2020novelty}.
+In addition to the original publication, this chapter has been updated to include work conducted on the Planetary Data System (PDS) Image Atlas to provide new methods for users to search for information \parencite{horton2020novelty}.
 This chapter is included in this dissertation to provide a foundational understanding of how novelty detection systems can be operationalized.
 By detailing the integration of this system into the Mars Science Laboratory (MSL) tactical planning pipeline, the practical challenges and solutions involved in adapting machine learning techniques for real-world scientific missions are highlighted.
-The insights gained from this work serve as a basis for the on-board novelty detection methods developed to support mission operations for missions such as ASTHROS and RST. 
+The insights gained from this work serve as a basis for the on-board novelty detection methods developed to support mission operations for other projects such as ASTHROS and RST. 
 
 \section{Abstract}
-While innovations in scientific instrumentation have pushed the boundaries of Mars rover mission capabilities, the increase in data complexity has pressured Mars Science Laboratory (MSL) and future Mars rover operations staff to quickly analyze complex data sets to meet progressively shorter tactical and strategic planning timelines. 
-MSLWEB is an internal data tracking tool used by operations staff to perform first-pass analysis on MSL image sequences, a series of products taken by the Mast Camera, Mastcam. 
+While innovations in scientific instrumentation have pushed the boundaries of Mars rover mission capabilities, the increase in data complexity has pressured Mars Science Laboratory (MSL) and future Mars rover operations staff to quickly analyze complex datasets to meet progressively shorter tactical and strategic planning timelines. 
+MSLWEB is an internal data tracking tool used by operations staff to perform first-pass analysis on MSL image sequences, a series of products taken by the Mast Camera (Mastcam). 
 Mastcam consists of a pair of 400-1000 nm wavelength cameras on MSL's Remote Sensing Mast that, among other functions, uses a filter wheel to produce multispectral images by creating a sequence of products at different wavelengths. 
-Mastcam's multiband multispectral image sequences require more complex analysis compared to standard 3-band RGB images. 
-Typically, these are analyzed by the inspection of false color images created to aid visualization, such as band ratios between different spectral indices that can highlight specific potential mineralogic differences among iron-bearing phases and decorrelation stretches to enhance the color differences between multiple filters. 
+Mastcam's multiband multispectral image sequences require more complex analysis than standard 3-band RGB images. 
+Typically, these sequences are analyzed by the inspection of false color images created to aid visualization, such as band ratios between different spectral indices that can highlight specific potential mineralogic differences among iron-bearing phases and decorrelation stretches to enhance the color differences between multiple filters. 
 
-Given the short time frame of tactical planning in which downlinked images might need to be analyzed (within 5-10 hours before the next uplink), there exists a need to triage analysis time to focus on the most important sequences and parts of a sequence. 
+Given the short time frame of tactical planning in which downlinked images need to be analyzed (within 5-10 hours before the next uplink), there exists a need to triage analysis time to focus on the most important sequences and parts of a sequence. 
 We address this need by creating products for MSLWEB that use novelty detection to help operations staff identify unusual data that might be diagnostic of new or atypical compositions or mineralogies detected within an imaging scene. 
 This was achieved in two ways: by creating products for each sequence to identify novel regions in the image and by assigning multispectral sequences a sortable novelty score. 
 These new products provide colorized heat maps of inferred novelty that operations staff can use to rapidly review downlinked data and focus their efforts on analyzing potentially new kinds of diagnostic multispectral signatures. 
 This approach has the potential to guide scientists to new discoveries by quickly drawing their attention to often subtle variations not detectable with simple color composites.
-The products developed in this work have shown promising benefits for integration into mission operations by potentially decreasing tactical operations planning time through guided triage.
+The products developed in this work have shown promising benefits for integration into mission operations by decreasing tactical operations planning time through guided triage.
 
 \section{Introduction}
-While discovering the unexpected is one of the most exciting parts of research, the process of making a discovery often involves countless hours of sifting through otherwise mundane data. 
-Advances in novelty detection systems can help to alleviate this arduous task by enabling researchers to focus their attention on the most interesting parts of their data. 
+While discovering the unexpected is one of the most exciting parts of research, the process of making a discovery involves countless hours of sifting through otherwise mundane data. 
+Advances in novelty detection systems can help alleviate this arduous task by enabling researchers to focus their attention on the most interesting parts of their data. 
 Novelty is defined as an unexpected occurrence in a sequence based on a data set of typical sequences.
 Given what is known to be "normal," the novelty detection algorithm highlights the most unusual features in an image. 
 Novelty detection techniques work by analyzing the commonalities in a data set in order to generalize the structure of the data and pick out anomalies \parencite{japkowicz1995novelty}.
 When a new observation is presented to a novelty detection system, the system identifies features that differ from the commonalities learned during training \parencite{markou2003novelty}.
-This is different from traditional classification systems as what constitutes as \textit{novel} is not predefined. 
-Instead of classifying samples as \textit{typical} and \textit{novel}, novelty detection systems build a model from \textit{typical} examples that can be used to discover anomalies. 
-This makes novelty detection ideal for scenarios where \textit{novel} examples are infrequent or difficult to obtain and \textit{typical} examples are abundant \parencite{japkowicz1995novelty}.
-Identifying anomalous examples is useful in many application domains, such as structural fault detection for aerospace systems by analyzing ambient vibrations \parencite{worden1997structural} or identifying brain tumors using MRI images \parencite{wang2020brain}.
+This is different from traditional classification systems as what constitutes as novel is not predefined. 
+Instead of classifying samples as typical and novel, novelty detection systems build a model from typical examples that can be used to discover anomalies. 
+This makes novelty detection ideal for scenarios where novel examples are infrequent or difficult to obtain and typical examples are abundant \parencite{japkowicz1995novelty}.
+Identifying anomalous examples is useful in many domains, such as structural fault detection for aerospace systems by analyzing ambient vibrations \parencite{worden1997structural}, or identifying brain tumors using MRI images \parencite{wang2020brain}.
 
 \begin{figure}
 \centering
@@ -53,8 +53,8 @@ Additionally, on the ground, data from missions like MSL are often observed by b
 The Planetary Data System (PDS) Image Atlas is a tool for both scientists and enthusiasts to explore vast image sets from various planetary missions. 
 Like a good photographer, some mission instruments take multiple views of the same scene in order to best capture a subject. 
 When browsing an instrument's reverse chronological photo album, an Image Atlas user may encounter large batches of nearly identical images. 
-This experience is not user-friendly for both scientists, who may be looking for specific types of images, and enthusiasts, who may just be browsing a mission. 
-To assist in navigation, the Image Atlas offers tools to filter and classify images by metadata, including time of collection, instrument used, and content (e.g., craters, dunes, layered rocks) \cite{wagstaff2018deep}.
+This experience is not user-friendly for both scientists, who may be looking for specific types of images, and enthusiasts, who may be browsing a single mission. 
+To assist in navigation, the Image Atlas offers tools to filter and classify images by metadata, including time of collection, instrument used, and content (e.g., craters, dunes, layered rocks) \parencite{wagstaff2018deep}.
 These navigation techniques work for users researching specific interests but are less useful for users looking to browse the image set. 
 To find interesting or unique examples, users must manually browse through the Atlas, which can be a time-consuming and impractical process.
 
@@ -63,17 +63,17 @@ Mastcam consists of a pair of multispectral Charge Coupled Device (CCD) imagers 
 A set of image products from Mastcam is called a sequence.
 Seven of the eight landed missions on Mars have employed camera systems capable of multispectral imaging \parencite{bell2019tactical}.
 Future missions, such as Mars 2020 and Psyche, will also be carrying similar multispectral cameras \parencite{bell2016mastcam} \parencite{bell_psyche}.
-Given that multispectral cameras are so prevalent in planetary exploration, the ability to rapidly detect novel features in multispectral images is beneficial across many missions.
+Given that multispectral cameras are prevalent in planetary exploration, the ability to rapidly detect novel features in multispectral images is beneficial across many missions.
 
 The goal of this work is to operationalize previous work developed for novelty detection for Mastcam.
 \cite{kerner2020comparison} quantitatively compared different novelty detection methods for the analysis of multispectral images on Mars.
 With a typical data set, machine learning models including Reed-Xiaoli (RX) detectors, Principal Component Analysis (PCA), Generative Adversarial Networks (GANs), and Convolutional Autoencoders (CAE) were used to produce a measure of how atypical each image or multispectral pixel is in a new sequence. 
 Using pixel-wise analysis allows these methods to highlight difficult to identify novel regions within an image that may otherwise go undetected by operations staff.
 These methods\footnote{https://github.com/JPLMLIA/mastcam-noveltydet} and the data set\footnote{https://zenodo.org/record/3732485} used to evaluate them were made publicly available at publication. 
-Multiple models were evaluated to show that certain models perform better for certain novelties than others: e.g., PCA was better suited for detecting spectral (compositional) novelties than for morphological (shape) novelties. 
+Multiple models were evaluated to show certain models perform better for certain novelties than others: e.g., PCA was better suited for detecting spectral (compositional) novelties than for morphological (shape) novelties. 
 Their work provides an in-depth qualitative evaluation of these methods, which was used to guide decisions about which methods to use. 
 While their work demonstrated the capabilities of the algorithms, it did not evaluate the methods based on their effectiveness in the tactical planning pipeline.
-In order to be most useful to operations, these methods need to be automatically run on new data and integrated into tactical analysis workflows to accelerate tactical planning \parencite{donahoe2020new}.
+In order to be most useful to operations, these methods must be automatically run on new data and integrated into tactical analysis workflows to accelerate tactical planning \parencite{donahoe2020new}.
 New advances in this work include further development of the algorithms and the creation of an implementation strategy for operations. 
 Additionally, we analyzed the outputs from the system to determine the usefulness of these methods in comparison to existing tactical planning procedures. 
 
@@ -103,10 +103,10 @@ These quick-look products are generated using calibrated data, making them unava
 Kerner et al.~demonstrated four types of novelty detection systems for multispectral novelty detection: CAEs, GANs, PCA, and RX detectors \parencite{kerner2020comparison}. 
 All of these methods, except RX, are reconstruction-based methods that attempt to "compress" and "reconstruct" an input to recreate the original image. 
 When trained on typical examples, these methods are able to reconstruct normal examples well but are unable to represent novel examples.
-The novelty detection system is able to identify novel regions based on the reconstruction error, which is the difference between the input and the recreated image.
+The novelty detection system is able to identify novel regions based on the reconstruction error, known as the difference between the input and the recreated image.
 For Mastcam multispectral sequences, these images have six bands instead of the traditional one (grayscale) or three (RGB). 
 It is important to note that Kerner et al.~evaluated these methods to identify novel geology in multispectral sequences, not create a visualization for tactical analysis that maximizes their ability to spot hard-to-find features. 
-Our goal is to create novelty detection products that could be integrated into actual tactical operations pipelines and evaluate their effectiveness for triaging analyst time in tactical operations.
+Our goal is to create novelty detection products that could be integrate into actual tactical operations pipelines and evaluate their effectiveness for triaging analyst time in tactical operations.
 
 \section{Data Set}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,11 +118,11 @@ Our goal is to create novelty detection products that could be integrated into a
 \end{figure*}
 
 In this work, we created a data set of all multispectral Mastcam sequences based on the preprocessing methods outlined in the labeled Mars multispectral novelty detection data set \parencite{kerner_data}.
-This previous data set provided images with both \textit{typical} and \textit{novel} labels cropped from the M-100 right eye of Mastcam on MSL between sols 1 to 1666.
+This previous data set provided images with both typical and novel labels cropped from the M-100 right eye of Mastcam on MSL between sols 1 to 1666.
 Each example in the data set is a 64-by-64 tile with six bands corresponding to 6 different filters.
 The tiles were sub-sampled from larger thumbnail images of around 140-by-100 pixels in size. 
 Thumbnails were used rather than full-resolution sequences as they are among the first available products during tactical planning. 
-Additionally, uncalibrated images were used as these data are the most readily available in the tactical analysis timeline. 
+Additionally, uncalibrated images were used as these are the most readily available within the tactical analysis timeline. 
 To generate the data set, these thumbnails were loaded as single-band images in OpenCV before combining them to produce a single six-band tile \parencite{opencv_library}.
 
 While we did not explicitly use the labeled Mars multispectral novelty detection data set in this work, we utilized the novelty classes to verify the system.
@@ -137,7 +137,7 @@ While our system should be able to identify novelties such as large veins and br
 %These examples are visible in the RGB images and do not require a novelty detection system to draw attention to them.
 The \cite{kerner2020comparison} data set did not account for these operational priorities when evaluating novelty detection performance. 
 In order to fully evaluate the benefit of our novelty detection system in tactical operations, we created a new data set using the same preprocesssing as the Kerner et al. data set. 
-Instead of separating the images into typical and novel data sets, we included all multispectral sequences from Mastcam's left and right eyes in an unsupervised manner.
+Instead of separating the images into typical and novel datasets, we included all multispectral sequences from Mastcam's left and right eyes in an unsupervised manner.
 The images in this data set were preprocesssed in the same way as the original data set but kept as full-size thumbnails instead of tiles in order to provide detections at the same resolution as they are viewed by operations staff. 
 Starting with every thumbnail taken by Mastcam, the data set was filtered by sequences containing seven different filters: RGB (no filter) and six narrow-band spectral filters.
 Additionally, sequences containing the calibration tool were omitted. 
@@ -181,8 +181,7 @@ Each sequence can be analyzed individually or relative to other sequences based 
 To reduce the effect of brightness in the novelty scoring, separate models were created using a data set where the RGB image of the sequence is loaded as a grayscale image and used to divide the other six images in the input. 
 Individual sequence analysis is accomplished by visualizing the pixel novelty scores as a heat map. 
 Analysts can quickly review these heat maps to identify the most novel regions within a sequence relative to all prior sequences. 
-Statistics can be calculated and sorted for each sequence to compare the novelty of different sequences.
-This can help prioritize which multispectral sequence to review first. 
+Statistics can be calculated and sorted for each sequence to compare the novelty of different sequences and thus prioritizing which multispectral sequence to review first. 
 
 \subsection{PDS Image Atlas Integration}
 To integrate these tools into the Image Atlas, Amazon Web Services (AWS) SageMaker (SM) was used to train and deploy these tools as queryable endpoints. 
@@ -197,13 +196,13 @@ We use an unsupervised novelty detection algorithm, requiring no prior knowledge
 An image dataset is used as input, and the result is N images of diverse content, where N is a value specified by the user. 
 An example use case for this is having a carousel of images with high content diversity on the PDS Image Atlas website to give users a sample of a variety of images gathered from a particular mission or instrument.
 
-A pre-trained convolutional neural network (CNN) is used to extract feature vectors from each image in the data set, and then Discovery via Eigenbasis Modeling of Uninteresting Data (DEMUD) is run, which is an algorithm that detects novel items in a dataset \parencite{wagstaff_demud}.
+A pre-trained convolutional neural network (CNN) is used to extract feature vectors from each image in the data set, and then an algorithm that detects novel items in a dataset, Discovery via Eigenbasis Modeling of Uninteresting Data (DEMUD), is run \parencite{wagstaff_demud}.
 DEMUD selects interesting or novel images in a dataset with an iterative method where an item is selected from the dataset. 
 Image content is modeled with a singular value decomposition (SVD). 
 The remaining items are projected onto the model, and a reconstruction error is calculated for each item not already included in the SVD model. 
 The item with the highest reconstruction error, or the most novel item, is then selected and incorporated into the model. 
 This enables the model to learn about the most novel items and avoid selecting them for future iterations. 
-This process continues until the N most diverse images are selected. 
+This process continues until the N most diverse images are selected for display to the user.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -260,6 +259,7 @@ The low-scoring sequences mostly consist of sky and sand images, which are of re
 When comparing multiple images, we normalized the pixel novelty scores across the data set in order to display relative novelty. 
 The scores are visualized without normalization when an analyst selects an individual sequence to analyze. 
 
+\begin{landscape}
 \begin{figure*}
 \centering
 \includegraphics[width=\linewidth]{figs/msl/top10.jpg}
@@ -267,12 +267,13 @@ The scores are visualized without normalization when an analyst selects an indiv
 \caption[Examples of the Most and Least Novel Images in the Mastcam Left Eye Data Set]{The most and least novel sequences in the Mastcam Left Eye data set. Sequences are sorted by maximum novelty value obtained from a brightness-corrected background distribution. The pixel novelty scores are normalized across the entire data set.}
 \label{msl/fig:sorted}
 \end{figure*}
+\end{landscape}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 While initial results from reviewing the novelty detection output seem promising, it is difficult to evaluate the effectiveness of the system at assisting in operations without a longer-term study in which many sequences would be analyzed for previously undiscovered features.
-This is necessary as generating a test set of undiscovered novelties is not feasible due to the fact that they haven't been discovered yet.
+Ggenerating a test set of undiscovered novelties is not feasible due to the fact that they have not been discovered yet.
 %tell the percentage of new novelties present. 
 %As this study is looking for hard to detect novelties, generating a labeled test set for the undiscovered is not feasible.
 The purpose of this study is to assist tactical planning, so the key value is in the system's ability to highlight unique sequences and novel features within those sequences. 
@@ -280,19 +281,19 @@ The brightly colored heat map of novel regions for each sequence appears to prov
 The next step for this work is to gather more feedback from the tactical planning team to determine the increase in productivity while using novelty detection products.
 To quantitatively evaluate this, operations staff members can be given the task of analyzing the Mastcam sequence with and without novelty-based products.
 Analysis time can be recorded to identify if staff members are able to identify novel features quicker when the novelty detection system is used for triaging.
-Instances, where the system highlights something that the staff member does not find novel, can also help to understand the limitations of the method and improve future method development.
+Instances where the system highlights something that the staff member does not find novel can also help to understand the limitations of the method and improve future method development.
 This feedback will help validate the usability of the novelty detection system and fine-tune its features, such as dividing by brightness, global normalization, and limiting the training set to recent data. 
 Additionally, novelty detection products may improve masking rover parts and finding ways to reduce the rainbowing effect from shadows.
 Another approach may be to not use a background distribution based on the entire Mastcam multispectral history and, instead, calculate new models for each image to find the most novel feature on a local scale.
 
-Future work is also needed to improve ways of ordering the sequences based on their novelty scores.
+Future work is also needed to improve ordering the sequences based on their novelty scores.
 While sorting sequences by the maximum pixel RX score provides more useful outputs than sorting by the mean pixel RX score, there may be better ways of prioritizing sequences (e.g., sorting by the variance of scores in the image). %heat map may help to identify sequences with spectral novelties.
 To validate that the ranking's priorities align with the triage an operations staff member may perform, an experiment can also be created to have both humans and the novelty detection system generate rankings.
 The rankings can be compared using Spearman's rank correlation coefficient to compare their overlap.
 Such an experiment could also help to find better ways of sorting the sequences.
-Finding better ways to prioritize novel sequences is also beneficial for on-board autonomy applications \cite{wagstaffnovelty}.
+Finding better ways to prioritize novel sequences is also beneficial for on-board autonomy applications \parencite{wagstaffnovelty}.
 
-MSLWEB, an Arizona State University-based Mastcam tracking application, is the perfect platform for integrating novelty detection products into tactical planning workflows. 
+MSLWEB, an Arizona State University-based Mastcam tracking application, is the ideal platform for integrating novelty detection products into tactical planning workflows. 
 Currently, MSLWEB supports the automatic generation of simple, quick-look products such as decorrelation stretches and filter ratios. 
 Augmenting this system to support novelty detection would involve adding an inference endpoint to the pipeline and automatically passing new sequences through it. 
 As this system is currently being used by operations staff, a strong justification is necessary to perform this integration. 
@@ -304,7 +305,7 @@ Currently, both tools have running prototype endpoints available for PDS devs to
 With the integration of these tools, the capabilities of the Image Atlas can expand to provide an overview of highly diverse images for each NASA mission, group images by similarity, and sort albums by their most interesting content.
 
 Future work involves creating models for more instruments, implementing new algorithms, and developing user interface prototypes. 
-A pipeline to deploy new endpoints has been set up on SM so that models can be developed for new instrument data sets. 
+A pipeline to deploy new endpoints has been set up on SM so that models can be developed for new instrument datasets. 
 This is done by simply specifying the data location and how it should be loaded and running the pipeline on the image set. 
 For novelty detection, new algorithms, such as principal component analysis and generative adversarial networks, can be adapted to the SM suite so that Image Atlas developers have more control over how they would like to sort the data. 
 Finally, proper prototypes for how these tools will work with the Image Atlas need to be developed so full integration can begin.
