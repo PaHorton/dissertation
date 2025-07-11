@@ -1,5 +1,6 @@
 \chapter{Conclusions and Future Work}
 \label{ch:conclusion}
+\section{Conclusions}
 The title of my dissertation is  "Development, Implementation, and Impacts of the Novelty Detection Systems for Mission Operations," and I wanted to take the opportunity to summarize the key findings of my dissertation and discuss future work that can be done in support of this title. 
 I will begin with Development. 
 Starting with Chapter \ref{ch:msl}, we discuss how to take already existing systems for multispectral image novelty detection, improve and operationalize them, and then apply them to the Mars Science Laboratory's (MSL) mission operation workflow.
@@ -13,7 +14,7 @@ This is discussed in Chapter \ref{ch:readout}, where I used my Software Engineer
 For me, this is the most important part of my dissertation, as it finally bridges the gap between my background as a Software Engineer and my work as a Scientist in the Exploration Systems Design program.
 
 This is further emphasized in Chapter \ref{ch:carina}, where I dive into the scientific goals of ASTHROS by analyzing data from SOFIA. 
-While the paper is written for a more science-oriented audience, I wanted to use this conclusion to discuss the importance of being both the Systems Engineer reading out the data and the Scientist analyzing it.
+While the chapter is written for a more science-oriented audience, I wanted to use this conclusion to discuss the importance of being both the Systems Engineer reading out the data and the Scientist analyzing it.
 By being able to understand both sides of the equation, I was able to develop a readout system that not only satisfied the engineering requirements but also constantly kept the science goals in mind.
 Doing the data analysis on SOFIA allowed me to develop new methods and scripts for analyzing the data that I can easily turn around and implement as on-board systems for ASTHROS.
 These methods can be used to provide quicker feedback to the operations team during the flight. 
@@ -27,19 +28,46 @@ The readout system is in an operational state and is used regularly to test the 
 Once we are ready to do pre-flight testing, the novelty detection system will be used to ensure that the data we are collecting is of the highest quality.
 We have already begun theorizing how to use the novelty detection system in more ways than just identifying bad calibration spectra, such as identifying sources during commissioning and looking at telemetry data to identify potential issues with the payload before they become a problem.
 
+\section{Future Work}
 The future of this work is vital to the success of ASTHROS, and I hope to see it through to the end.
 As outlined at the end of Chapter \ref{ch:readout}, there are pending tasks that need to be completed before the readout system is fully operational and ready for flight.
 These final steps include integration with the gondola's flight computer and implementing the on-board analysis systems developed in Chapter \ref{ch:spectra}.
 I am excited to see how these systems come together and how they will impact the mission to be one of the most technically streamlined ballooning missions to date.
 In addition, work needs to be done to oversee, finalize, and implement the novelty detection systems for MSL and RST.
 The MSL system can be further refined to be a standalone system that can slowly be integrated into the mission operations workflow.
-This would allow mission operations time to get acquainted with the system and provide feedback on how it can be improved.
+As Mastcam on MSL is currently inoperable as a multispectral imager, the novelty detection system would need to be adapted for Perseverance for further development.
+Integration with the Perseverance Mastcam-Z team would allow mission operations time to get acquainted with the system and provide feedback on how it can be improved.
 The RST system also has room for performance improvements, such as improving the speed and performance of the system.
 Methods on JWST may be able to be adapted to RST, but this is still an open area of research.
 
-Finally, there is work to be done in terms of improving the software development process of science missions as a whole.
+I would be remiss if I did not mention how artificial intelligence (AI) fits into mission operations and novelty detection.
+AI is a rapidly evolving field that has the potential to augment how we approach mission operations but it is not a silver bullet.
+Throwing AI at the problem does not guarantee the best solution as it is often not the best tool for the job, especially when it comes to a more clearly defined problem like novelty detection.
+Given that we are looking for anomalies in data, we can often use simpler methods to achieve the same results, without the overhead of training and deploying an AI model.
+That said, there are instances where AI can be beneficial in summarizing data or providing insights that would otherwise be difficult to analyze holistically.
+One such example would be using AI to analyze the telemetry stream from ASTHROS to highlight potential issues with the payload.
+This could be done with a hysteresis of the telemetry data and using AI to identify patterns that may indicate a problem, providing a conversational interface for the operations team to quickly identify and address issues rather than having to stare at a dashboard of graphs.
+However, we must be careful not to fall into the frighteningly common and publicly pervasive trap of using AI for the sake of using AI, as it can lead to overfitting and generalization.
+As evidenced in this work, monitoring telemetry data can be done with much simpler methods, such as thresholding and measuring the rate of change, which can provide the same insights without the overhead of an AI model.
+While I am not completely against the use of AI in mission operations, I believe that it should be used tactically and only when it provides a clear quantitative and qualitative benefit over traditional methods proven through rigorous testing and validation.
+
+I would also like to take the opportunity to discuss the future of scientific software development in general.
 The ASTHROS readout system is a prime example of how a software development process can be used to create a robust and reliable system that meets the needs of the mission.
-Many of the components of the readout system are reusable and can be adapted for other missions.
-Using RabbitMQ as a framework for modularization is something that can be applied to other small-scale missions, and I hope to see it adopted by other missions in the future.
-Having attended conferences on scientific ballooning, I have seen and heard about the struggles that other missions have had with their readout systems.
-I hope that my work can serve as a guide for other missions to follow and that it can help improve the software development process for scientific ballooning missions as a whole.
+Having firsthand experience between software engineering best practices and scientific software development, I can see a clear gap between the two.
+Oftentimes, the development of software on a mission is a means to an end, with a key focus on getting systems up and running.
+Without rigorous planning and a well-defined architecture, missions are left with a system that is difficult to maintain and extend.
+There exists a knowledge gap between software engineers and scientists, where skills are not transferred and expertise is left untapped. 
+Filling this knowledge gap and creating scientifically minded software engineers is difficult as most software engineers are not inclined to work in the scientific field.
+Working in tech is often seen as more lucrative and stable, and many software engineers do not have the requisite domain knowledge to work in the scientific field.
+Institutions like ASU's School of Earth and Space Exploration and NASA's Jet Propulsion Lab are vital to bridging this gap by providing opportunities for software engineers to work on scientific missions and gain the necessary domain knowledge.
+I often see scientists becoming engineers, but I rarely see engineers becoming scientists and I hope to change that by leading the charge and encouraging young engineers to pursue their passions. 
+
+Finally, I would like to relate this back to novelty detection and scientific ballooning.
+For missions with obvious bandwidth concerns, the need for on-board analysis is non-negotiable.
+This is especially true for probes like Europe Clipper, where all of the data cannot be sent back to Earth in a timely manner.
+Novelty detection systems or another form of on-board autonomy is inevitable for these missions, and putting in the effort to develop them for missions like ASTHROS will only help us in the future.
+Speaking of ASTHROS, ballooning missions like ASTHROS are an essential test bed for new technologies and overlooking their importance is a mistake.
+In the age of high profile space telescopes and planetary missions, it is easy to forget the value of smaller scale missions.
+If space science is blindly moving towards startup culture with companies like SpaceX, then we should at least focus the "move fast and break things" mentality on platforms built for that purpose.
+In all honesty, working on these smaller scale missions is eerily similar to working at a startup, where you have to wear many hats and be able to pivot quickly.
+Funding and promoting these missions not only provides opportunities for new technologies to be tested but may be the catalyst necessary to inspire engineers to pursue careers in space science and do something more.
