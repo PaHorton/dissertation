@@ -91,7 +91,7 @@ For more information about this and the dataset selection, see Section \ref{rst/
         Principal Component Analysis (PCA) & Convolutional Neural Network (CNN)\\
         \parencite{cillis2018snowballs} & \parencite{gu2018recent} \\
         \hline
-        Ordinary Least Squares (OLS) & \\
+        Generalized Least Squares (GLS) & \\
         \parencite{robberto2015cr} & \\
         \hline
     \end{tabular}
@@ -145,17 +145,16 @@ By limiting the number of PCA components to two, our reconstructed ramps will be
 Finally, like the statistical method, we create the pixel mask by highlighting any pixel whose change in residual is above the threshold.
 We then identify regions using the same topological transformations and scikit-image's measure library for finding blobs \parencite{scikit-image}.
 
-\subsubsection{Ordinary Least Squares (OLS)}
-JWST uses an Generalized Least Squares (GLS) method, outlined in \cite{robberto2014generalized} and expanded in \cite{robberto2015cr}, to identify cosmic rays in their data by fitting a linear model to the ramp of each pixel as well as the ramp if a jump were to occur at a given frame.
-GLS differs from OLS in that it allows for the covariance of the errors to be non-diagonal, providing a more accurate assessment of uncertainty in the slope estimate.
-That said, we can still utilize OLS if the goal is not to estimate the slope but simply identify if there is a jump in the ramp at a given frame as we are not concerned with the covariance of the errors \parencite{robberto2014generalized}.
-This is preferable to GLS as it is computationally less expensive and can be performed in a single pass through the data.
+\subsubsection{Generalized Least Squares (GLS)}
+JWST uses an GLS method, outlined in \cite{robberto2014generalized} and expanded in \cite{robberto2015cr}, to identify cosmic rays in their data by fitting a linear model to the ramp of each pixel as well as the ramp if a jump were to occur at a given frame.
+The JWST method goes on to use the output from the GLS method in conjunction with Bayes factors to determine the likelihood of a cosmic ray occurring at a given frame, using a-prioi knowledge of the likelihood of cosmic rays occurring in a given exposure.
+In our case, we are interested in any jump in the ramp, regardless of the cause, so we can simplify the JWST method to just the GLS method to produce metrics for each pixel and frame.
 
 Using the Heaviside function, $\Theta(t)$, which returns 0 when less than 0 and 1 when greater than 0, we can fit a linear model of a ramp of $t_n$ values with a jump at a given frame $t_{CR}$ as follows:
 \begin{equation}
-    c(t_i) = a + b\ t_i + \text{CR}\ \Theta(t_i - t_{CR})
+    c(t_i) = a + b\ t_i + \text{CR}\ \Theta(t_i - t_{CR}) + \sigma_i
 \end{equation}
-In this equation, $a$ is the initial value of the ramp, $b$ is the slope of the ramp, and $CR$ is the amount of DN added to the ramp at the time of the jump.
+In this equation, $a$ is the initial value of the ramp, $b$ is the slope of the ramp, $CR$ is the amount of DN added to the ramp at the time of the jump, and $\sigma_i$ is random error in the ramp.
 In matrix form, this can be expressed as:
 \begin{equation}
     c_i = \begin{bmatrix}
@@ -181,10 +180,22 @@ In matrix form, this can be expressed as:
 \end{equation}
 In order to test every possible frame for a jump, we can expand our matrix $A$ with a third dimension where each slice of the matrix is a different frame $t_{CR}$.
 This results in a triangular matrix, with each column representing the possibility of a jump at that frame.
-To solve for $\alpha$, we can use the OLS estimator \parencite{puntanen1989equality}:
+To solve for $\alpha$, we can use the GLS estimator \parencite{robberto2014generalized}:
 \begin{equation}
-    \hat{\alpha} = (\hat{A}^T \hat{A})^{-1} \hat{A}^T \hat{c}
+    \hat{\alpha} = (\hat{A}^T W^{-1} \hat{A})^{-1} \hat{A}^T W^{-1} \hat{c}
 \end{equation}
+$W$ in our matrix is a covariance matrix that accounts for the noise in the data.
+In the case of GLS, our covariance matrix is as follows:
+\begin{equation}
+    W = \begin{bmatrix}
+        c_1 + \sigma_{ron}^2 & c_1 & \cdots & c_1 \\
+        c_1 & c_2 + \sigma_{ron}^2 & \cdots & c_2 \\
+        \vdots & \vdots & \ddots & \vdots \\
+        c_1 & c_2 & \cdots & c_n + \sigma_{ron}^2
+\end{bmatrix}
+\end{equation}
+where $\sigma_{ron}$ is the readout noise of the detector.
+We can calculate the readout noise from the standard deviation of the readout values across a sample of pixels in the exposure.
 Our matrix $\hat{A}$ is now three-dimensional, with shape (N, N, 3) to account for the jump occurring at each frame.
 This will result in a two-dimensional matrix of $\hat{\alpha}$ values with shape (N, 3), where each slice of the row is the estimated parameters for a jump at that frame.
 By calculating this all at once, we can quickly determine the residuals of each fit and identify the best fit for each pixel using matrix operations.
@@ -262,18 +273,18 @@ For consistency, all of the tests were performed on a 2021 M1 Macbook Pro Max wi
 Much of the development of this work was done on the NASA Center for Climate Simulation PRISM GPU cluster. 
 
 \subsection{Locating Anomalies}
-The methods we tested for locating anomalies were Statistical Thresholding, PCA, and OLS.
+The methods we tested for locating anomalies were Statistical Thresholding, PCA, and GLS.
 These methods look for large jumps in a time series, but each method looks for a different type of jump.
 The Statistical Thresholding method purely looks for jumps in the DN accumulated in each frame by identifying large changes in DN compared to the rest of the accumulated DN in the frame. 
 The PCA method trains on a subset of pixels across the exposure and looks for large jumps in the residual error from transforming and inverse-transforming each pixel. 
-Finally, the OLS method looks to fit a jump using a split linear fit across each frame.
+Finally, the GLS method looks to fit a jump using a split linear fit across each frame.
 Regarding runtime efficiency, all three methods require calculating the difference between values and a threshold and then identifying groups of flagged pixels. 
 Statistical Thresholding only requires calculating the difference between two frames, while PCA requires calculating the difference between the original and reconstructed ramp.
 On average, this takes about 2 minutes and 10 seconds for each dark image with 100 frames. 
 Because PCA additionally needs to fit, transform, and inverse transform the entire exposure, running it adds an average of 42 seconds to locate anomalies. 
-Finally, the OLS method takes over an hour just to calculate the residuals for each pixel across each frame.
+Finally, the GLS method takes over an hour just to calculate the residuals for each pixel across each frame.
 This makes the statistical threshold method faster than PCA in every experiment because PCA requires preprocessing. 
-OLS is far too slow to be considered for analysis without further optimization.
+GLS is far too slow to be considered for analysis without further optimization.
 
 \begin{figure}
     \centering
@@ -324,34 +335,34 @@ The time the Heuristic Rules pipeline takes to generate a report depends on the 
 In this chapter, we have outlined the methods used to identify and classify anomalies in the RST WFI detector data.
 We have shown that Statistical Thresholding is the best method for locating anomalies in the data, as it is able to identify the majority of anomalies while being fast enough to keep up with the data generation rate.
 We have also shown that Heuristic Rules is the best method for classifying anomalies, as it is able to correctly identify the majority of snowballs and cosmic rays while being fast enough to keep up with the data generation rate.
-Additionaly, we have tested other methods such as PCA and OLS, but these methods were either too slow or not accurate enough to be used in the SDP pipeline.
+Additionaly, we have tested other methods such as PCA and GLS, but these methods were either too slow or not accurate enough to be used in the SDP pipeline.
 
-With further optimization, the OLS method may outperform PCA and Statistical Thresholding as it is designed to identify cosmic rays in a similar up-the-ramp readout scheme.
+With further optimization, the GLS method may outperform PCA and Statistical Thresholding as it is designed to identify cosmic rays in a similar up-the-ramp readout scheme.
 However, because linear regression is necessary across every pixel and every frame, the method is too computationally expensive to run on the entire exposure.
-Even with numerical optimizations, such as avoiding the inverse matrix calculation using NumPy's Singular Value Decomposition based Least Squares algorithm, the OLS method is still too slow to be used in the SDP pipeline \cite{harris2020array}.
-Figure \ref{rst/fig:jwst_ols}, shows an example of the OLS method from two samples, with and without a snowball.
-In the example with a snowball, OLS is able to identify both the jump in the ramp and the location of the jump.
-Looking at the residuals, the massive dip in mean squared error at the time of the jump is due to the OLS method fitting perfectly to the ramp.
-In the case without a snowball, almost every fit is perfect, as OLS was finding tiny jumps at each frame instead of the larger jumps we were looking for.
+Even with numerical optimizations, such as avoiding the inverse matrix calculation using NumPy's Singular Value Decomposition based Least Squares algorithm, the GLS method is still too slow to be used in the SDP pipeline \cite{harris2020array}.
+Figure \ref{rst/fig:jwst_gls}, shows an example of the GLS method from two samples, with and without a snowball.
+In the example with a snowball, GLS is able to identify both the jump in the ramp and the location of the jump.
+Looking at the residuals, the massive dip in mean squared error at the time of the jump is due to the GLS method fitting perfectly to the ramp.
+In the case without a snowball, almost every fit is perfect, as GLS was finding tiny jumps at each frame instead of the larger jumps we were looking for.
 
 While this method works well for identifying a single pixel with a jump, it does not scale well once we take into consideration the number of pixels in an exposure.
-The OLS method may produce a better metric than simple Statistical Thresholding to spot differences between two frames, but it is not efficient enough to run on the entire exposure.
-If the OLS calculation could be optimized, such as only calculating the OLS for pixels that have been flagged by the Statistical Thresholding method, we may be able to use it in the future.
+The GLS method may produce a better metric than simple Statistical Thresholding to spot differences between two frames, but it is not efficient enough to run on the entire exposure.
+If the GLS calculation could be optimized, such as only calculating the GLS for pixels that have been flagged by the Statistical Thresholding method, we may be able to use it in the future.
 
 \begin{figure}
     \centering
-    \includegraphics[width=.49\linewidth]{figs/rst/ols_good.png}
-    \includegraphics[width=.49\linewidth]{figs/rst/ols_bad.png}
-    \includegraphics[width=.49\linewidth]{figs/rst/ols_good_res.png}
-    \includegraphics[width=.49\linewidth]{figs/rst/ols_bad_res.png}
-    \caption[Example of the OLS Method on WFI Detector Data]{
-        An example of the OLS method on WFI detector data.
-        The two images on the left show a standard ramp with no anomalies, with the top showing how OLS fits the ramp and the bottom showing the mean squared error residuals of the fit.
-        The two images on the right show a ramp with a snowball in the middle of the exposure, with the top showing how OLS fits the ramp and the bottom showing the mean squared error residuals of the fit.
+    \includegraphics[width=.49\linewidth]{figs/rst/gls_good.png}
+    \includegraphics[width=.49\linewidth]{figs/rst/gls_bad.png}
+    \includegraphics[width=.49\linewidth]{figs/rst/gls_good_res.png}
+    \includegraphics[width=.49\linewidth]{figs/rst/gls_bad_res.png}
+    \caption[Example of the GLS Method on WFI Detector Data]{
+        An example of the GLS method on WFI detector data.
+        The two images on the left show a standard ramp with no anomalies, with the top showing how GLS fits the ramp and the bottom showing the mean squared error residuals of the fit.
+        The two images on the right show a ramp with a snowball in the middle of the exposure, with the top showing how GLS fits the ramp and the bottom showing the mean squared error residuals of the fit.
         Note the scales on the residual plots are vastly different.
-        In the case of the snowball, the OLS method only fits at one point in the ramp, resulting in a large dip in the residuals near that point and a large error at all other points.
+        In the case of the snowball, the GLS method only fits at one point in the ramp, resulting in a large dip in the residuals near that point and a large error at all other points.
     }
-    \label{rst/fig:jwst_ols}
+    \label{rst/fig:jwst_gls}
 \end{figure}
 
 \subsection{SDP Pipeline Integration}
@@ -373,7 +384,8 @@ With a well-defined dataset of labeled data, we will be able to better assess th
 
 Another area for improvement may be finding better ways to locate anomalies.
 We may revisit PCA to see if we can adjust the parameters (number of components and threshold for error) to reduce its false negative rate.
-We may also revisit OLS if we can determine a way to optimize the algorithm further to make it viable for massive image sizes. 
+We may also revisit GLS if we can determine a way to optimize the algorithm further to make it viable for massive image sizes. 
+Updating GLS to the full JWST method using Bayes factors may also help reduce the false positive rate of the method and provide a normalized metric for thresholding.
 Additionally, other methods like RX and LRX, as described at the beginning of Section \ref{rst/sec:methods}, could be better suited for filtering the initial exposure.
 
 The current implementation of the SDP pipeline uses a bad pixel mask to mask regions of the image that are problematic. 
