@@ -65,6 +65,7 @@ The rest of this chapter is organized as follows.
 First, we go over the methods for identifying and classifying snowballs and cosmic rays in Section \ref{rst/sec:methods}.
 Then, in Section \ref{rst/sec:data}, we explain the dataset chosen and how labels for the dataset were generated.
 After that, we discuss the results of the different methods and draw conclusions about which methods to implement in the SDP pipeline in Section \ref{rst/sec:results}.
+Section \ref{rst/sec:conclusions} concludes the work in this chapter.
 Finally, we discuss future work in Section \ref{rst/sec:future}.
 
 \section{Methods}
@@ -339,7 +340,7 @@ Additionaly, we have tested other methods such as PCA and GLS, but these methods
 
 With further optimization, the GLS method may outperform PCA and Statistical Thresholding as it is designed to identify cosmic rays in a similar up-the-ramp readout scheme.
 However, because linear regression is necessary across every pixel and every frame, the method is too computationally expensive to run on the entire exposure.
-Even with numerical optimizations, such as avoiding the inverse matrix calculation using NumPy's Singular Value Decomposition based Least Squares algorithm, the GLS method is still too slow to be used in the SDP pipeline \cite{harris2020array}.
+Even with numerical optimizations, such as avoiding the inverse matrix calculation using NumPy's Singular Value Decomposition based Least Squares algorithm, the GLS method is still too slow to be used in the SDP pipeline \parencite{harris2020array}.
 Figure \ref{rst/fig:jwst_gls}, shows an example of the GLS method from two samples, with and without a snowball.
 In the example with a snowball, GLS is able to identify both the jump in the ramp and the location of the jump.
 Looking at the residuals, the massive dip in mean squared error at the time of the jump is due to the GLS method fitting perfectly to the ramp.
