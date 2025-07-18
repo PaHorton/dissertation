@@ -13,6 +13,7 @@ In our detectors, anomalies appear as jumps in the ramp of a readout and are cla
 The WFI employs an array of 18 HgCdTe photodiode detectors (H4RG-10) that collect image samples.
 Each set of raw frames within a non-destructive exposure is packaged by the SDP pipeline into image cubes for each detector.
 Each cube is a time series of $4096 \times 4096$ accumulating pixel frames.
+While snowballs are not fully understood, they are thought to be a feature of the detector itself through alpha decay of naturally radioactive contaminants.
 The preliminary analysis pipeline is used to locate anomalies in these time-series accumulation frames and identify the type of anomaly, either natural phenomena or detector characteristics.
 To compare different methods, we have implemented both heuristic-based and data-driven methods to identify anomalies.
 For the heuristic-based approach, we identify snowballs and cosmic rays by the measured size and shape of outlier pixel clusters between consecutive frames.
@@ -28,12 +29,13 @@ Each detector on the WFI utilizes an up-the-ramp readout scheme that produces $4
 For a given exposure, each frame gives us information on the amount of light collected over time and allows us to identify both the location and time of anomalies within a ramp.
 During an exposure, external or detector-related events may occur that affect groups (or sets) of pixels across the detector. 
 External events, such as cosmic rays, involve something external to the detector causing a sudden increase in the amount of charge collected by the pixels.
-Detector-realted events, such as snowballs, are inherent to the detector and not caused by external sources.
-While snowballs are not fully understood, their frequency and reoccuring locality lead us to believe they are a feature of the detector itself.
+Detector-related events, such as snowballs, are inherent to the detector and not caused by external sources.
+While snowballs are not fully understood, their frequency and reoccurring locality lead us to believe they are a feature of the detector itself.
+It is speculated that their origin may be due to alpha decay of naturally radioactive contaminants in the detector \parencite{cillis2018snowballs}.
 Because we're collecting time-series information, we can see the exact frame in which the event occurs and observe how the event affects subsequent frames. 
 There are many different sources that might cause errors in our detectors' data, such as read noise patterns, thermal noise, compression errors, and software errors, but we are particularly interested in external and natural sources of errors \parencite{cillis2018snowballs}. 
 During Integration and Testing (I\&T) of the WFI detectors, identifying these errors is crucial to understanding the performance of the detectors and ensuring that they are functioning correctly before launch.
-Understanding these errors ensures we select the best detectors for the WFI array and can cleanly identify issues with the detectors during operations.
+Understanding these errors ensures we select the best detectors for the WFI array and correctly identify issues with the detectors during operations.
 Both cosmic rays and snowballs are transient events that result in sudden increases in charges and pixels' Data Number (DN) values compared to their typical neighboring pixels.
 These events are also rare and not expected to occur in every exposure.
 Therefore, we can use anomaly detection to identify these outliers as tracking the frequency of these events can help us identify issues with the detectors and their performance over time.
@@ -147,9 +149,11 @@ Finally, like the statistical method, we create the pixel mask by highlighting a
 We then identify regions using the same topological transformations and scikit-image's measure library for finding blobs \parencite{scikit-image}.
 
 \subsubsection{Generalized Least Squares (GLS)}
-JWST uses an GLS method, outlined in \cite{robberto2014generalized} and expanded in \cite{robberto2015cr}, to identify cosmic rays in their data by fitting a linear model to the ramp of each pixel as well as the ramp if a jump were to occur at a given frame.
-The JWST method goes on to use the output from the GLS method in conjunction with Bayes factors to determine the likelihood of a cosmic ray occurring at a given frame, using a-prioi knowledge of the likelihood of cosmic rays occurring in a given exposure.
-In our case, we are interested in any jump in the ramp, regardless of the cause, so we can simplify the JWST method to just the GLS method to produce metrics for each pixel and frame.
+JWST uses an GLS method, outlined in \cite{robberto2014generalized} to have a linear fit of non-destructive ramp by modeling the ramp of each pixel as well as the ramp if a jump were to occur at a given frame.
+They then expanded their approach in \cite{robberto2015cr} to identify cosmic rays in their data in conjunction with Bayes factors to determine the likelihood of a cosmic ray occurring at a given frame, using a-prioi knowledge of the likelihood of cosmic rays occurring in a given exposure.
+Using GLS over Ordinary Least Squares (OLS) is important because of three assumptions that OLS makes that GLS does not: the errors must be normally distributed, their variances must be consistent (points are spread around the regression line in the same way), and these errors must be uncorrelated. 
+Having non-destructive frames with various sources of noise apart and anomalies violates the first two assumptions, making OLS not a good fit for our data.
+In our case, we are interested in any jump in the ramp, regardless of the cause, so we can simplify the JWST method to just use the GLS method to produce metrics for each pixel and frame.
 
 Using the Heaviside function, $\Theta(t)$, which returns 0 when less than 0 and 1 when greater than 0, we can fit a linear model of a ramp of $t_n$ values with a jump at a given frame $t_{CR}$ as follows:
 \begin{equation}
@@ -244,8 +248,9 @@ These products are produced during the SDP pipeline and added as part of the aut
 \label{rst/sec:data}
 The H4RG detectors used in the WFI array are able to perform non-destructive reads while producing an exposure resulting in measurements through time, also referred to as up-the-ramp measurements. 
 Non-destructive read means that the detector is able to read the pixel values without resetting them, allowing us to take multiple measurements of the same pixel during an exposure.
+These individual reads accumulate throughout the exposure, resulting in a series of readout frames gradually increasing in DN value as the detector collects more light.
 This allows us to take the up-the-ramp measurements taken during an exposure and order them in a series to create frames within the exposure. 
-This results in a time series of frames for each integration from a detector's pixel values being reset at the beginning of an exposure to the final accumulated pixel values at the end of an exposure \parencite{casertano2022determining}.
+The result is a time series of frames for each integration from a detector's pixel values being reset at the beginning of an exposure to the final accumulated pixel values at the end of an exposure \parencite{casertano2022determining}.
 To test the effectiveness of the anomaly detection pipeline, we use real exposures taken during the selection phase of the flight detectors for the WFI detector array. 
 During the selection phase of flight detectors, over 70 detectors went through numerous experiments with different types of light exposures, both bright and dark.
 These dark tests consisted of two-hour-long exposures where detectors accumulated across 100 frames.
@@ -369,9 +374,9 @@ If the GLS calculation could be optimized, such as only calculating the GLS for 
 \subsection{SDP Pipeline Integration}
 Of the methods tested, the best combination of methods for the SDP pipeline would be the Statistical Thresholding method for locating anomalies and the Heuristic Rules method for classifying anomalies.
 This combination is easy to implement in the SDP pipeline and is fast enough to keep up with the data generation rate of the WFI detectors.
-This method is not without its flaws, as it over-classifies cosmic rays by identifying many potential anomalies and non-anomalies as cosmic rays.
+This method is not without its flaws, as it produces many false positive cosmic rays that should be labeled as potential anomalies or None.
 This is likely due to the less rigid criteria for identifying cosmic rays compared to snowballs.
-Currently, this combination has been provided to the SDP team for integration into the pipeline as a library fitting the 
+Currently, this combination has been provided to the SDP team for integration into the pipeline as a library, following the same structure as the rest of the SDP pipeline.
 
 \section{Future Work}
 \label{rst/sec:future}
