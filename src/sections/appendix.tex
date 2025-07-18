@@ -1,18 +1,18 @@
-\chapter{ASHTORS Raspberry Pi Compute Module 4 Setup Guide}
+\chapter{ASTHROS Raspberry Pi Compute Module 4 Setup Guide}
 \label{readout/app:cm4_setup}
 From a fresh install of Raspberry Pi OS, we need to install the necessary packages to run the readout system.
 The first step is to enable Secure Shell (SSH) so that we can remotely access the Raspberry Pi.
 This can be done in the Raspberry Pi Configuration tool by enabling SSH in the Interfaces tab.
-While we're in the interfaces tool, we can also enable SPI and Remote GPIO. 
+While we are in the interfaces tool, we must enable SPI and Remote GPIO. 
 These are necessary to interface with the PMCC.
 
 Next, we need to configure the networking interfaces. 
 \texttt{eth0} is the wired interface to the rest of the readout network. 
 We need a static IP for the CM4 to ensure that other devices on the network can easily find it.
 In the network settings at the top right of the screen, we can select "Edit Connections" under Advanced Options. 
-From there, you will see "Wired connection 1" which is the default name for the wired interface.
+From there is "Wired connection 1" which is the default name for the wired interface.
 Select the interface and navigate to the IPv4 Settings tab.
-Chance the method from "Automatic (DHCP)" to "Manual" and add the IP address, Netmask, and Gateway.
+Change the method from "Automatic (DHCP)" to "Manual" and add the IP address, Netmask, and Gateway.
 For ASTHROS, we have the IP addresses of all CM4s set to \texttt{192.168.1.13X} where \texttt{X} is uniquely assigned to each CM4.
 The Netmask is set to \texttt{23} so we can access all devices on the \texttt{192.168.1.X} readout network as well as the \texttt{192.168.0.X} gondola network.
 Finally, the Gateway is set to \texttt{192.168.1.1} when attached to the gondola and \texttt{192.168.1.101} when attached to the readout network.
@@ -21,7 +21,7 @@ When connected in flight configuration, we disable the NAS's router functionalit
 
 Next, we need to configure the SPI interface to work with the PMCCs.
 This process is different for Compute Module 5s (CM5s) as they have a different SPI driver and interfaces for the GPIO pins.
-While we are in the process of upgrading to CM5s, the current version of the readout, and thus this documentation, is designed for CM4s.
+ASTHROS is currently in the process of upgrading to CM5s, but this documentation is focused on the setup for Compute Module 4s (CM4s).
 The first step is to increase the SPI buffer size.
 This is done by appending the following to the end of the \texttt{/boot/cmdline.txt} file:
 \begin{verbatim}
@@ -47,20 +47,20 @@ While we could, in theory, only use two SPI busses and use the chip select lines
 At this point, it is a good idea to reboot the CM4 to ensure that all changes have taken effect.
 To verify the SPI busses are enabled, we check the \texttt{/dev} directory for the SPI devices which should be \texttt{/dev/spidevX.0} where \texttt{X} is the SPI bus number (0, 3, 4, or 5).
 After rebooting and verifying the SPI has been set up, we recommend connecting the CM4 to the internet through a wireless hotspot in order to install the necessary libraries.
-The first library we need to install is the pigpio.
+The first library we need to install is the \texttt{pigpio}.
 This is a library that allows us to control the GPIO pins on the CM4 without needing root access.
-To install the pigpio library, we need to run the following commands:
+To install the \texttt{pigpio} library, we need to run the following commands:
 \begin{verbatim}
     sudo apt-get update
     sudo apt-get install pigpio
 \end{verbatim}
-After installing the pigpio library, we need to enable the pigpio daemon to run on boot.
+After installing the \texttt{pigpio} library, we need to enable the \texttt{pigpio} daemon to run on boot.
 This is done by running the following command:
 \begin{verbatim}
     sudo systemctl enable pigpiod
 \end{verbatim}
 
-Finally, we need to install the actual Python packages that we will use to control the PMCC.
+Finally, we need to install the custom Python packages that we will use to control the PMCC.
 First we need to clone the \texttt{PyMCC} repository from GitHub.
 This is done by running the following command:
 \begin{verbatim}
@@ -134,3 +134,40 @@ Errors disconnecting from the LCT4302:
     \item \texttt{X34} - Timeout from LCT4302 disconnection
     \item \texttt{X35} - Unknown Error from LCT4302 disconnection
 \end{itemize}
+
+\chapter{Previously Published Work}
+\section{Integrating Novelty Detection Capabilities with MSL Mastcam Operations to Enhance Data Analysis}
+The content of Chapter \ref{ch:msl} was previously published in 2021 as part of the Proceedings of the 2021 IEEE Aerospace Conference.
+The content of the chapter has been modified to include additional work and minor formatting changes were made to comply with the ASU dissertation formatting guide.
+Co-authors have granted permission for the inclusion of this publication in this dissertation. 
+Below is the full citation and original abstract.
+\begin{refsection}
+  \nocite{horton2021integrating}
+  \printbibliography[heading=none]
+\end{refsection}
+\subsection{Abstract}
+While innovations in scientific instrumentation have pushed the boundaries of Mars rover mission capabilities, the increase in data complexity has pressured Mars Science Laboratory (MSL) and future Mars rover operations staff to quickly analyze complex data sets to meet progressively shorter tactical and strategic planning timelines. MSLWEB is an internal data tracking tool used by operations staff to perform first pass analysis on MSL image sequences, a series of products taken by the Mast camera, Mastcam. Mastcam consists of a pair of 400-1000 nm wavelength cameras on MSL's Remote Sensing Mast that, among other functions, uses a filter wheel to produce multispectral images by creating a sequence of products at different wavelengths. Mastcam's multiband multispectral image sequences require more complex analysis compared to standard 3-band RGB images. Typically, these are analyzed by the inspection of false color images created to aid visualization, such as band ratios between different spectral indices that can highlight specific potential mineralogic differences among iron-bearing phases, and decorrelation stretches to enhance the color differences between multiple filters. Given the short time frame of tactical planning in which down-linked images might need to be analyzed (within 5-10 hours before the next uplink), there exists a need to triage analysis time to focus on the most important sequences and parts of a sequence. We address this need by creating products for MSLWEB that use novelty detection to help operations staff identify unusual data that might be diagnostic of new or atypical compositions or mineralogies detected within an imaging scene. This was achieved in two ways: 1) by creating products for each sequence to identify novel regions in the image, and 2) by assigning multispectral sequences a sortable novelty score. These new products provide colorized heat maps of inferred novelty that operations staff can use to rapidly review down-linked data and focus their efforts on analyzing potentially new kinds of diagnostic multispectral signatures. This approach has the potential to guide scientists to new discoveries by quickly drawing their attention to often subtle variations not detectable with simple color composites. The products developed in this work have shown promising benefits for integration into mission operations by potentially decreasing tactical operations planning time through guided triage.
+
+\section{Anomaly Detection for the Roman Space Telescope Wide Field Instrument’s Science Data Processing Pipeline}
+The content of Chapter \ref{ch:rst} was previously published in 2023 as part of the Proceedings of the 2023 SPIE Astronomical Telescopes + Instrumentation Conference.
+The content of the chapter has been modified to include additional work and minor formatting changes were made to comply with the ASU dissertation formatting guide.
+Co-authors have granted permission for the inclusion of this publication in this dissertation. 
+Below is the full citation and original abstract.
+\begin{refsection}
+  \nocite{horton2024anomaly}
+  \printbibliography[heading=none]
+\end{refsection}
+\subsection{Abstract}
+The Roman Space Telescope (RST) Wide Field Instrument (WFI) will be utilizing a preliminary Science Data Processing (SDP) pipeline during its Integration and Test, and to some extent during Operations, to track basic statistics and identify known features such as cosmic rays, snowballs as well as possible anomalies in raw detector data. In our detectors, these anomalies appear as jumps in the ramp of a readout and are classified as cosmic rays if they appear as a streak or snowballs if they’re more circular. The WFI employs an array of 18 H4RG-10 detectors that collect image samples. Each set of raw frames within a non-destructive exposure is packaged by the SDP pipeline into image cubes for each detector. Each cube is a time series of 4096 × 4096 accumulating pixel frames. The preliminary analysis pipeline is used to locate anomalies in these time-series accumulation frames and identify the type of anomaly, either natural phenomena or detector characteristic. To compare different methods, we’ve implemented both heuristic-based and data-driven methods to identify anomalies. For the heuristic-based approach, we identify snowballs and cosmic rays by the size and shape of outlier pixel clusters between consecutive frames. For data driven methods, we evaluated a Convolutional Neural Network (CNN) model, and more traditional methods like Principal Component Analysis (PCA). CNN is a supervised learning/classification method. Thus, we used a labeled dataset of anomalies to perform segmentation of the image and identify anomalies. We used previously identified cosmic rays and snowballs to measure the accuracy and efficiency of the mentioned approaches. In evaluating these methods, we aim to pick the best fit for the SDP pipeline’s anomaly detection in terms of both performance and runtime.
+
+\section{On-board Science Data Quality Analysis using Anomaly Detection for ASTHROS}
+The content of Chapter \ref{ch:spectra} was previously published in 2023 as part of the Proceedings of the 2023 SPIE Astronomical Telescopes + Instrumentation Conference.
+The content of the chapter has been modified to include additional work and minor formatting changes were made to comply with the ASU dissertation formatting guide.
+Co-authors have granted permission for the inclusion of this publication in this dissertation. 
+Below is the full citation and original abstract.
+\begin{refsection}
+  \nocite{horton2024board}
+  \printbibliography[heading=none]
+\end{refsection}
+\subsection{Abstract}
+ASTHROS (Astrophysics Stratospheric Telescope for High Spectral Resolution Observations at Submillimeter-wavelengths) is a high-altitude balloon mission utilizing an array of sixteen spectrometers to create high spatial resolution 3D maps of ionized nitrogen gas in galactic and extragalactic star-forming regions. During data collection, we utilize on-the-fly mapping, where the instrument continuously collects spectra while scanning over a target area. After a sweep across the target, we take a calibration spectra to correct our science data. These calibration spectra provide a baseline for how the instrument is operating at a given moment. As we collect new calibration spectra, we can compare the current calibration with a series of past calibrations to determine if our system is producing anomalous spectra. Some examples of anomalous spectra are changes in RFI spike frequency, location, or amplitudes, changes in the overall readout level, and changes in the shape of the spectra. We compare statistical and data-driven methods for detecting these anomalies and evaluate their performance to determine the best fit for the ASTHROS readout system. For data-driven methods, we compare the latent space representation of our calibration spectra with past calibrations using models like Variational AutoEncoders (VAE) and Principal Component Analysis (PCA). By comparing with a rolling window of past calibrations, we allow our system to change gradually while identifying sudden irregularities. When spectra are labeled as anomalous, they are prioritized for review so that the ground operations team can analyze and address the issue. On-board analysis is enabled by the readout system architecture which utilizes the RabbitMQ (RMQ) messaging networking. RMQ allows us to modularly build our readout system and create additional functionality, such as on-board analysis, without making modifications to the operation pipeline.
